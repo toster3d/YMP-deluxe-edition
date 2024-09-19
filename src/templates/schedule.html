@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Schedule
+{% endblock %}
+
+{% block main %}
+
+{% if errors %}
+<p class="error">Error:{{ error }}</p>
+{% endif %}
+
+<section class="container" id="section-sch">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-4">
+        <form action="{{ url_for('schedule') }}" method="post">
+          <label for="date" class="form-label" style="font-weight: bold;">Select date</label>
+          <div class="col-md-8">
+            <div class="input-group">
+              <span class="input-group-text" id="basic-addon1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" fill="currentColor"
+                  class="bi bi-calendar-heart-fill" viewBox="0 0 16 16">
+                  <path
+                    d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v1h16V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5ZM16 14V5H0v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2ZM8 7.993c1.664-1.711 5.825 1.283 0 5.132-5.825-3.85-1.664-6.843 0-5.132Z" />
+                </svg>
+              </span>
+              <input class="js-date form-control form-control-md" name="date" value="{{ current_date }}"
+                onchange="this.form.submit()">
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <h5 class="display-4 text-center" style="margin-top: 45px; margin-bottom:25px;">YOUR MEAL PLAN</h5>
+    <div class="row justify-content-center text-center" style="font-size: 20px;">
+      <form action="{{ url_for('chooseMeal') }}" method="post">
+        <label for="selected_date" class="form-label">for </label>
+        {% if date %}
+        <input class="js-date no-border" disabled="true" id="selected_date" name="selected_date" value="{{ date }}">
+        {% else %}
+        <input class="js-date no-border" disabled="true" id="selected_date" name="selected_date"
+          value="{{ current_date }}">
+        {% endif %}
+      </form>
+    </div>
+  </div>
+  <div class="container">
+    <div class="row g-3 justify-content-center" style="margin-top: 40px; margin-bottom:40px;"">
+    <div class=" col-md-3">
+      <div class="card h-100">
+        <div class="card-body h-100">
+          <div class="service" name="userPlan" value="breakfast"
+            onclick="location.href='{{ url_for('chooseMeal', userPlan='breakfast', mealName='mealName', selected_date=selected_date) }}';">
+            <img src="/static/pexels-keegan-evans-90894.jpg" class="card-img-top">
+            <h4 class="card-title">Breakfast</h4>
+            {% if userPlans %}
+            {% if userPlans[0].breakfast is none %}
+            <p class="card-text">Add breakfast</p>
+            {% else %}
+            <p class="multiline text-uppercase text-center mb-4">{{ userPlans[0].breakfast }}</p>
+            {% endif %}
+            {% else %}
+            <p class="card-text">Add breakfast</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body h-100">
+          <div class="service" name="userPlan" value="lunch"
+            onclick="location.href='{{ url_for('chooseMeal', userPlan='lunch', mealName='mealName', selected_date=selected_date) }}';">
+            <img src="/static/pexels-dana-tentis-1213710.jpg" class="card-img-top">
+            <h4 class="card-title">Lunch</h4>
+            {% if userPlans %}
+            {% if userPlans[0].lunch is none %}
+            <p class="card-text">Add lunch</p>
+            {% else %}
+            <p class="multiline text-uppercase text-center mb-4">{{ userPlans[0].lunch }}</p>
+            {% endif %}
+            {% else %}
+            <p class="card-text">Add lunch</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body h-100">
+          <div class="service" name="userPlan" value="dinner"
+            onclick="location.href='{{ url_for('chooseMeal', userPlan='dinner', mealName='mealName', selected_date=selected_date) }}';">
+            <img src="/static/pexels-engin-akyurt-2347311.jpg" class="card-img-top">
+            <h4 class="card-title">Dinner</h4>
+            {% if userPlans %}
+            {% if userPlans[0].dinner is none %}
+            <p class="card-text">Add dinner</p>
+            {% else %}
+            <p class="multiline text-uppercase text-center mb-4">{{ userPlans[0].dinner }}</p>
+            {% endif %}
+            {% else %}
+            <p class="card-text">Add dinner</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body h-100">
+          <div class="service" name="userPlan" value="dessert"
+            onclick="location.href='{{ url_for('chooseMeal', userPlan='dessert', mealName='mealName', selected_date=selected_date) }}';">
+            <img src="/static/pexels-susanne-jutzeler-sujufoto-1132558.jpg" class="card-img-top">
+            <h4 class="card-title">Dessert</h4>
+            {% if userPlans %}
+            {% if userPlans[0].dessert is none %}
+            <p class="card-text">Add dessert</p>
+            {% else %}
+            <p class="multiline text-uppercase text-center mb-4">{{ userPlans[0].dessert }}</p>
+            {% endif %}
+            {% else %}
+            <p class="card-text">Add dessert</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+
+    flatpickr(".js-date", {
+      dateFormat: "l d F Y"
+    })
+  </script>
+</section>
+
+{% endblock %}
