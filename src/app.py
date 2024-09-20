@@ -1,11 +1,11 @@
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, make_response, url_for
 from flask_session import Session
-from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from datetime import timedelta
 from helpers import login_required
 from RecipeManager import RecipeManager
+from user_auth import UserAuth
 import os
 
 
@@ -26,6 +26,8 @@ Session(app)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(current_dir, "recipes.db")
 db = SQL(f"sqlite:///{db_path}")
+user_auth = UserAuth(db)
+
 
 
 @app.after_request
@@ -45,144 +47,37 @@ def index():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Log user in"""
-
-    # Forget any user_id
-    session.clear()
-    error = None
-    # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            error = "must provide username"
-            flash('Must provide username')
-            return render_template("login.html")
-
-        # Ensure password was submitted
-        elif not request.form.get("password"):
-            error = "must provide password"
-            flash('Must provide password')
-            return render_template("login.html")
-
-        # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = ?",
-                          request.form.get("username"))
-
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            error = "invalid username or password"
-            flash('Invalid username or password')
-            return render_template("login.html")
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-
-        # Redirect user to home page
-        flash('You were successfully Signed in!')
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("login.html", error=error)
+        username = request.form.get("username")
+        password = request.form.get("password")
+        success, redirect_url = user_auth.login(username, password)
+        if success:
+            return redirect(url_for("index"))
+        else:
+            return render_template(redirect_url)
+    return render_template("login.html")
 
 
 @app.route("/logout")
 def logout():
-    """Log user out"""
-    # Forget any user_id
-    session.clear()
-    # Redirect user to login form
-    return redirect("/")
+    user_auth.logout()
+    return redirect(url_for("index"))
 
-def password_validation(password):
-    symbols = ['!', '#', '?', '%', '$', '&']
-    if len(password) < 8:
-        flash("password must provide min. 8 characters")
-        return False
-    elif len(password) > 20:
-        flash("password must provide max 20 characters")
-        return False
-    if not any(char.isdigit() for char in password):
-        flash("password should contain at least one number")
-        return False
-    if not any(char.isupper() for char in password):
-        flash("password should contain at least one uppercase letter")
-        return False
-    if not any(char.islower() for char in password):
-        flash("password should contain at least one lowercase letter")
-        return False
-    if not any(char in symbols for char in password):
-        flash('Password should contain at least one of the symbols !#?%$&')
-        return False
-    else:
-        return True
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    # User reached route via POST (as by submitting a form via POST)
-    error = None
     if request.method == "POST":
         username = request.form.get("username")
         email = request.form.get("email")
         password = request.form.get("password")
         confirmation = request.form.get("confirmation")
-        usernames = db.execute(
-            "SELECT * FROM users WHERE username = ?", username)
-        hashed = generate_password_hash(password)
-
-        # Ensure username was submitted
-        if not username:
-            error = "must provide username"
-            flash('Must provide username')
-            return render_template("register.html")
-
-        # Ensure password was submitted
-        elif not password:
-            error = "must provide password"
-            flash('Must provide password')
-            return render_template("register.html")
-        elif not email:
-            error = "must provide an e-mail"
-            flash('Must provide an e-mail')
-            return render_template("register.html")
-
-        elif password != confirmation:
-            error = "Password does not match"
-            flash('Password does not match')
-            return render_template("register.html")
-
-        if usernames:
-            error = "username is already taken"
-            flash('username is already taken')
-            return render_template("register.html")
-
-        existing_email = db.execute("SELECT * FROM users WHERE email = ?", email)
-        if existing_email:
-            error = "email is already taken"
-            flash('E-mail is already taken')
-            return render_template("register.html")
-
-         # checking password validation
-        val = password_validation(password)
-        if not val:
-            error = "Invalid password."
-            flash('Invalid password')
-            return render_template("register.html")
-
-
-        # Query database for username
-
-        db.execute("INSERT INTO users (username, email, hash) VALUES(?, ?, ?)",
-                  username, email, hashed)
-
-        # Redirect user to home page
-        flash('You were successfully registered in. Sign in to start!')
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
+        success, redirect_url = user_auth.register(username, email, password, confirmation)
+        if success:
+            return redirect(url_for("login"))
+        else:
+            return render_template(redirect_url)
     else:
-        return render_template("register.html", error=error)
+        return render_template("register.html")
 
 
 @app.route("/recipes", methods=["GET", "POST"])
@@ -214,7 +109,6 @@ def ListOfRecipes():
     user_id = session["user_id"]
     recipe_manager = RecipeManager(db, user_id)
     items = recipe_manager.get_recepes_list()
-    
     return render_template("ListOfRecipes.html", items=items)
 
 
