@@ -1,11 +1,15 @@
+import os
+from datetime import datetime
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, make_response, url_for
 from flask_session import Session
 from datetime import datetime
 from datetime import timedelta
 from helpers import login_required
-from RecipeManager import RecipeManager
+from recipe_manager import RecipeManager
 from user_auth import UserAuth
+from user_plan_manager import UserPlanManager
+from shopping_list_service import ShoppingListService
 import os
 
 
@@ -15,19 +19,20 @@ app = Flask(__name__)
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-# na:
 current_dir = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(current_dir, "recipes.db")
 db = SQL(f"sqlite:///{db_path}")
-user_auth = UserAuth(db)
 
+user_auth = UserAuth(db)
+user_plan_manager = UserPlanManager(db)
+recipe_manager = RecipeManager(db)
+shopping_list_service = ShoppingListService(user_plan_manager, recipe_manager)
 
 
 @app.after_request
@@ -50,11 +55,11 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        success, redirect_url = user_auth.login(username, password)
+        success, user_id = user_auth.login(username, password)  # Zmiana: zwróć user_id
         if success:
             return redirect(url_for("index"))
         else:
-            return render_template(redirect_url)
+            return render_template("login.html", error="Invalid credentials")  # Dodano komunikat o błędzie
     return render_template("login.html")
 
 
@@ -90,14 +95,13 @@ def recipes():
         if not request.form.get("mealName"):
             flash('Must provide a meal name.')
             return render_template("recipes.html")
-        user = session["user_id"]
-        recipe_manager = RecipeManager(db, user)
-        recipeList = recipe_manager.get_recipes()
+        user = session['user_id']
+        recipeList = recipe_manager.get_recipes(user)
         if not recipeList:
             recipe_manager.add_recipe(user, mealName, mealType, ingredients, instructions)
             return redirect("/ListOfRecipes")
         elif mealName not in recipeList[0]["mealName"]:
-            recipe_manager.add_recipe(mealName, mealType, ingredients, instructions)
+            recipe_manager.add_recipe(user, mealName, mealType, ingredients, instructions)
             return redirect("/ListOfRecipes")
     else:
         return render_template("recipes.html")
@@ -106,9 +110,9 @@ def recipes():
 @app.route("/ListOfRecipes")
 @login_required
 def ListOfRecipes():
-    user_id = session["user_id"]
-    recipe_manager = RecipeManager(db, user_id)
-    items = recipe_manager.get_recepes_list()
+    user_id = session['user_id']
+    # recipe_manager = RecipeManager(db, user_id)
+    items = recipe_manager.get_recepes_list(user_id)
     return render_template("ListOfRecipes.html", items=items)
 
 
@@ -116,8 +120,7 @@ def ListOfRecipes():
 @login_required
 def displayRecipe(recipe_id):
     user_id = session["user_id"]
-    recipe_manager = RecipeManager(db, user_id)
-    recipe = recipe_manager.get_recipe_by_id(recipe_id, db)
+    recipe = recipe_manager.get_recipe_by_id(recipe_id, user_id)
     if not recipe:
         flash("Invalid recipe id", "warning")
     ingredients = [ing.strip() for ing in recipe['ingredients'].split('\n')]
@@ -125,7 +128,7 @@ def displayRecipe(recipe_id):
     instructions = [ing.strip() for ing in recipe['instructions'].split('\n')]
     recipe['instructions'] = instructions
     if request.method == "POST" and request.form.get("deleteRecipe"):
-        recipe_manager.delete_recipe(recipe_id)
+        recipe_manager.delete_recipe(recipe_id, user_id)
         return redirect("/ListOfRecipes")
     return render_template("displayRecipe.html", recipe=recipe)
 
@@ -134,8 +137,7 @@ def displayRecipe(recipe_id):
 @login_required
 def editRecipe(recipe_id):
     user_id = session["user_id"]
-    recipe_manager = RecipeManager(db, user_id)
-    recipe = recipe_manager.get_recipe_by_id(recipe_id, db)
+    recipe = recipe_manager.get_recipe_by_id(recipe_id, user_id)
     if not recipe:
         flash("Invalid recipe id", "warning")
 
@@ -144,74 +146,50 @@ def editRecipe(recipe_id):
         ed_mealType = request.form.get("mealType")
         ed_ingredients = request.form.get('ingredients')
         ed_instructions = request.form.get("instructions")
-        recipe_manager.update_recipe(recipe_id, ed_mealName, ed_mealType, ed_ingredients, ed_instructions)
+        recipe_manager.update_recipe(recipe_id, user_id, ed_mealName, ed_mealType, ed_ingredients, ed_instructions)
         return redirect(url_for("displayRecipe", recipe_id=recipe_id))
 
-    ingredients = [ing.strip() for ing in recipe[0]['ingredients'].split('\n')]
-    instructions = [ing.strip()
-                              for ing in recipe[0]['instructions'].split('\n')]
-    return render_template("editRecipe.html", recipe=recipe[0], ingredients=ingredients, instructions=instructions)
+    ingredients = [ing.strip() for ing in recipe['ingredients'].split('\n')]
+    instructions = [ing.strip() for ing in recipe['instructions'].split('\n')]
+    return render_template("editRecipe.html", recipe=recipe, ingredients=ingredients, instructions=instructions)
+
 
 @app.route("/schedule", methods=["GET", "POST"])
 @login_required
 def schedule():
+    user_id = session["user_id"]
     if request.method == "POST":
         date = request.form.get("date")
         user_id = session["user_id"]
         selected_date = request.form.get('selected_date')
         if selected_date:
-            db.execute("UPDATE userPlan SET breakfast = :breakfast, lunch = :lunch, dinner = :dinner WHERE user_id = :user_id AND date = :selected_date", breakfast=breakfast, lunch=lunch, dinner=dinner, user_id=user_id, selected_date=selected_date)
+            user_plan_manager.update_plan(user_id, selected_date)
             return redirect(url_for('schedule', date=selected_date))
         else:
-            userPlans = db.execute("SELECT * FROM userPlan WHERE user_id = :user_id AND date = :date", user_id=user_id, date=date)
+            userPlans = user_plan_manager.get_plans(user_id, date)
+
     else:
         now = datetime.now()
         date = request.args.get('date')
         if not date:
             date = now.strftime("%A %d %B %Y")
         user_id = session["user_id"]
-        userPlans = db.execute("SELECT * FROM userPlan WHERE user_id = :user_id AND date = :date", user_id=user_id, date=date)
+        userPlans = user_plan_manager.get_plans(user_id, date)
     return render_template("schedule.html", current_date=date, userPlans=userPlans, selected_date=date)
 
-@app.route("/deleteMeal/<string:mealName>", methods=["POST"])
-def deleteMeal(mealName):
-    user_id = session["user_id"]
-    selected_date = request.form.get('selected_date')
-    db.execute("UPDATE userPlan SET {}=NULL WHERE user_id=:user_id AND date=:date".format(mealName), user_id=user_id, date=selected_date)
-    flash("The recipe for {} was removed from your plan".format(mealName), "success")
-    return "", 204
 
 
 @app.route('/chooseMeal', methods=["GET", "POST"])
 @login_required
 def chooseMeal():
     user_id = session["user_id"]
-    recipe_manager = RecipeManager(db, user_id)
-    items = recipe_manager.get_recipes_ordered_by_meal_type()
+    items = recipe_manager.get_recipes_ordered_by_meal_type(user_id)
     selected_date = request.form.get('selected_date')
+    
     if request.method == "POST":
         userPlan = request.form["userPlan"]
         mealName = request.form.get("mealName")
-        userPlans = db.execute("SELECT * FROM userPlan WHERE user_id = :user_id AND date = :selected_date", user_id=user_id, selected_date=selected_date)
-        if not userPlans:
-            db.execute("INSERT INTO userPlan (user_id, date) VALUES (:user_id, :date)", user_id=user_id, date=selected_date)
-            if userPlan == 'breakfast':
-                db.execute("UPDATE userPlan SET breakfast = :mealName WHERE user_id = :user_id AND date = :date", mealName = mealName, user_id=user_id, date=selected_date)
-            elif userPlan == "lunch":
-                db.execute("UPDATE userPlan SET lunch = :mealName WHERE user_id = :user_id AND date = :date", mealName = mealName, user_id=user_id, date=selected_date)
-            elif userPlan == "dinner":
-                db.execute("UPDATE userPlan SET dinner = :mealName WHERE user_id = :user_id AND date = :date", mealName=mealName, user_id=user_id, date=selected_date)
-            elif userPlan == "dessert":
-                db.execute("UPDATE userPlan SET dessert = :mealName WHERE user_id = :user_id AND date = :date", mealName=mealName, user_id=user_id, date=selected_date)
-        else:
-            if userPlan == 'breakfast':
-                db.execute("UPDATE userPlan SET breakfast = :mealName WHERE user_id = :user_id AND date = :date", mealName = mealName, user_id=user_id, date=selected_date)
-            elif userPlan == "lunch":
-                db.execute("UPDATE userPlan SET lunch = :mealName WHERE user_id = :user_id AND date = :date", mealName = mealName, user_id=user_id, date=selected_date)
-            elif userPlan == "dinner":
-                db.execute("UPDATE userPlan SET dinner = :mealName WHERE user_id = :user_id AND date = :date", mealName=mealName, user_id=user_id, date=selected_date)
-            elif userPlan == "dessert":
-                db.execute("UPDATE userPlan SET dessert = :mealName WHERE user_id = :user_id AND date = :date", mealName=mealName, user_id=user_id, date=selected_date)
+        user_plan_manager.create_or_update_plan(user_id, selected_date, userPlan, mealName)  # Użycie nowej metody
         return redirect(url_for("schedule", date=selected_date))
     else:
         return render_template('chooseMeal.html', items=items, date=selected_date)
@@ -220,57 +198,31 @@ def chooseMeal():
 @app.route('/shoppingList', methods=["GET", "POST"])
 @login_required
 def shoppingList():
-    user_id = session['user_id']
-    ingredients = []
-    recipe_manager = RecipeManager(db, user_id)
-    mealNames_recipes1 = recipe_manager.get_meal_names()
-    recipes1Names = []
-    for item in mealNames_recipes1:
-        recipes1Names.append(item['mealName'])
+    user_id = session["user_id"]
     if request.method == "POST":
         date_range = request.form.get("date_range")
         if not date_range:
             flash("You must choose a date range.", "warning")
             return redirect(url_for("shoppingList"))
+        
         start_date, end_date = date_range.split(" to ")
         start_date = datetime.strptime(start_date, "%A %d %B %Y")
         end_date = datetime.strptime(end_date, "%A %d %B %Y")
-        date_list = []
-        while start_date <= end_date:
-            date_list.append(start_date.strftime("%A %d %B %Y"))
-            start_date += timedelta(days=1)
-        for date in date_list:
-            userPlans = db.execute("SELECT breakfast, lunch, dinner, dessert FROM userPlan WHERE user_id = :user_id AND date = :date", user_id=user_id, date=date)
-            if userPlans:
-                mealNam = list(userPlans[0].values())
-            else:
-                mealNam = []
-            for meal in mealNam:
-                if meal in recipes1Names:
-                    recipe_manager = RecipeManager(db, user_id)
-                    result = recipe_manager.get_ingredients_by_meal_name(meal)
-                    for row in result:
-                        ingredients += [ing.strip() for ing in result.split("\n") if ing.strip()]
-        ingredients = list(set(ingredients))
+
+        ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (start_date, end_date))
         if not ingredients:
             flash("You didn't set any meal plan for this date. Check your schedule.", "warning")
-        return render_template("shoppingList.html", date_range = date_range, ingredients=ingredients)
+        return render_template("shoppingList.html", date_range=date_range, ingredients=ingredients)
+    
     else:
         now = datetime.now()
         current_date = now.strftime("%A %d %B %Y")
-        userPlans = db.execute("SELECT breakfast, lunch, dinner, dessert FROM userPlan WHERE user_id = :user_id AND date = :current_date", user_id=user_id, current_date=current_date)
-        if userPlans:
-            mealNam = list(userPlans[0].values())
-        else:
-            mealNam = []
-
-        for meal in mealNam:
-            if meal in recipes1Names:
-                result = recipe_manager.get_ingredients_by_meal_name(meal)
-                for row in result:
-                    ingredients += [ing.strip() for ing in row["ingredients"].split("\n") if ing.strip()]
-    ingredients = list(set(ingredients))
-    return render_template("shoppingList.html", current_date=current_date, ingredients=ingredients)
+        ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (now.date(), now.date()))
+        
+        if not ingredients:
+            flash("You don't have any meal plan for today. Check your schedule.", "info")
+        
+        return render_template("shoppingList.html", current_date=current_date, ingredients=ingredients)
 
 
 if __name__ == "__main__":
