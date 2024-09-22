@@ -2,12 +2,35 @@ from flask import session, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 from cs50 import SQL
 
+
 class UserAuth:
+    """
+    A class to handle user authentication operations.
+
+    This class provides methods for user login, logout, registration,
+    and password validation.
+    """
+
     def __init__(self, db):
+        """
+        Initialize the UserAuth instance.
+
+        Args:
+            db: The database connection object.
+        """
         self.db = db
 
     def login(self, username, password):
-        """Log user in"""
+        """
+        Authenticate a user and log them in.
+
+        Args:
+            username (str): The user's username.
+            password (str): The user's password.
+
+        Returns:
+            tuple: A boolean indicating success and a string with the redirect path.
+        """
         if not username:
             flash('Must provide username')
             return False, "login.html"
@@ -27,11 +50,22 @@ class UserAuth:
         return True, "/"
 
     def logout(self):
-        """Log user out"""
+        """Log the current user out by clearing the session."""
         session.clear()
 
     def register(self, username, email, password, confirmation):
-        """Register a new user"""
+        """
+        Register a new user.
+
+        Args:
+            username (str): The desired username.
+            email (str): The user's email address.
+            password (str): The desired password.
+            confirmation (str): Password confirmation.
+
+        Returns:
+            tuple: A boolean indicating success and a string with the redirect path.
+        """
         if not username:
             flash('Must provide username')
             return False, "register.html"
@@ -44,12 +78,16 @@ class UserAuth:
             flash('Must provide an e-mail')
             return False, "register.html"
 
-        existing_username = self.db.execute("SELECT * FROM users WHERE username = ?", username)
+        existing_username = self.db.execute(
+            "SELECT * FROM users WHERE username = ?", username
+        )
         if existing_username:
             flash('Username is already taken')
             return False, "register.html"
 
-        existing_email = self.db.execute("SELECT * FROM users WHERE email = ?", email)
+        existing_email = self.db.execute(
+            "SELECT * FROM users WHERE email = ?", email
+        )
         if existing_email:
             flash('E-mail is already taken')
             return False, "register.html"
@@ -62,11 +100,23 @@ class UserAuth:
             return False, "register.html"
 
         hashed = generate_password_hash(password)
-        self.db.execute("INSERT INTO users (username, email, hash) VALUES(?, ?, ?)", username, email, hashed)
+        self.db.execute(
+            "INSERT INTO users (username, email, hash) VALUES(?, ?, ?)",
+            username, email, hashed
+        )
         flash('You were successfully registered. Sign in to start!')
         return True, "/"
 
     def password_validation(self, password):
+        """
+        Validate the password against security criteria.
+
+        Args:
+            password (str): The password to validate.
+
+        Returns:
+            bool: True if the password meets all criteria, False otherwise.
+        """
         symbols = ['!', '#', '?', '%', '$', '&']
 
         if len(password) < 8:

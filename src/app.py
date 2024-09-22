@@ -6,10 +6,8 @@ from flask_session import Session
 from datetime import datetime
 from datetime import timedelta
 from helpers import login_required
-from recipe_manager import RecipeManager
-from user_auth import UserAuth
-from user_plan_manager import UserPlanManager
-from shopping_list_service import ShoppingListService
+from services import ShoppingListService, UserAuth, UserPlanManager, RecipeManager
+
 import os
 
 
@@ -198,7 +196,8 @@ def chooseMeal():
 @app.route('/shoppingList', methods=["GET", "POST"])
 @login_required
 def shoppingList():
-    user_id = session["user_id"]
+    user_id = session['user_id']
+    
     if request.method == "POST":
         date_range = request.form.get("date_range")
         if not date_range:
@@ -208,16 +207,18 @@ def shoppingList():
         start_date, end_date = date_range.split(" to ")
         start_date = datetime.strptime(start_date, "%A %d %B %Y")
         end_date = datetime.strptime(end_date, "%A %d %B %Y")
-
+        
         ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (start_date, end_date))
+        
         if not ingredients:
-            flash("You didn't set any meal plan for this date. Check your schedule.", "warning")
+            flash("You didn't set any meal plan for this date range. Check your schedule.", "warning")
+        
         return render_template("shoppingList.html", date_range=date_range, ingredients=ingredients)
     
-    else:
+    else:  # GET request
         now = datetime.now()
         current_date = now.strftime("%A %d %B %Y")
-        ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (now.date(), now.date()))
+        ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (now, now))
         
         if not ingredients:
             flash("You don't have any meal plan for today. Check your schedule.", "info")
