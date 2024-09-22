@@ -1,15 +1,10 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, make_response, url_for
 from flask_session import Session
-from datetime import datetime
-from datetime import timedelta
 from helpers import login_required
 from services import ShoppingListService, UserAuth, UserPlanManager, RecipeManager
-
-import os
-
 
 # Configure application
 app = Flask(__name__)
@@ -27,6 +22,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(current_dir, "recipes.db")
 db = SQL(f"sqlite:///{db_path}")
 
+# Initialize services
 user_auth = UserAuth(db)
 user_plan_manager = UserPlanManager(db)
 recipe_manager = RecipeManager(db)
@@ -53,11 +49,11 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        success, user_id = user_auth.login(username, password)  # Zmiana: zwróć user_id
+        success, user_id = user_auth.login(username, password)
         if success:
             return redirect(url_for("index"))
         else:
-            return render_template("login.html", error="Invalid credentials")  # Dodano komunikat o błędzie
+            return render_template("login.html", error="Invalid credentials")
     return render_template("login.html")
 
 
@@ -90,15 +86,12 @@ def recipes():
         mealType = request.form.get("mealType")
         ingredients = request.form.get("ingredients")
         instructions = request.form.get("instructions")
-        if not request.form.get("mealName"):
+        if not mealName:
             flash('Must provide a meal name.')
             return render_template("recipes.html")
         user = session['user_id']
         recipeList = recipe_manager.get_recipes(user)
-        if not recipeList:
-            recipe_manager.add_recipe(user, mealName, mealType, ingredients, instructions)
-            return redirect("/ListOfRecipes")
-        elif mealName not in recipeList[0]["mealName"]:
+        if not recipeList or mealName not in recipeList[0]["mealName"]:
             recipe_manager.add_recipe(user, mealName, mealType, ingredients, instructions)
             return redirect("/ListOfRecipes")
     else:
@@ -109,7 +102,6 @@ def recipes():
 @login_required
 def ListOfRecipes():
     user_id = session['user_id']
-    # recipe_manager = RecipeManager(db, user_id)
     items = recipe_manager.get_recepes_list(user_id)
     return render_template("ListOfRecipes.html", items=items)
 
@@ -158,14 +150,12 @@ def schedule():
     user_id = session["user_id"]
     if request.method == "POST":
         date = request.form.get("date")
-        user_id = session["user_id"]
         selected_date = request.form.get('selected_date')
         if selected_date:
             user_plan_manager.update_plan(user_id, selected_date)
             return redirect(url_for('schedule', date=selected_date))
         else:
             userPlans = user_plan_manager.get_plans(user_id, date)
-
     else:
         now = datetime.now()
         date = request.args.get('date')
@@ -174,7 +164,6 @@ def schedule():
         user_id = session["user_id"]
         userPlans = user_plan_manager.get_plans(user_id, date)
     return render_template("schedule.html", current_date=date, userPlans=userPlans, selected_date=date)
-
 
 
 @app.route('/chooseMeal', methods=["GET", "POST"])
@@ -187,7 +176,7 @@ def chooseMeal():
     if request.method == "POST":
         userPlan = request.form["userPlan"]
         mealName = request.form.get("mealName")
-        user_plan_manager.create_or_update_plan(user_id, selected_date, userPlan, mealName)  # Użycie nowej metody
+        user_plan_manager.create_or_update_plan(user_id, selected_date, userPlan, mealName)
         return redirect(url_for("schedule", date=selected_date))
     else:
         return render_template('chooseMeal.html', items=items, date=selected_date)
@@ -215,7 +204,7 @@ def shoppingList():
         
         return render_template("shoppingList.html", date_range=date_range, ingredients=ingredients)
     
-    else:  # GET request
+    else:
         now = datetime.now()
         current_date = now.strftime("%A %d %B %Y")
         ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (now, now))
