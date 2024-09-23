@@ -1,12 +1,14 @@
 [project]
 name = "moj-projekt"
 version = "0.1.0"
-description = "Add your description here"
+description = "A comprehensive meal planning and shopping list application"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "moj-projekt",
+    "flask>=2.0.0",
+    "cs50>=3.0.0",
     "requests>=2.32.3",
+    "flask-session>=0.3.2",
 ]
 
 [tool.uv.sources]
