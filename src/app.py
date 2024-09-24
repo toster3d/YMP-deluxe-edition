@@ -1,9 +1,9 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session, make_response, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
-from helpers import login_required
+from helpers.login_required_decorator import login_required
 from services import ShoppingListService, UserAuth, UserPlanManager, RecipeManager
 
 # Configure application

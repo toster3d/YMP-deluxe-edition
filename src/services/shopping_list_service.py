@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import List, Tuple
-from .date_range_generator import DateRangeGenerator
-from .ingredient_parser import IngredientParser
-
+from helpers.date_range_generator import generate_date_list
+from helpers.ingredient_parser import parse_ingredients
 
 class ShoppingListService:
     """
@@ -19,8 +18,6 @@ class ShoppingListService:
         """
         self.user_plan_manager = user_plan_manager
         self.recipe_manager = recipe_manager
-        self.date_range_generator = DateRangeGenerator()
-        self.ingredient_parser = IngredientParser()
 
     def get_ingredients_for_date_range(self, user_id: int, date_range: Tuple[datetime, datetime]) -> List[str]:
         """
@@ -35,7 +32,7 @@ class ShoppingListService:
         """
         start_date, end_date = date_range
         ingredients = []
-        date_list = self.date_range_generator.generate_date_list(start_date, end_date)
+        date_list = generate_date_list(start_date, end_date)
 
         for date in date_list:
             user_plans = self.user_plan_manager.get_plans(user_id, date.strftime("%A %d %B %Y"))
@@ -49,7 +46,7 @@ class ShoppingListService:
                     recipe = self.recipe_manager.get_recipe_by_name(user_id, meal_name)
                     if recipe:
                         ingredients.extend(
-                            self.ingredient_parser.parse_ingredients(recipe['ingredients'])
+                            parse_ingredients(recipe['ingredients'])
                         )
 
         return list(set(ingredients))
