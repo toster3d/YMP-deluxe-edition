@@ -18,9 +18,9 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-current_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(current_dir, "recipes.db")
-db = SQL(f"sqlite:///{db_path}")
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(CURRENT_DIR, "recipes.db")
+db = SQL(f"sqlite:///{DB_PATH}")
 
 # Initialize services
 user_auth = UserAuth(db)
@@ -49,7 +49,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        success, user_id = user_auth.login(username, password)
+        success = user_auth.login(username, password)
         if success:
             return redirect(url_for("index"))
         else:
@@ -82,17 +82,17 @@ def register():
 @app.route("/recipes", methods=["GET", "POST"])
 def recipes():
     if request.method == "POST":
-        mealName = request.form.get("mealName")
-        mealType = request.form.get("mealType")
+        meal_name = request.form.get("mealName")
+        meal_type = request.form.get("mealType")
         ingredients = request.form.get("ingredients")
         instructions = request.form.get("instructions")
-        if not mealName:
+        if not meal_name:
             flash('Must provide a meal name.')
             return render_template("recipes.html")
         user = session['user_id']
-        recipeList = recipe_manager.get_recipes(user)
-        if not recipeList or mealName not in recipeList[0]["mealName"]:
-            recipe_manager.add_recipe(user, mealName, mealType, ingredients, instructions)
+        recipe_list = recipe_manager.get_recipes(user)
+        if not recipe_list or meal_name not in recipe_list[0]["mealName"]:
+            recipe_manager.add_recipe(user, meal_name, meal_type, ingredients, instructions)
             return redirect("/ListOfRecipes")
     else:
         return render_template("recipes.html")
@@ -100,7 +100,7 @@ def recipes():
 
 @app.route("/ListOfRecipes")
 @login_required
-def ListOfRecipes():
+def list_of_recipes():
     user_id = session['user_id']
     items = recipe_manager.get_recepes_list(user_id)
     return render_template("ListOfRecipes.html", items=items)
@@ -108,7 +108,7 @@ def ListOfRecipes():
 
 @app.route("/displayRecipe/<int:recipe_id>", methods=["GET", "POST"])
 @login_required
-def displayRecipe(recipe_id):
+def display_recipe(recipe_id):
     user_id = session["user_id"]
     recipe = recipe_manager.get_recipe_by_id(recipe_id, user_id)
     if not recipe:
@@ -125,7 +125,7 @@ def displayRecipe(recipe_id):
 
 @app.route("/editRecipe/<int:recipe_id>", methods=["GET", "POST"])
 @login_required
-def editRecipe(recipe_id):
+def edit_recipe(recipe_id):
     user_id = session["user_id"]
     recipe = recipe_manager.get_recipe_by_id(recipe_id, user_id)
     if not recipe:
@@ -137,7 +137,7 @@ def editRecipe(recipe_id):
         ed_ingredients = request.form.get('ingredients')
         ed_instructions = request.form.get("instructions")
         recipe_manager.update_recipe(recipe_id, user_id, ed_mealName, ed_mealType, ed_ingredients, ed_instructions)
-        return redirect(url_for("displayRecipe", recipe_id=recipe_id))
+        return redirect(url_for("display_recipe", recipe_id=recipe_id))
 
     ingredients = [ing.strip() for ing in recipe['ingredients'].split('\n')]
     instructions = [ing.strip() for ing in recipe['instructions'].split('\n')]
@@ -168,15 +168,15 @@ def schedule():
 
 @app.route('/chooseMeal', methods=["GET", "POST"])
 @login_required
-def chooseMeal():
+def choose_meal():
     user_id = session["user_id"]
     items = recipe_manager.get_recipes_ordered_by_meal_type(user_id)
     selected_date = request.form.get('selected_date')
     
     if request.method == "POST":
-        userPlan = request.form["userPlan"]
-        mealName = request.form.get("mealName")
-        user_plan_manager.create_or_update_plan(user_id, selected_date, userPlan, mealName)
+        user_plan = request.form["userPlan"]
+        meal_name = request.form.get("mealName")
+        user_plan_manager.create_or_update_plan(user_id, selected_date, user_plan, meal_name)
         return redirect(url_for("schedule", date=selected_date))
     else:
         return render_template('chooseMeal.html', items=items, date=selected_date)
@@ -184,7 +184,7 @@ def chooseMeal():
 
 @app.route('/shoppingList', methods=["GET", "POST"])
 @login_required
-def shoppingList():
+def shopping_list():
     user_id = session['user_id']
     
     if request.method == "POST":

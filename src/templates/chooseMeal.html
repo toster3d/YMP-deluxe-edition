@@ -32,7 +32,7 @@ Choose {{ mealName }} - Meal Planner
                   <td class="text-start text-uppercase">{{ item['mealName'] }}</td>
                   <td class="text-end">{{ item['mealType'] }}</td>
                   <td>
-                    <form method="post" action="{{ url_for('chooseMeal') }}">
+                    <form method="post" action="{{ url_for('choose_meal') }}">
                       <input type="hidden" id="selected_date" name="selected_date"
                         value="{{ request.args.get('selected_date') }}">
                       <input type="hidden" name="mealName" value="{{ item['mealName'] }}">

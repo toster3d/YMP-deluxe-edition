@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-ListOfRecipes
+List of recipes
 {% endblock %}
 
 {% block main %}
@@ -33,7 +33,7 @@ ListOfRecipes
                   }}</td>
                 <td class="text-start" value="{{ item['mealType'] }}">{{ item['mealType'] }}</td>
                 <td>
-                  <a href="{{ url_for('displayRecipe', recipe_id=item['id']) }}">View</a>
+                  <a href="{{ url_for('display_recipe', recipe_id=item['id']) }}">View</a>
                 </td>
               </tr>
               {% endfor %}

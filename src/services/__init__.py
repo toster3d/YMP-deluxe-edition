@@ -1,4 +1,4 @@
-from .shopping_list_module import ShoppingListService
+from .shopping_list_service import ShoppingListService
 from .user_auth import UserAuth
 from .user_plan_manager import UserPlanManager
 from .recipe_manager import RecipeManager
