@@ -1,7 +1,11 @@
-from flask import session, flash
+import logging
+from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
 from cs50 import SQL
 
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class UserAuth:
     """
@@ -32,21 +36,21 @@ class UserAuth:
             tuple: A boolean indicating success and a string with the redirect path.
         """
         if not username:
-            flash('Must provide username')
+            logger.warning('Must provide username')
             return False, "login.html"
 
         if not password:
-            flash('Must provide password')
+            logger.warning('Must provide password')
             return False, "login.html"
 
         rows = self.db.execute("SELECT * FROM users WHERE username = ?", username)
 
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
-            flash('Invalid username or password')
+            logger.warning('Invalid username or password')
             return False, "login.html"
 
         session["user_id"] = rows[0]["id"]
-        flash('You were successfully signed in!')
+        logger.info('You were successfully signed in!')
         return True, "/"
 
     def logout(self):
@@ -67,33 +71,33 @@ class UserAuth:
             tuple: A boolean indicating success and a string with the redirect path.
         """
         if not username:
-            flash('Must provide username')
+            logger.warning('Must provide username')
             return False, "register.html"
 
         if not password:
-            flash('Must provide password')
+            logger.warning('Must provide password')
             return False, "register.html"
 
         if not email:
-            flash('Must provide an e-mail')
+            logger.warning('Must provide an e-mail')
             return False, "register.html"
 
         existing_username = self.db.execute(
             "SELECT * FROM users WHERE username = ?", username
         )
         if existing_username:
-            flash('Username is already taken')
+            logger.warning('Username is already taken')
             return False, "register.html"
 
         existing_email = self.db.execute(
             "SELECT * FROM users WHERE email = ?", email
         )
         if existing_email:
-            flash('E-mail is already taken')
+            logger.warning('E-mail is already taken')
             return False, "register.html"
 
         if password != confirmation:
-            flash('Password does not match')
+            logger.warning('Password does not match')
             return False, "register.html"
 
         if not self.password_validation(password):
@@ -104,7 +108,7 @@ class UserAuth:
             "INSERT INTO users (username, email, hash) VALUES(?, ?, ?)",
             username, email, hashed
         )
-        flash('You were successfully registered. Sign in to start!')
+        logger.info('You were successfully registered. Sign in to start!')
         return True, "/"
 
     def password_validation(self, password):
@@ -120,21 +124,21 @@ class UserAuth:
         symbols = ['!', '#', '?', '%', '$', '&']
 
         if len(password) < 8:
-            flash("Password must provide min. 8 characters")
+            logger.warning("Password must provide min. 8 characters")
             return False
         if len(password) > 20:
-            flash("Password must provide max 20 characters")
+            logger.warning("Password must provide max 20 characters")
             return False
         if not any(char.isdigit() for char in password):
-            flash("Password should contain at least one number")
+            logger.warning("Password should contain at least one number")
             return False
         if not any(char.isupper() for char in password):
-            flash("Password should contain at least one uppercase letter")
+            logger.warning("Password should contain at least one uppercase letter")
             return False
         if not any(char.islower() for char in password):
-            flash("Password should contain at least one lowercase letter")
+            logger.warning("Password should contain at least one lowercase letter")
             return False
         if not any(char in symbols for char in password):
-            flash('Password should contain at least one of the symbols !#?%$&')
+            logger.warning('Password should contain at least one of the symbols !#?%$&')
             return False
         return True

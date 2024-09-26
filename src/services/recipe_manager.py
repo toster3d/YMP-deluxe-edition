@@ -1,5 +1,8 @@
-from flask import flash
+import logging
 
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class RecipeManager:
     """
@@ -104,7 +107,7 @@ class RecipeManager:
             ingredients=ingredients,
             instructions=instructions
         )
-        flash("Recipe was added!")
+        logger.info("Recipe was added!")
 
     def update_recipe(self, recipe_id, user_id, meal_name, meal_type, ingredients, instructions):
         """
@@ -143,7 +146,7 @@ class RecipeManager:
             recipe_id=recipe_id,
             user_id=user_id
         )
-        flash("Your recipe was successfully deleted!")
+        logger.info("Your recipe was successfully deleted!")
 
     def get_recipes_ordered_by_meal_type(self, user_id):
         """

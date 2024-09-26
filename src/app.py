@@ -1,13 +1,18 @@
 import os
+import logging
 from datetime import datetime
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, session, url_for
 from flask_session import Session
 from helpers.login_required_decorator import login_required
 from services import ShoppingListService, UserAuth, UserPlanManager, RecipeManager
 
 # Configure application
 app = Flask(__name__)
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -87,7 +92,7 @@ def recipes():
         ingredients = request.form.get("ingredients")
         instructions = request.form.get("instructions")
         if not meal_name:
-            flash('Must provide a meal name.')
+            logger.warning('Must provide a meal name.')
             return render_template("recipes.html")
         user = session['user_id']
         recipe_list = recipe_manager.get_recipes(user)
@@ -112,7 +117,7 @@ def display_recipe(recipe_id):
     user_id = session["user_id"]
     recipe = recipe_manager.get_recipe_by_id(recipe_id, user_id)
     if not recipe:
-        flash("Invalid recipe id", "warning")
+        logger.warning("Invalid recipe id")
     ingredients = [ing.strip() for ing in recipe['ingredients'].split('\n')]
     recipe['ingredients'] = ingredients
     instructions = [ing.strip() for ing in recipe['instructions'].split('\n')]
@@ -129,7 +134,7 @@ def edit_recipe(recipe_id):
     user_id = session["user_id"]
     recipe = recipe_manager.get_recipe_by_id(recipe_id, user_id)
     if not recipe:
-        flash("Invalid recipe id", "warning")
+        logger.warning("Invalid recipe id")
 
     if request.method == "POST":
         ed_mealName = request.form.get("mealName")
@@ -190,7 +195,7 @@ def shopping_list():
     if request.method == "POST":
         date_range = request.form.get("date_range")
         if not date_range:
-            flash("You must choose a date range.", "warning")
+            logger.warning("You must choose a date range.")
             return redirect(url_for("shoppingList"))
         
         start_date, end_date = date_range.split(" to ")
@@ -200,7 +205,7 @@ def shopping_list():
         ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (start_date, end_date))
         
         if not ingredients:
-            flash("You didn't set any meal plan for this date range. Check your schedule.", "warning")
+            logger.warning("You didn't set any meal plan for this date range. Check your schedule.")
         
         return render_template("shoppingList.html", date_range=date_range, ingredients=ingredients)
     
@@ -210,7 +215,7 @@ def shopping_list():
         ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (now, now))
         
         if not ingredients:
-            flash("You don't have any meal plan for today. Check your schedule.", "info")
+            logger.warning("You don't have any meal plan for today. Check your schedule.")
         
         return render_template("shoppingList.html", current_date=current_date, ingredients=ingredients)
 
