@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Tuple
-from helpers.date_range_generator import generate_date_list
-from helpers.ingredient_parser import parse_ingredients
+from ..helpers.date_range_generator import generate_date_list
+from ..helpers.ingredient_parser import parse_ingredients
 
 class ShoppingListService:
     """

@@ -62,11 +62,16 @@ class UserPlanManager:
         Returns:
             list: A list of dictionaries containing the user's plans.
         """
-        return self.db.execute(
-            "SELECT * FROM userPlan WHERE user_id = ? AND date = ?",
-            user_id,
-            date
-        )
+        # plans = self.db.execute(
+        #     "SELECT * FROM userPlan WHERE user_id = ? AND date = ?",
+        #     user_id,
+        #     date
+        # )
+        
+        # if not plans:
+        #     return []
+        
+        # return plans
 
     def create_or_update_plan(self, user_id, selected_date, user_plan, meal_name):
         """

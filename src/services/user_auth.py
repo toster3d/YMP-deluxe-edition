@@ -103,13 +103,15 @@ class UserAuth:
         if not self.password_validation(password):
             return False, "register.html"
 
-        hashed = generate_password_hash(password)
-        self.db.execute(
-            "INSERT INTO users (username, email, hash) VALUES(?, ?, ?)",
-            username, email, hashed
-        )
-        logger.info('You were successfully registered. Sign in to start!')
-        return True, "/"
+        hash = generate_password_hash(password)
+        try:
+            self.db.execute(
+                "INSERT INTO users (username, email, hash) VALUES(?, ?, ?)",
+                username, email, hash
+            )
+            return True, "Rejestracja udana"
+        except Exception as e:
+            return False, str(e)
 
     def password_validation(self, password):
         """
@@ -142,3 +144,18 @@ class UserAuth:
             logger.warning('Password should contain at least one of the symbols !#?%$&')
             return False
         return True
+
+    def get_user_id(self, username):
+        """
+        Get the user ID from the username.
+
+        Args:
+            username (str): The username to find the ID for.
+
+        Returns:
+            int: The user ID if found, None otherwise.
+        """
+        rows = self.db.execute("SELECT id FROM users WHERE username = ?", username)
+        if len(rows) == 1:
+            return rows[0]["id"]
+        return None

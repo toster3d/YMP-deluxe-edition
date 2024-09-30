@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
 
 {% block title %}
-Home Page
+Strona główna
 {% endblock %}
 
 {% block main %}
 {% if error %}
-<p class=error>Error:{{ error }}</p>
+<p class="error">Error: {{ error }}</p>
 {% endif %}
 
 <div class="container index__conteiner">
@@ -16,11 +16,11 @@ Home Page
     </div>
     <div class="col-md-6 col-sm-12 index__image__column">
       <div class="row index__image__row">
-        <div class="col-md-11 mb-3 col-sm-8 musaka-column">
-          <img src="/static/musaka.jpg" class="w-100 h-100 image-musaka">
+        <div class="col-md-11 col-sm-8 mb-3 musaka-column">
+          <img src="{{ url_for('static', filename='musaka.jpg') }}" class="w-100 h-100 image-musaka" alt="Musaka">
         </div>
         <div class="col-md-9 col-sm-4 makaroniki-column">
-          <img src="/static/makaroniki.jpg" class="w-100 h-100 image-makaroniki">
+          <img src="{{ url_for('static', filename='makaroniki.jpg') }}" class="w-100 h-100 image-makaroniki" alt="Makaroniki">
         </div>
       </div>
     </div>

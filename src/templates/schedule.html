@@ -14,7 +14,7 @@ Schedule
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-4">
-        <form action="{{ url_for('schedule') }}" method="post">
+        <form action="{{ url_for('plans.schedule') }}" method="post">
           <label for="date" class="form-label" style="font-weight: bold;">Select date</label>
           <div class="col-md-8">
             <div class="input-group">
@@ -36,7 +36,7 @@ Schedule
   <div class="container-fluid">
     <h5 class="display-4 text-center" style="margin-top: 45px; margin-bottom:25px;">YOUR MEAL PLAN</h5>
     <div class="row justify-content-center text-center" style="font-size: 20px;">
-      <form action="{{ url_for('choose_meal') }}" method="post">
+      <form action="{{ url_for('plans.choose_meal') }}" method="post">
         <label for="selected_date" class="form-label">for </label>
         {% if date %}
         <input class="js-date no-border" disabled="true" id="selected_date" name="selected_date" value="{{ date }}">
@@ -53,7 +53,7 @@ Schedule
       <div class="card h-100">
         <div class="card-body h-100">
           <div class="service" name="userPlan" value="breakfast"
-            onclick="location.href='{{ url_for('choose_meal', userPlan='breakfast', mealName='mealName', selected_date=selected_date) }}';">
+            onclick="location.href='{{ url_for('plans.choose_meal', userPlan='breakfast', mealName='mealName', selected_date=selected_date) }}'">
             <img src="/static/pexels-keegan-evans-90894.jpg" class="card-img-top">
             <h4 class="card-title">Breakfast</h4>
             {% if userPlans %}
@@ -73,7 +73,7 @@ Schedule
       <div class="card h-100">
         <div class="card-body h-100">
           <div class="service" name="userPlan" value="lunch"
-            onclick="location.href='{{ url_for('choose_meal', userPlan='lunch', mealName='mealName', selected_date=selected_date) }}';">
+            onclick="location.href='{{ url_for('plans.choose_meal', userPlan='lunch', mealName='mealName', selected_date=selected_date) }}'">
             <img src="/static/pexels-dana-tentis-1213710.jpg" class="card-img-top">
             <h4 class="card-title">Lunch</h4>
             {% if userPlans %}
@@ -93,7 +93,7 @@ Schedule
       <div class="card h-100">
         <div class="card-body h-100">
           <div class="service" name="userPlan" value="dinner"
-            onclick="location.href='{{ url_for('choose_meal', userPlan='dinner', mealName='mealName', selected_date=selected_date) }}';">
+            onclick="location.href='{{ url_for('plans.choose_meal', userPlan='dinner', mealName='mealName', selected_date=selected_date) }}'">
             <img src="/static/pexels-engin-akyurt-2347311.jpg" class="card-img-top">
             <h4 class="card-title">Dinner</h4>
             {% if userPlans %}
@@ -113,7 +113,7 @@ Schedule
       <div class="card h-100">
         <div class="card-body h-100">
           <div class="service" name="userPlan" value="dessert"
-            onclick="location.href='{{ url_for('choose_meal', userPlan='dessert', mealName='mealName', selected_date=selected_date) }}';">
+            onclick="location.href='{{ url_for('plans.choose_meal', userPlan='dessert', mealName='mealName', selected_date=selected_date) }}'">
             <img src="/static/pexels-susanne-jutzeler-sujufoto-1132558.jpg" class="card-img-top">
             <h4 class="card-title">Dessert</h4>
             {% if userPlans %}
