@@ -1,7 +1,7 @@
 import logging
 
 # Configure logger
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO) # FIXME: configure only once
 logger = logging.getLogger(__name__)
 
 class RecipeManager:

@@ -1,4 +1,18 @@
-class UserPlanManager:
+from datetime import datetime
+from abc import ABC, abstractmethod
+
+
+
+
+class AbstractUserPlanManager(ABC):
+    @abstractmethod
+    def add_plan(self, user_id: int, date: datetime): ...
+
+    def sth_else(self): ...
+
+
+
+class SqliteUserPlanManager(AbstractUserPlanManager):
     """
     A class to manage user meal plans.
 
@@ -28,7 +42,7 @@ class UserPlanManager:
             user_id,
             date
         )
-
+            
     def update_meal(self, user_id, date, meal_name, meal_value):
         """
         Update a specific meal for a user on a specific date.
@@ -51,7 +65,7 @@ class UserPlanManager:
             date
         )
 
-    def get_plans(self, user_id, date):
+    def get_plans(self, user_id: int, date: datetime):
         """
         Get all plans for a user on a specific date.
 

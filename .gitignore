@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+# add       flask_session
 # C extensions
 *.so
 

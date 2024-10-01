@@ -11,7 +11,9 @@ class ScheduleResource(Resource):
         if not date:
             now = datetime.now()
             date = now.strftime("%A %d %B %Y")
-        user_plan_manager = current_app.config['services']['user_plan_manager']
+
+        user_plan_manager = UserPlanManager(current_app.config['db'])
+        # user_plan_manager = current_app.config['services']['user_plan_manager']
         user_plans = user_plan_manager.get_plans(user_id, date)
         return {'date': date, 'userPlans': user_plans}, 200
 

@@ -4,6 +4,8 @@ from cs50 import SQL
 import os
 
 db = None  # Initialize db variable
+# TODO: import dotenv + define static configs in .env
+
 
 def create_app():
     global db
@@ -24,23 +26,25 @@ def create_app():
     init_db(db)
 
     # Pass db instance to service classes
-    from .services.user_auth import UserAuth
-    from .services.recipe_manager import RecipeManager
-    from .services.user_plan_manager import UserPlanManager
-    from .services.shopping_list_service import ShoppingListService
+    # from .services import UserAuth
+    # from .services import RecipeManager
+    # from .services import UserPlanManager
+    # from .services import ShoppingListService
 
-    user_auth = UserAuth(db)
-    recipe_manager = RecipeManager(db)
-    user_plan_manager = UserPlanManager(db)
-    shopping_list_service = ShoppingListService(user_plan_manager, recipe_manager)
+    # user_auth = UserAuth(db)
+    # recipe_manager = RecipeManager(db)
+    # user_plan_manager = UserPlanManager(db)
+    # shopping_list_service = ShoppingListService(user_plan_manager, recipe_manager)
 
-    # Add services to app configuration
-    app.config['services'] = {
-        'user_auth': user_auth,
-        'recipe_manager': recipe_manager,
-        'user_plan_manager': user_plan_manager,
-        'shopping_list_service': shopping_list_service
-    }
+    # # Add services to app configuration
+    # app.config['services'] = {
+    #     'user_auth': user_auth,
+    #     'recipe_manager': recipe_manager,
+    #     'user_plan_manager': user_plan_manager,
+    #     'shopping_list_service': shopping_list_service
+    # }
+
+    app.config['db'] = db
 
     return app
 
