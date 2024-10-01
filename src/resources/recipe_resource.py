@@ -4,7 +4,8 @@ from flask import current_app, session, jsonify
 class RecipeListResource(Resource):
     def get(self):
         if 'user_id' not in session:
-            return jsonify({"message": "Użytkownik nie jest zalogowany"}), 401
+            # Change to: User is not logged in
+            return jsonify({"message": "User is not logged in"}), 401
         recipe_manager = current_app.config['services']['recipe_manager']
         user_id = session['user_id']
         recipes = recipe_manager.get_recipes(user_id)

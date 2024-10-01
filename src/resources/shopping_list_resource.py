@@ -11,7 +11,8 @@ class ShoppingListResource(Resource):
         shopping_list_service = current_app.config['services']['shopping_list_service']
         ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (now, now))
         if not ingredients:
-            return {'message': 'Brak planu posiłków na dziś. Sprawdź swój harmonogram.'}, 404
+            # Change to: No meal plan for today
+            return {'message': 'No meal plan for today. Check your schedule.'}, 404
         return {'ingredients': ingredients, 'current_date': now.strftime("%A %d %B %Y")}, 200
 
     @login_required
@@ -19,15 +20,17 @@ class ShoppingListResource(Resource):
         user_id = session["user_id"]
         date_range = request.form.get("date_range")
         if not date_range:
-            return {'message': 'Musisz wybrać zakres dat.'}, 400
+            # Change to: You must select a date range
+            return {'message': 'You must select a date range.'}, 400
         
-        start_date, end_date = date_range.split(" do ")
+        start_date, end_date = date_range.split(" to ")
         start_date = datetime.strptime(start_date, "%A %d %B %Y")
         end_date = datetime.strptime(end_date, "%A %d %B %Y")
         
         shopping_list_service = current_app.config['services']['shopping_list_service']
         ingredients = shopping_list_service.get_ingredients_for_date_range(user_id, (start_date, end_date))
         if not ingredients:
-            return {'message': 'Brak planu posiłków dla tego zakresu dat.'}, 404
+            # Change to: No meal plan for this date range
+            return {'message': 'No meal plan for this date range.'}, 404
 
         return {'ingredients': ingredients, 'date_range': date_range}, 200

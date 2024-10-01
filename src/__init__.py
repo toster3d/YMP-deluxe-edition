@@ -3,27 +3,27 @@ from flask import Flask
 from cs50 import SQL
 import os
 
-db = None  # Inicjalizacja zmiennej db
+db = None  # Initialize db variable
 
 def create_app():
     global db
     app = Flask(__name__, 
                 template_folder=os.path.abspath('src/templates'),
                 static_folder=os.path.abspath('src/static'))
-    app.config['SECRET_KEY'] = 'your-secret-key'  # Klucz dla Flask
+    app.config['SECRET_KEY'] = 'your-secret-key'  # Flask secret key
 
-    # Ścieżka do bazy danych
+    # Database path
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     DB_PATH = os.path.join(os.path.dirname(CURRENT_DIR), "recipes.db")
     
-    # Tworzenie bazy danych, jeśli nie istnieje
+    # Create database if it doesn't exist
     if not os.path.exists(DB_PATH):
-        open(DB_PATH, 'w').close()  # Tworzy pusty plik
+        open(DB_PATH, 'w').close()  # Creates an empty file
     
     db = SQL(f"sqlite:///{DB_PATH}")
-    init_db(db)  # Dodaj tę linię
+    init_db(db)
 
-    # Przekazanie instancji db do klas usługowych
+    # Pass db instance to service classes
     from .services.user_auth import UserAuth
     from .services.recipe_manager import RecipeManager
     from .services.user_plan_manager import UserPlanManager
@@ -34,7 +34,7 @@ def create_app():
     user_plan_manager = UserPlanManager(db)
     shopping_list_service = ShoppingListService(user_plan_manager, recipe_manager)
 
-    # Dodajemy serwisy do konfiguracji aplikacji
+    # Add services to app configuration
     app.config['services'] = {
         'user_auth': user_auth,
         'recipe_manager': recipe_manager,
@@ -45,24 +45,17 @@ def create_app():
     return app
 
 def configure_app(app):
-    app.config['DEBUG'] = True  # Można ustawić False w produkcji
+    app.config['DEBUG'] = True  # Can be set to False in production
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.config['SESSION_PERMANENT'] = False
     app.config['SESSION_TYPE'] = 'filesystem'
 
     
-    # Konfiguracja loggera
+    # Logger configuration
     logging.basicConfig(level=logging.INFO)
     app.logger = logging.getLogger(__name__)
 
-
     return app
-
-
-    # Ścieżka do bazy danych
-    #CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    #DB_PATH = os.path.join(CURRENT_DIR, "recipes.db")  # Umieść bazę danych w głównym folderze projektu
-    #app.config['DATABASE_PATH'] = DB_PATH
 
 def init_db(db):
     db.execute("""
@@ -73,4 +66,4 @@ def init_db(db):
         hash TEXT NOT NULL
     )
     """)
-    # Dodaj tutaj inne tabele, jeśli są potrzebne
+    # Add other tables here if needed
