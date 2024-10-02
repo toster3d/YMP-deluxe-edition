@@ -1,13 +1,12 @@
 from flask_restful import Resource, reqparse
-from flask import current_app, session, jsonify, render_template, make_response, request
-from .. import db
-from ..helpers.login_required_decorator import login_required
+from flask import current_app, session, jsonify, render_template, make_response
+from ..helpers.login_required_decorator import login_required: decorator
 
 class AuthResource(Resource):
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument("username", type=str, required=True, help="Username is required")
-        self.parser.add_argument("password", type=str, required=True, help="Password is required")
+    def __init__(self)-> None:
+        self.parser: reqparse.RequestParser = reqparse.RequestParser()
+        self.parser.add_argument('username', type=str, required=True)
+        self.parser.add_argument('password', type=str, required=True)
     
     def get(self):
         headers = {'Content-Type': 'text/html'}
@@ -15,9 +14,9 @@ class AuthResource(Resource):
     
     def post(self):
         user_auth = current_app.config['services']['user_auth']
-        args = self.parser.parse_args()
-        username = args['username']
-        password = args['password']
+        args: dict[str, str] = self.parser.parse_args()
+        username: str = args['username']
+        password: str = args['password']
         
         if not username or not password:
             return jsonify({"message": "Username and password are required"}), 400

@@ -1,10 +1,10 @@
-from flask import Flask
 from flask_restful import Api
-from . import create_app, configure_app
-from .routes import register_routes
+from flask import Flask 
+from .config import create_app, configure_app
+from .routes import register_routes # type: ignore
 
-app = create_app()
-configure_app(app)
+app: Flask = create_app()
+app = configure_app(app)
 api = Api(app)
 
 register_routes(app, api)

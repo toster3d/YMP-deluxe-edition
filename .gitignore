@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-# add       flask_session
+/flask_session
 # C extensions
 *.so
 
@@ -10,6 +10,7 @@ __pycache__/
 .Python
 env/
 venv/
+.env
 ENV/
 env.bak/
 venv.bak/
