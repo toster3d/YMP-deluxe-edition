@@ -1,17 +1,17 @@
-from flask import session
 from functools import wraps
-from typing import Callable, Any
-from flask import Response
+from flask import jsonify
+from flask_jwt_extended import verify_jwt_in_request # type: ignore
+from typing import Any, Callable
 
-def login_required(f: Callable[..., Any]) -> Callable[..., Response]:
+def login_required(f: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorate routes to require login.
-
-    https://flask.palletsprojects.com/en/1.1.x/patterns/viewdecorators/
     """
     @wraps(f)
-    def decorated_function(*args: Any, **kwargs: Any) -> Response:
-        if session.get("user_id") is None:
-            return Response("Użytkownik musi być zalogowany.", status=401)
+    def decorated_function(*args: Any, **kwargs: Any) -> Any:
+        try:
+            verify_jwt_in_request()
+        except Exception as e: # type: ignore
+            return jsonify({"msg": "User must be logged in."}), 401
         return f(*args, **kwargs)
     return decorated_function

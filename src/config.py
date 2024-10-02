@@ -24,7 +24,7 @@ logger.addHandler(console_handler) # type: ignore
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')  # Dodaj klucz JWT
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 
     CURRENT_DIR: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DB_PATH: str = os.path.join(CURRENT_DIR, "recipes.db")
@@ -34,9 +34,8 @@ def create_app() -> Flask:
 
     # Assign the configured logger to the Flask app
     app.logger = logger  # type: ignore
-
-    # Initialize JWT
-    jwt = JWTManager(app)
+    # Inicjalizacja JWT
+    jwt: JWTManager = JWTManager(app) # type: ignore
 
     return app
 

@@ -1,63 +1,66 @@
-from flask_restful import Resource, reqparse
-from flask import current_app, session, jsonify, render_template, make_response
-from ..helpers.login_required_decorator import login_required: decorator
+from typing import Any, Literal
+from flask.wrappers import Response
+from flask_restful import Resource
+from flask import current_app, session, jsonify, request
+from ..helpers.login_required_decorator import login_required
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from marshmallow import ValidationError, Schema, fields, validate
+from src.schemas.user_schema import UserRegistrationSchema
+
+class AuthSchema(Schema):
+    username = fields.Str(required=True, validate=validate.Length(min=1), error_messages={"required": "Username is required"})
+    password = fields.Str(required=True, validate=validate.Length(min=6), error_messages={"required": "Password is required"})
 
 class AuthResource(Resource):
-    def __init__(self)-> None:
-        self.parser: reqparse.RequestParser = reqparse.RequestParser()
-        self.parser.add_argument('username', type=str, required=True)
-        self.parser.add_argument('password', type=str, required=True)
-    
-    def get(self):
-        headers = {'Content-Type': 'text/html'}
-        return make_response(render_template('login.html'), 200, headers)
-    
-    def post(self):
-        user_auth = current_app.config['services']['user_auth']
-        args: dict[str, str] = self.parser.parse_args()
-        username: str = args['username']
-        password: str = args['password']
+    def post(self) -> tuple[Response, int]:
+        user_auth: Any = current_app.config['services']['user_auth']
+        data = request.get_json()
         
-        if not username or not password:
-            return jsonify({"message": "Username and password are required"}), 400
+        schema = AuthSchema()
+        try:
+            validated_data = schema.load(data)
+        except ValidationError as err:
+            return jsonify(err.messages), 400
         
-        success = user_auth.login(username, password)
+        username = validated_data['username']
+        password = validated_data['password']
         
+        success, message = user_auth.authenticate(username, password)
         if success:
-            session['user_id'] = user_auth.get_user_id(username)
-            return jsonify({"message": "Login successful!"})
-        return jsonify({"message": "Invalid credentials"}), 401
+            access_token = create_access_token(identity=username)
+            return jsonify({"message": "Authentication successful!", "access_token": access_token}), 200
+        return jsonify({"message": message}), 400
 
 class RegisterResource(Resource):
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument("username", type=str, required=True, help="Username is required")
-        self.parser.add_argument("email", type=str, required=True, help="Email is required")
-        self.parser.add_argument("password", type=str, required=True, help="Password is required")
-        self.parser.add_argument("confirmation", type=str, required=True, help="Password confirmation is required")
+    def get(self) -> tuple[Response, int]:
+        return jsonify({"message": "Please use POST to register"}), 200
     
-    def get(self):
-        headers = {'Content-Type': 'text/html'}
-        return make_response(render_template('register.html'), 200, headers)
-    
-    def post(self):
+    def post(self) -> tuple[Response, int]:
         user_auth = current_app.config['services']['user_auth']
-        args = self.parser.parse_args()
-        username = args['username']
-        email = args['email']
-        password = args['password']
-        confirmation = args['confirmation']
+        data = request.get_json()
         
-        if not all([username, email, password, confirmation]):
-            return jsonify({"message": "All fields are required"}), 400
+        schema = UserRegistrationSchema()
+        try:
+            validated_data = schema.load(data)
+        except ValidationError as err:
+            return jsonify(err.messages), 400
+        
+        username = validated_data['username']
+        email = validated_data['email']
+        password = validated_data['password']
+        confirmation = validated_data['confirmation']
+        
+        if password != confirmation:
+            return jsonify({"message": "Passwords do not match"}), 400
         
         success, message = user_auth.register(username, email, password, confirmation)
         if success:
-            return jsonify({"message": "Registration successful!"})
+            access_token = create_access_token(identity=username)
+            return jsonify({"message": "Registration successful!", "access_token": access_token}), 200
         return jsonify({"message": message}), 400
 
 @login_required
-def logout():
+def logout() -> tuple[Response, Literal[200]]:
     session.clear()
     return jsonify({"message": "Logout successful!"}), 200
 
