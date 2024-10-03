@@ -1,7 +1,7 @@
 from flask_restful import Api
 from flask import Flask 
 from .config import create_app, configure_app
-from .routes import register_routes # type: ignore
+from .routes import register_routes
 
 app: Flask = create_app()
 app = configure_app(app)
