@@ -35,7 +35,7 @@ def create_app() -> Flask:
     # Assign the configured logger to the Flask app
     app.logger = logger  # type: ignore
     # Inicjalizacja JWT
-    jwt: JWTManager = JWTManager(app) # type: ignore
+    JWTManager(app)
 
     return app
 
