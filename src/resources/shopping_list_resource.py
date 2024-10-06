@@ -1,7 +1,8 @@
-from flask import request, session, current_app
+from flask import jsonify, request
 from flask_restful import Resource
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from src.helpers.login_required_decorator import login_required
 from datetime import datetime
-from ..helpers.login_required_decorator import login_required
 
 class ShoppingListResource(Resource):
     @login_required

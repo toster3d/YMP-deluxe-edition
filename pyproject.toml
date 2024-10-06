@@ -6,9 +6,21 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "flask>=2.0.0",
-    "cs50>=3.0.0",
+    "cs50>=9.3.4",
     "requests>=2.32.3",
     "flask-session>=0.3.2",
+    "flask-jwt-extended>=4.6.0",
+    "marshmallow>=3.22.0",
+    "flask-restful>=0.3.10",
+    "flask-wrappers>=1.0.2",
+    "typing>=3.10.0.0",
+    "python-dotenv>=1.0.1",
+    "SQLAlchemy>=2.0.35",
+    "greenlet>=3.1.1",
+    "sqlparse>=0.5.1",
+    "termcolor>=2.4.0",
+    "typing-extensions>=4.12.2",
+    "wheel>=0.44.0",
 ]
 
 [tool.uv.sources]

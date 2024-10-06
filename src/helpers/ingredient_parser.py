@@ -1,7 +1,4 @@
-from typing import List
-
-
-def parse_ingredients(ingredients_string: str) -> List[str]:
+def parse_ingredients(ingredients_string: str) -> list[str]:
     """
     Parse a string of ingredients into a list of individual ingredients.
 

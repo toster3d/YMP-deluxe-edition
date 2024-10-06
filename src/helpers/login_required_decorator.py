@@ -1,7 +1,8 @@
 from functools import wraps
 from flask import jsonify
-from flask_jwt_extended import verify_jwt_in_request # type: ignore
-from typing import Any, Callable
+from flask_jwt_extended import verify_jwt_in_request  # type: ignore
+from typing import Callable, Any
+
 
 def login_required(f: Callable[..., Any]) -> Callable[..., Any]:
     """
@@ -11,7 +12,7 @@ def login_required(f: Callable[..., Any]) -> Callable[..., Any]:
     def decorated_function(*args: Any, **kwargs: Any) -> Any:
         try:
             verify_jwt_in_request()
-        except Exception as e: # type: ignore
+        except Exception:
             return jsonify({"msg": "User must be logged in."}), 401
         return f(*args, **kwargs)
     return decorated_function

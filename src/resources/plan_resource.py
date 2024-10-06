@@ -1,3 +1,4 @@
+from typing import Any, Literal
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -6,7 +7,7 @@ from src.services.recipe_manager import RecipeManager
 
 class ScheduleResource(Resource):
     @jwt_required()
-    def get(self) -> tuple[dict[str, str | list[dict]], int]:
+    def get(self) -> tuple[dict[str, str | Any], Literal[200]]:
         user_id: str = get_jwt_identity()
         date: str | None = request.args.get('date')
         if not date:
@@ -15,7 +16,7 @@ class ScheduleResource(Resource):
 
         user_plan_manager = current_app.config['services']['user_plan_manager']
         user_plans = user_plan_manager.get_plans(user_id, date)
-        return {'date': date, 'userPlans': user_plans}, 200
+        return {'date': date, 'user_plans': user_plans}, 200
 
     @jwt_required()
     def post(self) -> tuple[dict[str, str], int]:
@@ -29,7 +30,7 @@ class ScheduleResource(Resource):
             return {"message": "Plan updated successfully!"}, 200
         
         user_plans = user_plan_manager.get_plans(user_id, date)
-        return {'userPlans': user_plans}, 200
+        return {'user_plans': user_plans}, 200
 
 class ChooseMealResource(Resource):
     @jwt_required()

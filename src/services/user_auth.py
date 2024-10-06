@@ -1,161 +1,97 @@
-import logging
-from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
-from cs50 import SQL
+from flask_jwt_extended import create_access_token  # type: ignore
+from flask import current_app
+from cs50 import SQL  # type: ignore
+from typing import Union, Dict, Any, Optional
 
-# Configure logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class UserAuth:
-    """
-    A class to handle user authentication operations.
+    def __init__(self, db: SQL) -> None:  # type: ignore
+        self.db: SQL = db
 
-    This class provides methods for user login, logout, registration,
-    and password validation.
-    """
+    def get_db(self) -> SQL:  # type: ignore
+        if self.db is None:  # type: ignore
+            self.db = current_app.config['db']
+        return self.db  # type: ignore
 
-    def __init__(self, db):
-        """
-        Initialize the UserAuth instance.
+    def login(self, username: str, password: str) -> tuple[bool, Union[str, Dict[str, str]]]:
+        if not username or not password:
+            current_app.logger.warning('Username and password are required.')
+            return False, "Username and password are required."
 
-        Args:
-            db: The database connection object.
-        """
-        self.db = db
+        rows: list[dict[str, Any]] = self.get_db().execute( # type: ignore
+            "SELECT * FROM users WHERE user_name = ?", username
+        )
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):  # type: ignore
+            current_app.logger.warning('Invalid username or password.')
+            return False, "Invalid username or password."
 
-    def login(self, username, password):
-        """
-        Authenticate a user and log them in.
+        current_app.logger.info('Successfully signed in!')
+        access_token: str = create_access_token(identity=username)
+        return True, {"access_token": access_token}
 
-        Args:
-            username (str): The user's username.
-            password (str): The user's password.
+    def logout(self) -> tuple[dict[str, str], int]:
+        return {"message": "You have been logged out"}, 200
 
-        Returns:
-            tuple: A boolean indicating success and a string with the redirect path.
-        """
-        if not username:
-            logger.warning('Must provide username')
-            return False, "login.html"
+    def register(
+        self,
+        username: str,
+        email: str,
+        password: str,
+        confirmation: str
+    ) -> tuple[bool, str]:
+        if not username or not email or not password or not confirmation:
+            return False, "All fields are required."
 
-        if not password:
-            logger.warning('Must provide password')
-            return False, "login.html"
+        if password != confirmation:
+            return False, "Passwords do not match."
 
-        rows = self.db.execute("SELECT * FROM users WHERE username = ?", username)
+        if not self.password_validation(password):
+            return False, "Password does not meet security requirements."
 
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
-            logger.warning('Invalid username or password')
-            return False, "login.html"
-
-        session["user_id"] = rows[0]["id"]
-        logger.info('You were successfully signed in!')
-        return True, "/"
-
-    def logout(self):
-        """Log the current user out by clearing the session."""
-        session.clear()
-
-    def register(self, username, email, password, confirmation):
-        """
-        Register a new user.
-
-        Args:
-            username (str): The desired username.
-            email (str): The user's email address.
-            password (str): The desired password.
-            confirmation (str): Password confirmation.
-
-        Returns:
-            tuple: A boolean indicating success and a string with the redirect path.
-        """
-        if not username:
-            logger.warning('Must provide username')
-            return False, "register.html"
-
-        if not password:
-            logger.warning('Must provide password')
-            return False, "register.html"
-
-        if not email:
-            logger.warning('Must provide an e-mail')
-            return False, "register.html"
-
-        existing_username = self.db.execute(
-            "SELECT * FROM users WHERE username = ?", username
+        existing_username: Any = self.get_db().execute( # type: ignore
+            "SELECT * FROM users WHERE user_name = ?", username
         )
         if existing_username:
-            logger.warning('Username is already taken')
-            return False, "register.html"
+            return False, "Username is already taken."
 
-        existing_email = self.db.execute(
+        existing_email: Any = self.get_db().execute( # type: ignore
             "SELECT * FROM users WHERE email = ?", email
         )
         if existing_email:
-            logger.warning('E-mail is already taken')
-            return False, "register.html"
+            return False, "Email is already taken."
 
-        if password != confirmation:
-            logger.warning('Password does not match')
-            return False, "register.html"
-
-        if not self.password_validation(password):
-            return False, "register.html"
-
-        hash = generate_password_hash(password)
+        hash: str = generate_password_hash(password)
         try:
-            self.db.execute(
-                "INSERT INTO users (username, email, hash) VALUES(?, ?, ?)",
+            self.get_db().execute(  # type: ignore
+                "INSERT INTO users (user_name, email, hash) VALUES(?, ?, ?)",
                 username, email, hash
             )
-            return True, "Rejestracja udana"
+            current_app.logger.info(f"User {username} registered successfully.")
+            return True, "Registration successful."
         except Exception as e:
+            current_app.logger.error(f"Error during registration: {e}")
             return False, str(e)
 
-    def password_validation(self, password):
-        """
-        Validate the password against security criteria.
+    def password_validation(self, password: str) -> bool:
+        symbols: list[str] = ['!', '#', '?', '%', '$', '&']
 
-        Args:
-            password (str): The password to validate.
-
-        Returns:
-            bool: True if the password meets all criteria, False otherwise.
-        """
-        symbols = ['!', '#', '?', '%', '$', '&']
-
-        if len(password) < 8:
-            logger.warning("Password must provide min. 8 characters")
-            return False
-        if len(password) > 20:
-            logger.warning("Password must provide max 20 characters")
+        if len(password) < 8 or len(password) > 20:
             return False
         if not any(char.isdigit() for char in password):
-            logger.warning("Password should contain at least one number")
             return False
         if not any(char.isupper() for char in password):
-            logger.warning("Password should contain at least one uppercase letter")
             return False
         if not any(char.islower() for char in password):
-            logger.warning("Password should contain at least one lowercase letter")
             return False
         if not any(char in symbols for char in password):
-            logger.warning('Password should contain at least one of the symbols !#?%$&')
             return False
         return True
 
-    def get_user_id(self, username):
-        """
-        Get the user ID from the username.
-
-        Args:
-            username (str): The username to find the ID for.
-
-        Returns:
-            int: The user ID if found, None otherwise.
-        """
-        rows = self.db.execute("SELECT id FROM users WHERE username = ?", username)
-        if len(rows) == 1:
-            return rows[0]["id"]
+    def get_user_id(self, username: str) -> Optional[int]:
+        rows: list[dict[str, Any]] = self.get_db().execute(  # type: ignore
+            "SELECT id FROM users WHERE user_name = ?", username
+        )
+        if len(rows) == 1:  # type: ignore
+            return rows[0]["id"]  # type: ignore
         return None

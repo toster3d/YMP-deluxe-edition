@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
-from typing import List
+from datetime import date, datetime, timedelta
 
 
-def generate_date_list(start_date: datetime, end_date: datetime) -> List[datetime]:
+def generate_date_list(start_date: datetime, end_date: datetime) -> list[date]:
     """
     Generate a list of dates from start_date to end_date, inclusive.
 
@@ -21,8 +20,8 @@ def generate_date_list(start_date: datetime, end_date: datetime) -> List[datetim
         [datetime(2023, 1, 1), datetime(2023, 1, 2), datetime(2023, 1, 3),
          datetime(2023, 1, 4), datetime(2023, 1, 5)]
     """
-    date_list: List[datetime] = []
-    current_date = start_date
+    date_list: list[date] = []
+    current_date: datetime = start_date
     while current_date <= end_date:
         date_list.append(current_date)
         current_date += timedelta(days=1)
