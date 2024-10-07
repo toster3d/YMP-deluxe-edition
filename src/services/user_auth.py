@@ -1,12 +1,12 @@
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token  # type: ignore
+from flask_jwt_extended import create_access_token # type: ignore
 from flask import current_app
 from cs50 import SQL  # type: ignore
-from typing import Union, Dict, Any, Optional
+from typing import Union, Any, Optional
 
 
 class UserAuth:
-    def __init__(self, db: SQL) -> None:  # type: ignore
+    def __init__(self, db: SQL) -> None: #type: ignore
         self.db: SQL = db
 
     def get_db(self) -> SQL:  # type: ignore
@@ -14,7 +14,7 @@ class UserAuth:
             self.db = current_app.config['db']
         return self.db  # type: ignore
 
-    def login(self, username: str, password: str) -> tuple[bool, Union[str, Dict[str, str]]]:
+    def login(self, username: str, password: str) -> tuple[bool, Union[str, dict[str, str]]]:
         if not username or not password:
             current_app.logger.warning('Username and password are required.')
             return False, "Username and password are required."

@@ -62,8 +62,8 @@ class LogoutResource(Resource):
     @jwt_required()
     def post(self) -> Union[tuple[dict[str, str], int], tuple[Response, int]]:
         try:
-            jti: Any = get_jwt()['jti']
-            current_app.config['JWT_BLACKLIST'].add(jti)  # type: ignore
+            jti = get_jwt()['jti'] # type: ignore
+            current_app.config['JWT_BLACKLIST'].add(jti) #type: ignore
             return jsonify({"message": "Logout successful!"}), 200
         except Exception as e:
             current_app.logger.error(f"Error during logout: {str(e)}")

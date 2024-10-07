@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 # FIXME: no need
 from ..helpers.date_range_generator import generate_date_list
 from ..helpers.ingredient_parser import parse_ingredients
@@ -34,7 +34,7 @@ class ShoppingListService:
         """
         start_date, end_date = date_range
         ingredients = [] # FIXME: use set
-        date_list = generate_date_list(start_date, end_date)
+        date_list: list[date] = generate_date_list(start_date, end_date)
 
         # FIXME: no nested loops
         for date in date_list:

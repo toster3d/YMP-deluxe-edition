@@ -1,6 +1,5 @@
 from marshmallow import Schema, fields, validate
 
-# Schemat logowania
 class LoginSchema(Schema):
     username = fields.Str(
         required=True,
@@ -23,7 +22,6 @@ class LoginSchema(Schema):
         ]
     )
 
-# Schemat rejestracji
 class RegisterSchema(Schema):
     username = fields.Str(
         required=True,
@@ -62,3 +60,9 @@ class RegisterSchema(Schema):
             )
         ]
     )
+
+class RecipeSchema(Schema):
+    mealName = fields.Str(required=True)
+    mealType = fields.Str(required=True)
+    ingredients = fields.Str(required=False)
+    instructions = fields.Str(required=False)
