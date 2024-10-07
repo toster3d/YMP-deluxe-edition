@@ -45,7 +45,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
         jwt_header: dict[str, Any],
         jwt_payload: dict[str, Any]
     ) -> bool:
-        jti: str = jwt_payload.get('jti', '')
+        jti: str = jwt_payload['jti']
         return jti in app.config['JWT_BLACKLIST']
 
     return app
