@@ -2,7 +2,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask_jwt_extended import create_access_token  # type: ignore
 from flask import current_app
 from cs50 import SQL  # type: ignore
-from typing import Union, Any, Optional
+from typing import Union, Any
 
 
 class UserAuth:
@@ -37,7 +37,7 @@ class UserAuth:
         access_token: str = create_access_token(identity=user_id)
         return True, {"access_token": access_token}
 
-    def logout(self) -> tuple[dict[str, str], int]:
+    def logout(self):
         return {"message": "You have been logged out"}, 200
 
     def register(
@@ -102,7 +102,7 @@ class UserAuth:
 
         return has_digit and has_upper and has_lower and has_symbol
 
-    def get_user_id(self, username: str) -> Optional[int]:
+    def get_user_id(self, username: str) -> int | None:
         rows: list[dict[str, Any]] = self.get_db().execute(  # type: ignore
             "SELECT id FROM users WHERE user_name = ?", username
         )

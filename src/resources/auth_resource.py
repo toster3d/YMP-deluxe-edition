@@ -3,16 +3,16 @@ from flask.wrappers import Response
 from flask_jwt_extended import jwt_required, get_jwt  # type: ignore
 from flask_restful import Resource
 from marshmallow import ValidationError
-from typing import Union, Any
+from typing import Literal, Any
 from src.services.user_auth import UserAuth
 from .schemas import LoginSchema, RegisterSchema
 
 
 class AuthResource(Resource):
-    def post(self) -> Union[tuple[dict[str, Any], int], tuple[Response, int]]:
+    def post(self) -> tuple[dict[str, Any] | int, tuple[Response, int]]:
         data = request.get_json()
         if not data:
-            return jsonify({"message": "No input data provided"}), 400
+            return jsonify({"message": "No input data provided"}), 400 # type: ignore
 
         schema = LoginSchema()
         try:
@@ -27,16 +27,16 @@ class AuthResource(Resource):
         success, result = user_auth.login(username, password)
 
         if not success:
-            return jsonify({"message": result}), 400
+            return jsonify({"message": result}), 400 # type: ignore
 
-        return jsonify({"message": "Login successful!", "access_token": result}), 200
+        return jsonify({"message": "Login successful!", "access_token": result}), 200 # type: ignore
 
 
 class RegisterResource(Resource):
-    def post(self) -> Union[tuple[dict[str, Any], int], tuple[Response, int]]:
+    def post(self) -> tuple[dict[str, Any] | int, tuple[Response, int]]:
         data = request.get_json()
         if not data:
-            return jsonify({"message": "No input data provided"}), 400
+            return jsonify({"message": "No input data provided"}), 400  # type: ignore
 
         schema = RegisterSchema()
         try:
@@ -53,14 +53,14 @@ class RegisterResource(Resource):
         success, result = user_auth.register(username, email, password, confirmation)
 
         if not success:
-            return jsonify({"message": result}), 400
+            return jsonify({"message": result}), 400 # type: ignore
 
-        return jsonify({"message": "Registration successful!"}), 200
+        return jsonify({"message": "Registration successful!"}), 200 # type: ignore
 
 
 class LogoutResource(Resource):
     @jwt_required()
-    def post(self) -> Union[tuple[dict[str, str], int], tuple[Response, int]]:
+    def post(self) -> tuple[Response, Literal[200]] | tuple[Response, Literal[500]]:
         try:
             jti = get_jwt()['jti']  # type: ignore
             current_app.config['JWT_BLACKLIST'].add(jti)  # type: ignore
