@@ -62,7 +62,7 @@ class RegisterSchema(Schema):
     )
 
 class RecipeSchema(Schema):
-    mealName = fields.Str(required=True)
-    mealType = fields.Str(required=True)
+    meal_name = fields.Str(required=True)
+    meal_type = fields.Str(required=True)
     ingredients = fields.Str(required=False)
     instructions = fields.Str(required=False)

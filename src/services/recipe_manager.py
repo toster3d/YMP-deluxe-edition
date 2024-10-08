@@ -49,20 +49,23 @@ class RecipeManager(AbstractRecipeManager):
 
     def get_recipes_list(self, user_id: int):
         return self.db.execute(
-            "SELECT id, mealName, mealType FROM Recipes1 WHERE user_id = :user_id "
+            "SELECT id, meal_name, meal_type FROM recipes WHERE user_id = :user_id "
             "ORDER BY mealName COLLATE NOCASE ASC",
             user_id=user_id
         )
 
     def get_recipes(self, user_id: int):
-        return self.db.execute(
-            "SELECT * FROM Recipes1 WHERE user_id = :user_id",
+        recipes = self.db.execute(
+            "SELECT * FROM recipes WHERE user_id = :user_id",
             user_id=user_id
         )
+        if not recipes:
+            current_app.logger.info(f"No recipes found for user_id: {user_id}")
+        return recipes
 
     def get_recipe_by_id(self, recipe_id: int, user_id: int):
         recipe: Any = self.db.execute(
-            "SELECT * FROM Recipes1 WHERE id = :recipe_id AND user_id = :user_id",
+            "SELECT * FROM recipes WHERE id = :recipe_id AND user_id = :user_id",
             recipe_id=recipe_id,
             user_id=user_id
         )
@@ -70,7 +73,7 @@ class RecipeManager(AbstractRecipeManager):
 
     def get_recipe_by_name(self, user_id: int, meal_name: str):
         recipe: Any = self.db.execute(
-            "SELECT * FROM Recipes1 WHERE user_id = :user_id AND mealName = :meal_name",
+            "SELECT * FROM recipes WHERE user_id = :user_id AND meal_name = :meal_name",
             user_id=user_id,
             meal_name=meal_name
         )
@@ -78,12 +81,13 @@ class RecipeManager(AbstractRecipeManager):
 
     def add_recipe(self, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str) -> None:
         try:
+            current_app.logger.info(f"Adding recipe for user_id: {user_id}, meal_name: {meal_name}")
             self.db.execute(
-                "INSERT INTO Recipes1(user_id, mealName, mealType, ingredients, instructions) "
-                "VALUES(:user_id, :mealName, :mealType, :ingredients, :instructions)",
+                "INSERT INTO recipes(user_id, meal_name, meal_type, ingredients, instructions) "
+                "VALUES(:user_id, :meal_name, :meal_type, :ingredients, :instructions)",
                 user_id=user_id,
-                mealName=meal_name,
-                mealType=meal_type,
+                meal_name=meal_name,
+                meal_type=meal_type,
                 ingredients=ingredients,
                 instructions=instructions
             )
@@ -93,20 +97,20 @@ class RecipeManager(AbstractRecipeManager):
 
     def update_recipe(self, recipe_id: int, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str) -> None:
         self.db.execute(
-            "UPDATE Recipes1 SET mealName = :mealName, mealType = :mealType, "
+            "UPDATE recipes SET meal_name = :meal_name, meal_type = :meal_type, "
             "ingredients = :ingredients, instructions = :instructions "
             "WHERE id = :recipe_id AND user_id = :user_id",
             recipe_id=recipe_id,
             user_id=user_id,
-            mealName=meal_name,
-            mealType=meal_type,
+            meal_name=meal_name,
+            meal_type=meal_type,
             ingredients=ingredients,
             instructions=instructions
         )
 
     def delete_recipe(self, recipe_id: int, user_id: int) -> None:
         self.db.execute(
-            "DELETE FROM Recipes1 WHERE id = :recipe_id AND user_id = :user_id",
+            "DELETE FROM recipes WHERE id = :recipe_id AND user_id = :user_id",
             recipe_id=recipe_id,
             user_id=user_id
         )
@@ -114,13 +118,13 @@ class RecipeManager(AbstractRecipeManager):
 
     def get_recipes_ordered_by_meal_type(self, user_id: int):
         return self.db.execute(
-            "SELECT * FROM Recipes1 WHERE user_id = :user_id ORDER BY mealType",
+            "SELECT * FROM recipes WHERE user_id = :user_id ORDER BY meal_type",
             user_id=user_id
         )
 
     def get_ingredients_by_meal_name(self, user_id: int, meal: str)-> list[dict[str, Any]] | None:
         recipe = self.db.execute(
-            "SELECT ingredients FROM Recipes1 WHERE user_id = :user_id AND mealName = :meal_name",
+            "SELECT ingredients FROM recipes WHERE user_id = :user_id AND meal_name = :meal_name",
             user_id=user_id,
             meal_name=meal
         )
@@ -128,7 +132,7 @@ class RecipeManager(AbstractRecipeManager):
 
     def get_meal_names(self, user_id: int) -> list[Any]:
         meals = self.db.execute(
-            "SELECT mealName FROM Recipes1 WHERE user_id = :user_id",
+            "SELECT meal_name FROM recipes WHERE user_id = :user_id",
             user_id=user_id
         )
-        return [meal['mealName'] for meal in meals]
+        return [meal['meal_name'] for meal in meals]

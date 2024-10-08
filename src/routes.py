@@ -7,7 +7,6 @@ from src.resources.plan_resource import ScheduleResource, ChooseMealResource
 
 
 def register_routes(app: Flask, api: Api) -> None:
-    # Register Flask routes for login and registration
     app.add_url_rule(
         '/auth/login',
         'auth.login',
@@ -27,9 +26,8 @@ def register_routes(app: Flask, api: Api) -> None:
         methods=['POST']
     )
 
-    # Register remaining resources
-    api.add_resource(RecipeListResource, '/recipes')  # type: ignore
-    api.add_resource(RecipeResource, '/recipes/<int:recipe_id>')  # type: ignore
+    api.add_resource(RecipeListResource, '/recipe')  # type: ignore
+    api.add_resource(RecipeResource, '/recipe/<int:recipe_id>')  # type: ignore
     api.add_resource(ScheduleResource, '/schedule')  # type: ignore
-    api.add_resource(ChooseMealResource, '/choose_meal')  # type: ignore
+    api.add_resource(ChooseMealResource, '/meal_plan')  # type: ignore
     api.add_resource(ShoppingListResource, '/shopping_list')  # type: ignore

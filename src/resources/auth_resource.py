@@ -40,14 +40,14 @@ class RegisterResource(Resource):
 
         schema = RegisterSchema()
         try:
-            validated_data: RegisterData = schema.load(data)  # type: ignore
+            validated_data: Any = schema.load(data)  # type: ignore
         except ValidationError as err:
             return jsonify({"errors": err.messages}), 400  # type: ignore
 
-        username: Any = validated_data['username']
-        email: Any = validated_data['email']
-        password: Any = validated_data['password']
-        confirmation: Any = validated_data['confirmation']
+        username: str = validated_data['username']
+        email: str = validated_data['email']
+        password: str = validated_data['password']
+        confirmation: str = validated_data['confirmation']
 
         user_auth = UserAuth(current_app.config['db'])  # type: ignore
         success, result = user_auth.register(username, email, password, confirmation)
@@ -62,8 +62,8 @@ class LogoutResource(Resource):
     @jwt_required()
     def post(self) -> Union[tuple[dict[str, str], int], tuple[Response, int]]:
         try:
-            jti = get_jwt()['jti'] # type: ignore
-            current_app.config['JWT_BLACKLIST'].add(jti) #type: ignore
+            jti = get_jwt()['jti']  # type: ignore
+            current_app.config['JWT_BLACKLIST'].add(jti)  # type: ignore
             return jsonify({"message": "Logout successful!"}), 200
         except Exception as e:
             current_app.logger.error(f"Error during logout: {str(e)}")

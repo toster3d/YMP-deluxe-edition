@@ -28,8 +28,6 @@ class AbstractUserPlanManager(ABC):
         raise NotImplementedError('message')
 
 
-
-
 class SqliteUserPlanManager(AbstractUserPlanManager):
     def __init__(self, db: Any) -> None:
         self.db: Any = db
@@ -40,7 +38,7 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
             user_id,
             date.strftime("%Y-%m-%d")
         )
-            
+
     def update_meal(self, user_id: int, date: datetime, meal_name: str, meal_value: str) -> None:
         if not meal_name:
             raise ValueError("meal_name cannot be empty")
