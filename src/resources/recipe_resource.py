@@ -1,11 +1,11 @@
 from typing import Any
-from flask.wrappers import Response
 from flask_restful import Resource
 from flask import current_app, jsonify, request, make_response
-from flask_jwt_extended import jwt_required, get_jwt_identity  # type: ignore
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.services.recipe_manager import RecipeManager
 from .schemas import RecipeSchema
 from marshmallow import ValidationError
+from flask.wrappers import Response
 
 
 class RecipeListResource(Resource):
@@ -40,8 +40,8 @@ class RecipeListResource(Resource):
             data: Any = self.schema.load(json_data)
             current_app.logger.info(f"Validated data: {data}")
         except ValidationError as err:
-            current_app.logger.error(f"Validation error: {err.messages}")  # type: ignore
-            return make_response(jsonify(err.messages), 422)  # type: ignore
+            current_app.logger.error(f"Validation error: {err.messages}")
+            return make_response(jsonify(err.messages), 422)
 
         try:
             self.recipe_manager.add_recipe(
@@ -55,7 +55,7 @@ class RecipeListResource(Resource):
             return make_response(jsonify({"message": "Recipe added successfully!"}), 201)
         except Exception as e:
             current_app.logger.error(f"Error adding recipe: {e}")
-            return {"message": "Failed to add recipe"}, 500  # type: ignore
+            return make_response(jsonify({"message": "Failed to add recipe"}), 500)
 
 
 class RecipeResource(Resource):
@@ -70,6 +70,8 @@ class RecipeResource(Resource):
 
         if recipe:
             return make_response(jsonify(recipe), 200)
+
+        current_app.logger.info(f"Recipe with ID {recipe_id} not found for user_id {user_id}.")
         return make_response(jsonify({"message": "Recipe not found"}), 404)
 
     @jwt_required()
@@ -79,6 +81,7 @@ class RecipeResource(Resource):
             self.recipe_manager.delete_recipe(recipe_id, user_id)
             return make_response(jsonify({"message": "Recipe deleted successfully!"}), 200)
         except Exception as e:
+            current_app.logger.error(f"Error deleting recipe: {e}")
             return make_response(jsonify({"message": str(e)}), 404)
 
     @jwt_required()
@@ -91,7 +94,7 @@ class RecipeResource(Resource):
         try:
             data: Any = self.schema.load(json_data)
         except ValidationError as err:
-            return make_response(jsonify(err.messages), 422)  # type: ignore
+            return make_response(jsonify(err.messages), 422)
 
         try:
             self.recipe_manager.update_recipe(
@@ -104,4 +107,5 @@ class RecipeResource(Resource):
             )
             return make_response(jsonify({"message": "Recipe updated successfully!"}), 200)
         except Exception as e:
+            current_app.logger.error(f"Error updating recipe: {e}")
             return make_response(jsonify({"message": str(e)}), 404)

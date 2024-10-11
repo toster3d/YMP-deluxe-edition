@@ -1,26 +1,26 @@
 from abc import ABC, abstractmethod
-from flask import current_app
-from typing import Any
+from typing import Any, Optional
+from src.models.recipes import Recipe
 
 class AbstractRecipeManager(ABC):
     @abstractmethod
-    def get_recipes_list(self, user_id: int)-> list[dict[str, Any]]:
+    def get_recipes_list(self, user_id: int) -> list[dict[str, Any]]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def get_recipes(self, user_id: int)-> list[dict[str, Any]]:
+    def get_recipes(self, user_id: int) -> list[dict[str, Any]]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def get_recipe_by_id(self, recipe_id: int, user_id: int)-> list[dict[str, Any]] | None:
+    def get_recipe_by_id(self, recipe_id: int, user_id: int) -> Optional[dict[str, Any]]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def get_recipe_by_name(self, user_id: int, meal_name: str)-> list[dict[str, Any]] | None:
+    def get_recipe_by_name(self, user_id: int, meal_name: str) -> Optional[dict[str, Any]]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def add_recipe(self, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str)-> None:
+    def add_recipe(self, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str) -> None:
         raise NotImplementedError('message')
 
     @abstractmethod
@@ -32,107 +32,100 @@ class AbstractRecipeManager(ABC):
         raise NotImplementedError('message')
 
     @abstractmethod
-    def get_recipes_ordered_by_meal_type(self, user_id: int)-> list[dict[str, Any]]:
+    def get_recipes_ordered_by_meal_type(self, user_id: int) -> list[dict[str, Any]]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def get_ingredients_by_meal_name(self, user_id: int, meal: str)-> list[dict[str, Any]] | None:
+    def get_ingredients_by_meal_name(self, user_id: int, meal: str) -> Optional[str]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def get_meal_names(self, user_id: int)-> list[dict[str, Any]]:
+    def get_meal_names(self, user_id: int) -> list[str]:
         raise NotImplementedError('message')
 
 class RecipeManager(AbstractRecipeManager):
     def __init__(self, db: Any) -> None:
         self.db = db
 
-    def get_recipes_list(self, user_id: int):
-        return self.db.execute(
-            "SELECT id, meal_name, meal_type FROM recipes WHERE user_id = :user_id "
-            "ORDER BY mealName COLLATE NOCASE ASC",
-            user_id=user_id
-        )
+    def get_recipes_list(self, user_id: int) -> list[dict[str, Any]]:
+        recipes = Recipe.query.filter_by(user_id=user_id).order_by(Recipe.meal_name.asc()).all()
+        return [{'id': recipe.id, 'meal_name': recipe.meal_name, 'meal_type': recipe.meal_type} for recipe in recipes]
 
-    def get_recipes(self, user_id: int):
-        recipes = self.db.execute(
-            "SELECT * FROM recipes WHERE user_id = :user_id",
-            user_id=user_id
-        )
-        if not recipes:
-            current_app.logger.info(f"No recipes found for user_id: {user_id}")
-        return recipes
+    def get_recipes(self, user_id: int) -> list[dict[str, Any]]:
+        recipes = self.db.session.query(Recipe).filter_by(user_id=user_id).all()
+        return [
+            {
+                'id': recipe.id,
+                'meal_name': recipe.meal_name,
+                'meal_type': recipe.meal_type,
+                'ingredients': recipe.ingredients,
+                'instructions': recipe.instructions
+            }
+            for recipe in recipes
+        ]
 
-    def get_recipe_by_id(self, recipe_id: int, user_id: int):
-        recipe: Any = self.db.execute(
-            "SELECT * FROM recipes WHERE id = :recipe_id AND user_id = :user_id",
-            recipe_id=recipe_id,
-            user_id=user_id
-        )
-        return recipe[0] if recipe else None
+    def get_recipe_by_id(self, recipe_id: int, user_id: int) -> Optional[dict[str, Any]]:
+        recipe = self.db.session.query(Recipe).filter_by(id=recipe_id, user_id=user_id).first()
+        if recipe:
+            return {
+                'id': recipe.id,
+                'meal_name': recipe.meal_name,
+                'meal_type': recipe.meal_type,
+                'ingredients': recipe.ingredients,
+                'instructions': recipe.instructions
+            }
+        return None
 
-    def get_recipe_by_name(self, user_id: int, meal_name: str):
-        recipe: Any = self.db.execute(
-            "SELECT * FROM recipes WHERE user_id = :user_id AND meal_name = :meal_name",
-            user_id=user_id,
-            meal_name=meal_name
-        )
-        return recipe[0] if recipe else None
+    def get_recipe_by_name(self, user_id: int, meal_name: str) -> Optional[dict[str, Any]]:
+        recipe = Recipe.query.filter_by(user_id=user_id, meal_name=meal_name).first()
+        if recipe:
+            return {
+                'id': recipe.id,
+                'meal_name': recipe.meal_name,
+                'meal_type': recipe.meal_type,
+                'ingredients': recipe.ingredients,
+                'instructions': recipe.instructions
+            }
+        return None
 
     def add_recipe(self, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str) -> None:
-        try:
-            current_app.logger.info(f"Adding recipe for user_id: {user_id}, meal_name: {meal_name}")
-            self.db.execute(
-                "INSERT INTO recipes(user_id, meal_name, meal_type, ingredients, instructions) "
-                "VALUES(:user_id, :meal_name, :meal_type, :ingredients, :instructions)",
-                user_id=user_id,
-                meal_name=meal_name,
-                meal_type=meal_type,
-                ingredients=ingredients,
-                instructions=instructions
-            )
-        except Exception as e:
-            current_app.logger.error(f"Error adding recipe: {str(e)}")
-            raise RuntimeError("Failed to add recipe") from e
-
-    def update_recipe(self, recipe_id: int, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str) -> None:
-        self.db.execute(
-            "UPDATE recipes SET meal_name = :meal_name, meal_type = :meal_type, "
-            "ingredients = :ingredients, instructions = :instructions "
-            "WHERE id = :recipe_id AND user_id = :user_id",
-            recipe_id=recipe_id,
+        new_recipe = Recipe(
             user_id=user_id,
             meal_name=meal_name,
             meal_type=meal_type,
             ingredients=ingredients,
             instructions=instructions
         )
+        self.db.session.add(new_recipe)
+        self.db.session.commit()
+
+    def update_recipe(self, recipe_id: int, user_id: int, meal_name: str, meal_type: str, ingredients: str, instructions: str) -> None:
+        recipe = self.db.session.query(Recipe).filter_by(id=recipe_id, user_id=user_id).first()
+        if recipe:
+            recipe.meal_name = meal_name
+            recipe.meal_type = meal_type
+            recipe.ingredients = ingredients
+            recipe.instructions = instructions
+            self.db.session.commit()
+        else:
+            raise ValueError("Recipe not found")
 
     def delete_recipe(self, recipe_id: int, user_id: int) -> None:
-        self.db.execute(
-            "DELETE FROM recipes WHERE id = :recipe_id AND user_id = :user_id",
-            recipe_id=recipe_id,
-            user_id=user_id
-        )
-        current_app.logger.info("Your recipe was successfully deleted!")
+        recipe = self.db.session.query(Recipe).filter_by(id=recipe_id, user_id=user_id).first()
+        if recipe:
+            self.db.session.delete(recipe)
+            self.db.session.commit()
+        else:
+            raise ValueError("Recipe not found")
 
-    def get_recipes_ordered_by_meal_type(self, user_id: int):
-        return self.db.execute(
-            "SELECT * FROM recipes WHERE user_id = :user_id ORDER BY meal_type",
-            user_id=user_id
-        )
+    def get_recipes_ordered_by_meal_type(self, user_id: int) -> list[dict[str, Any]]:
+        recipes = Recipe.query.filter_by(user_id=user_id).order_by(Recipe.meal_type).all()
+        return [{'id': recipe.id, 'meal_name': recipe.meal_name, 'meal_type': recipe.meal_type} for recipe in recipes]
 
-    def get_ingredients_by_meal_name(self, user_id: int, meal: str)-> list[dict[str, Any]] | None:
-        recipe = self.db.execute(
-            "SELECT ingredients FROM recipes WHERE user_id = :user_id AND meal_name = :meal_name",
-            user_id=user_id,
-            meal_name=meal
-        )
-        return recipe[0]['ingredients'] if recipe else None
+    def get_ingredients_by_meal_name(self, user_id: int, meal: str) -> Optional[str]:
+        recipe = Recipe.query.filter_by(user_id=user_id, meal_name=meal).first()
+        return recipe.ingredients if recipe else None
 
-    def get_meal_names(self, user_id: int) -> list[Any]:
-        meals = self.db.execute(
-            "SELECT meal_name FROM recipes WHERE user_id = :user_id",
-            user_id=user_id
-        )
-        return [meal['meal_name'] for meal in meals]
+    def get_meal_names(self, user_id: int) -> list[str]:
+        meals = Recipe.query.filter_by(user_id=user_id).all()
+        return [recipe.meal_name for recipe in meals]

@@ -5,7 +5,7 @@ description = "A comprehensive meal planning and shopping list application"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "flask>=2.0.0",
+    "flask>=3.0.3",
     "cs50>=9.3.4",
     "requests>=2.32.3",
     "flask-session>=0.3.2",
@@ -21,6 +21,25 @@ dependencies = [
     "termcolor>=2.4.0",
     "typing-extensions>=4.12.2",
     "wheel>=0.44.0",
+    "flask-sqlalchemy>=3.1.1",
+    "aniso8601",
+    "cachelib",
+    "certifi",
+    "charset-normalizer",
+    "click",
+    "idna",
+    "itsdangerous",
+    "jinja2",
+    "markupsafe",
+    "msgspec",
+    "mypy",
+    "mypy-extensions",
+    "packaging",
+    "pyjwt",
+    "pytz",
+    "six",
+    "urllib3",
+    "werkzeug",
 ]
 
 [tool.uv.sources]

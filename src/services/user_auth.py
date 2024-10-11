@@ -1,43 +1,38 @@
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token  # type: ignore
+from flask_jwt_extended import create_access_token
 from flask import current_app
-from cs50 import SQL  # type: ignore
-from typing import Union, Any
+from typing import Literal, Union, Optional, Any
+from src.models.recipes import User
 
 
 class UserAuth:
-    def __init__(self, db: SQL) -> None:  # type: ignore
-        self.db: SQL = db
-
-    def get_db(self) -> SQL:  # type: ignore
-        if self.db is None:  # type: ignore
-            self.db = current_app.config['db']
-        return self.db  # type: ignore
+    def __init__(self, db: Any) -> None:
+        self.db: Any = db
 
     def login(self, username: str, password: str) -> tuple[bool, Union[str, dict[str, str]]]:
+        current_app.logger.info(f"Attempting to log in user: {username}")
         if not username or not password:
             current_app.logger.warning('Username and password are required.')
             return False, "Username and password are required."
 
-        rows: list[dict[str, Any]] = self.get_db().execute(  # type: ignore
-            "SELECT * FROM users WHERE user_name = ?", username
-        )
+        user: Optional[User] = User.query.filter_by(user_name=username).first()
+        current_app.logger.info(f"User found: {user}")
 
-        if len(rows) != 1:  # type: ignore
+        if user is None:
             current_app.logger.warning('Invalid username or password.')
             return False, "Invalid username or password."
 
-        if not check_password_hash(rows[0]["hash"], password):  # type: ignore
+        if not check_password_hash(user.hash, password):
             current_app.logger.warning('Invalid username or password.')
             return False, "Invalid username or password."
 
-        user_id: Any = rows[0]["id"]
+        user_id: int = user.id
         current_app.logger.info(f"User ID for {username}: {user_id}")
 
         access_token: str = create_access_token(identity=user_id)
         return True, {"access_token": access_token}
 
-    def logout(self):
+    def logout(self) -> tuple[dict[str, str], Literal[200]]:
         return {"message": "You have been logged out"}, 200
 
     def register(
@@ -53,30 +48,16 @@ class UserAuth:
         if password != confirmation:
             return False, "Passwords do not match."
 
-        if not self.password_validation(password):
-            return False, "Password does not meet security requirements."
+        hashed_password = generate_password_hash(password)
+        new_user = User(user_name=username, email=email, hash=hashed_password)
 
-        existing_username: Any = self.get_db().execute(  # type: ignore
-            "SELECT * FROM users WHERE user_name = ?", username
-        )
-        if existing_username:
-            return False, "Username is already taken."
-
-        existing_email: Any = self.get_db().execute(  # type: ignore
-            "SELECT * FROM users WHERE email = ?", email
-        )
-        if existing_email:
-            return False, "Email is already taken."
-
-        hash: str = generate_password_hash(password)
         try:
-            self.get_db().execute(  # type: ignore
-                "INSERT INTO users (user_name, email, hash) VALUES (?, ?, ?)",
-                username, email, hash
-            )
+            self.db.session.add(new_user)
+            self.db.session.commit()
             current_app.logger.info(f"User {username} registered successfully.")
             return True, "Registration successful."
         except Exception as e:
+            self.db.session.rollback()
             current_app.logger.error(f"Error during registration: {e}")
             return False, str(e)
 
@@ -102,10 +83,8 @@ class UserAuth:
 
         return has_digit and has_upper and has_lower and has_symbol
 
-    def get_user_id(self, username: str) -> int | None:
-        rows: list[dict[str, Any]] = self.get_db().execute(  # type: ignore
-            "SELECT id FROM users WHERE user_name = ?", username
-        )
-        if len(rows) == 1:  # type: ignore
-            return rows[0]["id"]  # type: ignore
-        return None
+    def get_user_id(self, username: str) -> Optional[int]:
+        user: Optional[User] = User.query.filter_by(user_name=username).first()
+        if user is None:
+            return None
+        return user.id 
