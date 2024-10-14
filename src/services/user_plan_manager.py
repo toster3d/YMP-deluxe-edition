@@ -9,23 +9,11 @@ from flask import current_app
 
 class AbstractUserPlanManager(ABC):
     @abstractmethod
-    def add_plan(self, user_id: int, date: datetime) -> None:
-        raise NotImplementedError('message')
-
-    @abstractmethod
-    def update_meal(self, user_id: int, date: datetime, meal_name: str, meal_value: str) -> None:
-        raise NotImplementedError('message')
-
-    @abstractmethod
     def get_plans(self, user_id: int, date: datetime) -> Optional[dict[str, Any]]:
         raise NotImplementedError('message')
 
     @abstractmethod
-    def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> None:
-        raise NotImplementedError('message')
-
-    @abstractmethod
-    def get_user_meals(self, user_id: int, date: datetime) -> list[dict[str, Any]]:
+    def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> dict[str, Any]:
         raise NotImplementedError('message')
 
     @abstractmethod
@@ -36,26 +24,6 @@ class AbstractUserPlanManager(ABC):
 class SqliteUserPlanManager(AbstractUserPlanManager):
     def __init__(self, db: Any) -> None:
         self.db: Any = db
-
-    def add_plan(self, user_id: int, date: datetime) -> None:
-        new_plan = UserPlan(
-            user_id=user_id,
-            date=date,
-            breakfast=None,
-            lunch=None,
-            dinner=None,
-            dessert=None
-        )
-        self.db.session.add(new_plan)
-        self.db.session.commit()
-
-    def update_meal(self, user_id: int, date: datetime, meal_name: str, meal_value: str) -> None:
-        if not meal_name:
-            raise ValueError("meal_name cannot be empty")
-        plan = self.db.session.query(UserPlan).filter_by(user_id=user_id, date=date).first()
-        if plan:
-            setattr(plan, meal_name, meal_value)
-            self.db.session.commit()
 
     def get_plans(self, user_id: int, date: datetime | date) -> Optional[dict[str, Any]]:
         if isinstance(date, datetime):
@@ -84,7 +52,7 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
 
         return result
 
-    def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> None:
+    def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> dict[str, Any]:
         current_app.logger.info(f"Creating or updating plan for user_id: {user_id}, date: {selected_date}, recipe_id: {recipe_id}, meal_type: {meal_type}")
 
         try:
@@ -108,8 +76,12 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
         self.db.session.commit()
         current_app.logger.info(f"Plan updated: {plan}")
 
-    def get_user_meals(self, user_id: int, date: datetime) -> list[dict[str, Any]]:
-        return self.get_plans(user_id, date)
+        return {
+            "meal_type": meal_type,
+            "recipe_name": recipe.meal_name,
+            "recipe_id": recipe_id,
+            "date": selected_date
+        }
 
     def get_user_recipes(self, user_id: int) -> list[dict[str, Any]]:
         recipes = self.db.session.query(Recipe).filter_by(user_id=user_id).all()

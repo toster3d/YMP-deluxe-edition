@@ -1,7 +1,8 @@
 from flask import jsonify, request, current_app, Response, make_response
-from flask_restful import Resource
+from flask_restful import Resource # type: ignore       
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+from typing import Any
 from src.services.shopping_list_service import ShoppingListService
 from src.services.recipe_manager import RecipeManager
 from src.services.user_plan_manager import SqliteUserPlanManager

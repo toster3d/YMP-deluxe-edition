@@ -1,5 +1,5 @@
 from typing import Any
-from flask_restful import Resource
+from flask_restful import Resource # type: ignore
 from flask import current_app, jsonify, request, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.services.recipe_manager import RecipeManager
@@ -8,7 +8,7 @@ from marshmallow import ValidationError
 from flask.wrappers import Response
 
 
-class RecipeListResource(Resource):
+class RecipeListResource(Resource): # type: ignore  
     def __init__(self) -> None:
         self.recipe_manager = RecipeManager(current_app.config['db'])
         self.schema = RecipeSchema()
@@ -37,7 +37,7 @@ class RecipeListResource(Resource):
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
         try:
-            data: Any = self.schema.load(json_data)
+            data: dict[str, Any] = self.schema.load(json_data)
             current_app.logger.info(f"Validated data: {data}")
         except ValidationError as err:
             current_app.logger.error(f"Validation error: {err.messages}")
@@ -52,13 +52,17 @@ class RecipeListResource(Resource):
                 data["instructions"]
             )
             current_app.logger.info("Recipe added successfully")
-            return make_response(jsonify({"message": "Recipe added successfully!"}), 201)
+            return make_response(jsonify({
+                "message": "Recipe added successfully!",
+                "meal_name": data["meal_name"],
+                "meal_type": data["meal_type"]
+            }), 201)
         except Exception as e:
             current_app.logger.error(f"Error adding recipe: {e}")
             return make_response(jsonify({"message": "Failed to add recipe"}), 500)
 
 
-class RecipeResource(Resource):
+class RecipeResource(Resource): # type: ignore
     def __init__(self) -> None:
         self.recipe_manager = RecipeManager(current_app.config['db'])
         self.schema = RecipeSchema()
@@ -66,7 +70,7 @@ class RecipeResource(Resource):
     @jwt_required()
     def get(self, recipe_id: int) -> Response:
         user_id: int = get_jwt_identity()
-        recipe: Any = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+        recipe: dict[str, Any] | None = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
 
         if recipe:
             return make_response(jsonify(recipe), 200)
@@ -78,8 +82,17 @@ class RecipeResource(Resource):
     def delete(self, recipe_id: int) -> Response:
         user_id: int = get_jwt_identity()
         try:
+            recipe = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+            if not recipe:
+                return make_response(jsonify({"message": "Recipe not found"}), 404)
+
             self.recipe_manager.delete_recipe(recipe_id, user_id)
-            return make_response(jsonify({"message": "Recipe deleted successfully!"}), 200)
+            current_app.logger.info(f"Recipe with ID {recipe_id} deleted successfully.")
+            return make_response(jsonify({
+                "message": "Recipe deleted successfully!",
+                "recipe_id": recipe_id,
+                "meal_name": recipe["meal_name"]
+            }), 200)
         except Exception as e:
             current_app.logger.error(f"Error deleting recipe: {e}")
             return make_response(jsonify({"message": str(e)}), 404)
@@ -92,7 +105,7 @@ class RecipeResource(Resource):
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
         try:
-            data: Any = self.schema.load(json_data)
+            data: dict[str, Any] = self.schema.load(json_data)
         except ValidationError as err:
             return make_response(jsonify(err.messages), 422)
 
@@ -105,7 +118,12 @@ class RecipeResource(Resource):
                 data["ingredients"],
                 data["instructions"]
             )
-            return make_response(jsonify({"message": "Recipe updated successfully!"}), 200)
+            current_app.logger.info(f"Recipe with ID {recipe_id} updated successfully.")
+            return make_response(jsonify({
+                "message": "Recipe updated successfully!",
+                "meal_name": data["meal_name"],
+                "meal_type": data["meal_type"]
+            }), 200)
         except Exception as e:
             current_app.logger.error(f"Error updating recipe: {e}")
             return make_response(jsonify({"message": str(e)}), 404)

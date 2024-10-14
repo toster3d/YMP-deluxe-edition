@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_restful import Api
-from typing import Optional
+from typing import Any
 from src.config import create_app
 from src.routes import register_routes
 from flask_jwt_extended import JWTManager
@@ -22,8 +22,8 @@ jwt: JWTManager = JWTManager(app)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blocklist(
-    jwt_header,
-    jwt_payload
+    jwt_header: Any,
+    jwt_payload: Any
 ) -> bool:
     jti: str = jwt_payload['jti']
     return jti in app.config['JWT_BLACKLIST']

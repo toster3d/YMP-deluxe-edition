@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Api # type: ignore
+from flask_restful import Api
 from src.resources.auth_resource import AuthResource, RegisterResource, LogoutResource
 from src.resources.shopping_list_resource import ShoppingListResource
 from src.resources.recipe_resource import RecipeListResource, RecipeResource

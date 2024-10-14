@@ -32,9 +32,6 @@ class UserAuth:
         access_token: str = create_access_token(identity=user_id)
         return True, {"access_token": access_token}
 
-    def logout(self) -> tuple[dict[str, str], Literal[200]]:
-        return {"message": "You have been logged out"}, 200
-
     def register(
         self,
         username: str,
