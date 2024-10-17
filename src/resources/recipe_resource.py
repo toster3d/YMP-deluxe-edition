@@ -1,7 +1,7 @@
 from typing import Any
 from flask_restful import Resource # type: ignore
 from flask import current_app, jsonify, request, make_response
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
 from src.services.recipe_manager import RecipeManager
 from .schemas import RecipeSchema
 from marshmallow import ValidationError
@@ -37,11 +37,11 @@ class RecipeListResource(Resource): # type: ignore
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
         try:
-            data: dict[str, Any] = self.schema.load(json_data)
+            data: dict[str, Any] = self.schema.load(json_data) # type: ignore
             current_app.logger.info(f"Validated data: {data}")
         except ValidationError as err:
-            current_app.logger.error(f"Validation error: {err.messages}")
-            return make_response(jsonify(err.messages), 422)
+            current_app.logger.error(f"Validation error: {err.messages}") # type: ignore
+            return make_response(jsonify(err.messages), 422) # type: ignore
 
         try:
             self.recipe_manager.add_recipe(
@@ -105,9 +105,9 @@ class RecipeResource(Resource): # type: ignore
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
         try:
-            data: dict[str, Any] = self.schema.load(json_data)
+            data: dict[str, Any] = self.schema.load(json_data) # type: ignore
         except ValidationError as err:
-            return make_response(jsonify(err.messages), 422)
+            return make_response(jsonify(err.messages), 422) # type: ignore     
 
         try:
             self.recipe_manager.update_recipe(
