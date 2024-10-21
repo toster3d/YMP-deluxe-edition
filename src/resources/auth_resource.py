@@ -1,68 +1,71 @@
 from flask import jsonify, request, make_response, current_app
 from flask.wrappers import Response
-from flask_restful import Resource # type: ignore
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity
+from flask_restful import Resource
+from flask_jwt_extended import jwt_required, get_jwt # type: ignore
 from marshmallow import ValidationError
-from typing import Any
-from src.services.user_auth import UserAuth
+from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredentialsError, RegistrationError
 from .schemas import LoginSchema, RegisterSchema
+from extensions import db as db_extension
 
-class AuthResource(Resource): # type: ignore    
+class AuthResource(Resource): 
     def post(self) -> Response:
-        data = request.get_json()
+        data: dict[str, str] | None = request.get_json()
         if not data:
+            current_app.logger.warning("No input data provided for login.")
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
-        schema = LoginSchema()
+        schema: LoginSchema = LoginSchema()
         try:
-            validated_data: dict[str, str] = schema.load(data)
+            validated_data: dict[str, str] = schema.load(data)  # type: ignore
         except ValidationError as err:
-            return make_response(jsonify({"errors": err.messages}), 400)
+            return make_response(jsonify({"errors": err.messages}), 400)  # type: ignore
 
         username: str = validated_data['username']
         password: str = validated_data['password']
 
-        user_auth = UserAuth(current_app.config['db'])
-        success, result = user_auth.login(username, password)
+        user_auth: UserAuth = UserAuth(db_extension)
+        try:
+            access_token: str = user_auth.login(username, password)
+            return make_response(jsonify({"message": "Login successful!", "access_token": access_token}), 200)
+        except MissingCredentialsError as e:
+            return make_response(jsonify({"error": str(e)}), 400)
+        except InvalidCredentialsError as e:
+            return make_response(jsonify({"error": str(e)}), 401)
+        except Exception as e:
+            return make_response(jsonify({"error": str(e)}), 500)
 
-        if not success:
-            return make_response(jsonify({"message": result}), 400)
 
-        return make_response(jsonify({"message": "Login successful!", "access_token": result}), 200)
-
-
-class RegisterResource(Resource): # type: ignore
+class RegisterResource(Resource):
     def post(self) -> Response:
-        data = request.get_json()
+        data: dict[str, str] | None = request.get_json()
         if not data:
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
-        schema = RegisterSchema()
+        schema: RegisterSchema = RegisterSchema()
         try:
-            validated_data = schema.load(data)
+            validated_data: dict[str, str] = schema.load(data)  # type: ignore
         except ValidationError as err:
-            return make_response(jsonify({"errors": err.messages}), 400)
+            return make_response(jsonify({"errors": err.messages}), 400)  # type: ignore
 
-        username = validated_data['username']
-        email = validated_data['email']
-        password = validated_data['password']
-        confirmation = validated_data['confirmation']
+        username: str = validated_data['username']
+        email: str = validated_data['email']
+        password: str = validated_data['password']
+        confirmation: str = validated_data['confirmation']
 
-        user_auth = UserAuth(current_app.extensions['sqlalchemy'].db) 
-        success, result = user_auth.register(username, email, password, confirmation)
+        user_auth: UserAuth = UserAuth(db_extension) 
+        try:
+            user_auth.register(username, email, password, confirmation)
+            return make_response(jsonify({"message": "Registration successful!"}), 201)
+        except RegistrationError as e:
+            return make_response(jsonify({"error": str(e)}), 500)
 
-        if not success:
-            return make_response(jsonify({"message": result}), 400)
 
-        return make_response(jsonify({"message": "Registration successful!"}), 201)
-
-
-class LogoutResource(Resource): # type: ignore  
+class LogoutResource(Resource):
     @jwt_required()
     def post(self) -> Response:
         try:
-            jti = get_jwt()['jti'] 
-            current_app.config['JWT_BLACKLIST'].add(jti)
+            jti: str = get_jwt()['jti']  # type: ignore
+            current_app.config['JWT_BLACKLIST'].add(jti)  # type: ignore
             return make_response(jsonify({"message": "Logout successful!"}), 200)
         except Exception as e:
             current_app.logger.error(f"Error during logout: {str(e)}")

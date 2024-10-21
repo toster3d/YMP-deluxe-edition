@@ -1,9 +1,9 @@
 from flask import Flask
 from flask_restful import Api
-from src.resources.auth_resource import AuthResource, RegisterResource, LogoutResource
-from src.resources.shopping_list_resource import ShoppingListResource
-from src.resources.recipe_resource import RecipeListResource, RecipeResource
-from src.resources.plan_resource import ScheduleResource, ChooseMealResource
+from resources.auth_resource import AuthResource, RegisterResource, LogoutResource
+from resources.shopping_list_resource import ShoppingListResource
+from resources.recipe_resource import RecipeListResource, RecipeResource
+from resources.plan_resource import ScheduleResource, ChooseMealResource
 
 
 def register_routes(app: Flask, api: Api) -> None:
@@ -26,9 +26,9 @@ def register_routes(app: Flask, api: Api) -> None:
         methods=['POST']
     )
 
-    api.add_resource(RecipeListResource, '/recipe')  
-    api.add_resource(RecipeResource, '/recipe/<int:recipe_id>')  
-    api.add_resource(ScheduleResource, '/schedule')  
-    api.add_resource(ChooseMealResource, '/meal_plan')  
-    api.add_resource(ShoppingListResource, '/shopping_list') 
-    api.add_resource(RegisterResource, '/auth/register')
+    api.add_resource(RecipeListResource, '/recipe')  #type: ignore  
+    api.add_resource(RecipeResource, '/recipe/<int:recipe_id>')  #type: ignore
+    api.add_resource(ScheduleResource, '/schedule')  #type: ignore
+    api.add_resource(ChooseMealResource, '/meal_plan')  #type: ignore
+    api.add_resource(ShoppingListResource, '/shopping_list')  #type: ignore
+    api.add_resource(RegisterResource, '/auth/register')  #type: ignore

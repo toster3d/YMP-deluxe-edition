@@ -1,43 +1,40 @@
-from datetime import datetime, date
-from sqlalchemy import func
-from sqlalchemy.exc import NoResultFound
+from datetime import date as date_type
+from datetime import datetime
 from abc import ABC, abstractmethod
-from typing import Any, Optional
-from src.models.recipes import UserPlan, Recipe
+from typing import Any
+from models.recipes import UserPlan, Recipe
 from flask import current_app
+from flask_sqlalchemy import SQLAlchemy
 
 
 class AbstractUserPlanManager(ABC):
     @abstractmethod
-    def get_plans(self, user_id: int, date: datetime) -> Optional[dict[str, Any]]:
-        raise NotImplementedError('message')
+    def get_plans(self, user_id: int, date: date_type) -> dict[str, int | date_type | str]:
+        raise NotImplementedError('This method should retrieve the meal plans for a user on a specific date.')
 
     @abstractmethod
     def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> dict[str, Any]:
-        raise NotImplementedError('message')
+        raise NotImplementedError('This method should create or update a meal plan for the user on the specified date with the given recipe ID and meal type.')
 
     @abstractmethod
     def get_user_recipes(self, user_id: int) -> list[dict[str, Any]]:
-        raise NotImplementedError('message')
+        raise NotImplementedError('This method should retrieve a list of recipes associated with the specified user ID.')
 
 
 class SqliteUserPlanManager(AbstractUserPlanManager):
-    def __init__(self, db: Any) -> None:
-        self.db: Any = db
+    def __init__(self, db: SQLAlchemy) -> None:
+        self.db: SQLAlchemy = db
 
-    def get_plans(self, user_id: int, date: datetime | date) -> Optional[dict[str, Any]]:
-        if isinstance(date, datetime):
-            date = date.date()
-
+    def get_plans(self, user_id: int, date: date_type) -> dict[str, int | date_type | str]:
         current_app.logger.info(f"Attempting to get plan for user_id: {user_id}, date: {date}")
 
-        plan = self.db.session.query(UserPlan).filter(
+        plan: UserPlan | None = self.db.session.query(UserPlan).filter(
             UserPlan.user_id == user_id,
-            func.date(UserPlan.date) == date
+            UserPlan.date == date
         ).first()
 
         if plan:
-            result = {
+            result: dict[str, int | date_type | str] = {
                 'user_id': plan.user_id,
                 'date': plan.date,
                 'breakfast': plan.breakfast,
@@ -53,19 +50,20 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
         return result
 
     def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> dict[str, Any]:
-        current_app.logger.info(f"Creating or updating plan for user_id: {user_id}, date: {selected_date}, recipe_id: {recipe_id}, meal_type: {meal_type}")
-
-        try:
-            plan = self.db.session.query(UserPlan).filter_by(user_id=user_id, date=selected_date).one()
-        except NoResultFound:
-            plan = UserPlan(user_id=user_id, date=selected_date)
+        
+        selected_date_only: date_type = selected_date.date()
+        
+        plan: UserPlan | None = self.db.session.query(UserPlan).filter_by(user_id=user_id, date=selected_date_only).first()
+        
+        if plan is None: 
+            plan = UserPlan(user_id=user_id, date=selected_date_only)
             self.db.session.add(plan)
 
-        recipe = self.db.session.query(Recipe).filter_by(id=recipe_id).first()
+        recipe: Recipe | None = self.db.session.query(Recipe).filter_by(id=recipe_id).first()
         if not recipe:
             raise ValueError(f"Recipe with id {recipe_id} not found")
 
-        meal_info = f"{recipe.meal_name} (ID: {recipe_id})"
+        meal_info: str = recipe.meal_name
 
         if meal_type in ['breakfast', 'lunch', 'dinner', 'dessert']:
             setattr(plan, meal_type, meal_info)
@@ -80,11 +78,11 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
             "meal_type": meal_type,
             "recipe_name": recipe.meal_name,
             "recipe_id": recipe_id,
-            "date": selected_date
+            "date": selected_date_only
         }
 
     def get_user_recipes(self, user_id: int) -> list[dict[str, Any]]:
-        recipes = self.db.session.query(Recipe).filter_by(user_id=user_id).all()
+        recipes: list[Recipe] = self.db.session.query(Recipe).filter_by(user_id=user_id).all()
         return [
             {
                 'id': recipe.id,
@@ -93,4 +91,3 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
             }
             for recipe in recipes
         ]
-

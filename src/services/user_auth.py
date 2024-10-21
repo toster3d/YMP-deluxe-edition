@@ -1,69 +1,59 @@
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token  # type: ignore
 from flask import current_app
-from typing import Literal, Union, Optional, Any
-from src.models.recipes import User
+from models.recipes import User
+from flask_sqlalchemy import SQLAlchemy
 
 
 class UserAuth:
-    def __init__(self, db: Any) -> None:
-        self.db: Any = db
+    def __init__(self, db: SQLAlchemy) -> None:
+        self.db: SQLAlchemy = db
 
-    def login(self, username: str, password: str) -> tuple[bool, Union[str, dict[str, str]]]:
-        current_app.logger.info(f"Attempting to log in user: {username}")
+    def login(self, username: str, password: str) -> str:
         if not username or not password:
-            current_app.logger.warning('Username and password are required.')
-            return False, "Username and password are required."
+            raise MissingCredentialsError()
 
-        user: Optional[User] = User.query.filter_by(user_name=username).first()
+        user: User | None = self.db.session.query(User).filter_by(user_name=username).first()
         current_app.logger.info(f"User found: {user}")
 
         if user is None:
-            current_app.logger.warning('Invalid username or password.')
-            return False, "Invalid username or password."
+            raise InvalidCredentialsError()
 
         if not check_password_hash(user.hash, password):
             current_app.logger.warning('Invalid username or password.')
-            return False, "Invalid username or password."
+            raise InvalidCredentialsError()
 
         user_id: int = user.id
         current_app.logger.info(f"User ID for {username}: {user_id}")
 
         access_token: str = create_access_token(identity=user_id)
-        return True, {"access_token": access_token}
+        return access_token
 
-    def register(
-        self,
-        username: str,
-        email: str,
-        password: str,
-        confirmation: str
-    ) -> tuple[bool, str]:
-        if not username or not email or not password or not confirmation:
-            return False, "All fields are required."
-
+    def register(self, username: str, email: str, password: str, confirmation: str) -> str:
         if password != confirmation:
-            return False, "Passwords do not match."
+            raise PasswordMismatchError()
 
-        hashed_password = generate_password_hash(password)
-        new_user = User(user_name=username, email=email, hash=hashed_password)
-
+        hashed_password: str = generate_password_hash(password)
+        new_user: User = User(user_name=username, email=email, hash=hashed_password)
         try:
             self.db.session.add(new_user)
             self.db.session.commit()
             current_app.logger.info(f"User {username} registered successfully.")
-            return True, "Registration successful."
-        except Exception as e:
+            return "Registration successful."
+        except Exception as error:
             self.db.session.rollback()
-            current_app.logger.error(f"Error during registration: {e}")
-            return False, str(e)
+            current_app.logger.error(f"Error during registration: {error}")
+            raise RegistrationError("Registration failed due to an unexpected error.")
 
-    def password_validation(self, password: str) -> bool:
+    def validate_password(self, password: str) -> bool:
         symbols: set[str] = {'!', '#', '?', '%', '$', '&'}
         if not (8 <= len(password) <= 20):
             return False
 
-        has_digit = has_upper = has_lower = has_symbol = False
+        has_digit: bool = False
+        has_upper: bool = False
+        has_lower: bool = False
+        has_symbol: bool = False
 
         for char in password:
             if char.isdigit():
@@ -80,8 +70,33 @@ class UserAuth:
 
         return has_digit and has_upper and has_lower and has_symbol
 
-    def get_user_id(self, username: str) -> Optional[int]:
-        user: Optional[User] = User.query.filter_by(user_name=username).first()
+    def get_user_id(self, username: str) -> int:
+        user: User | None = self.db.session.query(User).filter_by(user_name=username).first()
         if user is None:
-            return None
-        return user.id 
+            raise ValueError(f"User with username {username} not found")
+        return user.id
+
+
+class AuthenticationError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class MissingCredentialsError(AuthenticationError):
+    def __init__(self) -> None:
+        super().__init__("Username and password are required.")
+
+
+class InvalidCredentialsError(AuthenticationError):
+    def __init__(self) -> None:
+        super().__init__("Invalid username or password.")
+
+
+class RegistrationError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class PasswordMismatchError(RegistrationError):
+    def __init__(self) -> None:
+        super().__init__("Passwords do not match.")

@@ -71,3 +71,9 @@ class PlanSchema(Schema):
     selected_date = fields.Date(required=True, format="%A %d %B %Y")
     user_plan = fields.String(required=True)
     meal_name = fields.String(required=True)
+
+class RecipeUpdateSchema(Schema):
+    meal_name = fields.Str(required=False)
+    meal_type = fields.Str(required=False)
+    ingredients = fields.Str(required=False)
+    instructions = fields.Str(required=False)

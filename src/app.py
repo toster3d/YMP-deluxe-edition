@@ -1,10 +1,14 @@
+import sys
+import os
 from flask import Flask
 from flask_restful import Api
 from typing import Any
-from src.config import create_app
-from src.routes import register_routes
+from config import create_app
+from routes import register_routes
 from flask_jwt_extended import JWTManager
-from src.extensions import db
+from extensions import db
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def create_flask_app() -> Flask:
     app: Flask = create_app()
@@ -13,14 +17,14 @@ def create_flask_app() -> Flask:
 
     with app.app_context():
         db.create_all()
-        app.config['db'] = db
+    app.config['db'] = db
 
     return app
 
 app: Flask = create_flask_app()
 jwt: JWTManager = JWTManager(app)
 
-@jwt.token_in_blocklist_loader
+@jwt.token_in_blocklist_loader #type: ignore
 def check_if_token_in_blocklist(
     jwt_header: Any,
     jwt_payload: Any
