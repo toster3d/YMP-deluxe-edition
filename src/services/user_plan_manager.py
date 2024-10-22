@@ -28,9 +28,13 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
     def get_plans(self, user_id: int, date: date_type) -> dict[str, int | date_type | str]:
         current_app.logger.info(f"Attempting to get plan for user_id: {user_id}, date: {date}")
 
+        # Ensure the date is a date object for comparison
+        date_only = date if isinstance(date, date_type) else date.date()
+        current_app.logger.info(f"Using date for query: {date_only}")
+
         plan: UserPlan | None = self.db.session.query(UserPlan).filter(
             UserPlan.user_id == user_id,
-            UserPlan.date == date
+            UserPlan.date == date_only
         ).first()
 
         if plan:
@@ -45,13 +49,15 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
             current_app.logger.info(f"Found plan: {result}")
         else:
             result = {}
-            current_app.logger.info(f"No plan found for date: {date}")
+            current_app.logger.info(f"No plan found for date: {date_only}")
 
         return result
 
     def create_or_update_plan(self, user_id: int, selected_date: datetime, recipe_id: int, meal_type: str) -> dict[str, Any]:
+        current_app.logger.info(f"Creating or updating plan for user_id: {user_id}, date: {selected_date}, recipe_id: {recipe_id}, meal_type: {meal_type}")
         
-        selected_date_only: date_type = selected_date.date()
+        # Convert selected_date to a date object for comparison
+        selected_date_only = selected_date.date()  # Ensure we are using only the date part
         
         plan: UserPlan | None = self.db.session.query(UserPlan).filter_by(user_id=user_id, date=selected_date_only).first()
         

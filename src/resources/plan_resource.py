@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
 from datetime import datetime, date
 from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
-
+#TODO: sprawdzić dlaczego user_plan zwraca puste listy, prawdopodobnie znowu jest problem z datami
 class ScheduleResource(Resource): 
     def __init__(self) -> None:
         db: SQLAlchemy = current_app.config['db']  # type: ignore
@@ -17,10 +17,10 @@ class ScheduleResource(Resource):
         date_str: str = request.args.get('date', datetime.now().strftime("%A %d %B %Y"))
 
         try:
-            selected_date: datetime = datetime.strptime(date_str, "%A %d %B %Y")
-            user_plans: dict[str, int | date | str] = self.user_plan_manager.get_plans(user_id, selected_date)
+            selected_date: date = datetime.strptime(date_str, "%A %d %B %Y").date()  # Ensure this is a date object
+            user_plans: dict[str, Any] | None = self.user_plan_manager.get_plans(user_id, selected_date)
 
-            response_data: dict[str, str | dict[str, int | date | str | None]] = {
+            response_data: dict[str, str | dict[str, int | Any | None]] = {
                 "date": date_str,
                 "user_plans": {
                     "user_id": user_id,
