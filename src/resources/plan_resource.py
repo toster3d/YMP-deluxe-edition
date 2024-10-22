@@ -1,12 +1,13 @@
 from typing import Any
-from flask import request, jsonify, make_response, current_app, Response            
+from flask import request, jsonify, make_response, current_app, Response
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
 from datetime import datetime, date
 from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
-#TODO: sprawdzić dlaczego user_plan zwraca puste listy, prawdopodobnie znowu jest problem z datami
-class ScheduleResource(Resource): 
+
+
+class ScheduleResource(Resource):
     def __init__(self) -> None:
         db: SQLAlchemy = current_app.config['db']  # type: ignore
         self.user_plan_manager: SqliteUserPlanManager = SqliteUserPlanManager(db)  # type: ignore
@@ -17,10 +18,10 @@ class ScheduleResource(Resource):
         date_str: str = request.args.get('date', datetime.now().strftime("%A %d %B %Y"))
 
         try:
-            selected_date: date = datetime.strptime(date_str, "%A %d %B %Y").date()  # Ensure this is a date object
+            selected_date: date = datetime.strptime(date_str, "%A %d %B %Y").date()
             user_plans: dict[str, Any] | None = self.user_plan_manager.get_plans(user_id, selected_date)
 
-            response_data: dict[str, str | dict[str, int | Any | None]] = {
+            response_data: dict[str, Any] = {
                 "date": date_str,
                 "user_plans": {
                     "user_id": user_id,
@@ -35,7 +36,8 @@ class ScheduleResource(Resource):
         except ValueError:
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
-class ChooseMealResource(Resource):      
+
+class ChooseMealResource(Resource):
     def __init__(self) -> None:
         db: SQLAlchemy = current_app.config['db']  # type: ignore
         self.user_plan_manager: SqliteUserPlanManager = SqliteUserPlanManager(db)  # type: ignore
@@ -58,8 +60,8 @@ class ChooseMealResource(Resource):
         recipe_id: int | None = data.get('recipe_id')
         meal_type: str | None = data.get('meal_type')
 
-        if selected_date is None or recipe_id is None or meal_type is None:
-            return make_response(jsonify({"message": "Missing required fields"}), 400)
+        if selected_date is None or recipe_id is None or meal_type is None or recipe_id <= 0:
+            return make_response(jsonify({"message": "Missing required fields or invalid values"}), 400)
 
         try:
             selected_date_obj: datetime = datetime.strptime(selected_date, "%A %d %B %Y")
@@ -67,7 +69,9 @@ class ChooseMealResource(Resource):
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
         try:
-            updated_plan: dict[str, Any] = self.user_plan_manager.create_or_update_plan(user_id, selected_date_obj, recipe_id, meal_type)
+            updated_plan: dict[str, Any] = self.user_plan_manager.create_or_update_plan(
+                user_id, selected_date_obj, recipe_id, meal_type
+            )
             return make_response(jsonify({
                 "message": "Meal plan updated successfully!",
                 **updated_plan

@@ -7,7 +7,8 @@ from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredent
 from .schemas import LoginSchema, RegisterSchema
 from extensions import db as db_extension
 
-class AuthResource(Resource): 
+
+class AuthResource(Resource):
     def post(self) -> Response:
         data: dict[str, str] | None = request.get_json()
         if not data:
@@ -52,7 +53,7 @@ class RegisterResource(Resource):
         password: str = validated_data['password']
         confirmation: str = validated_data['confirmation']
 
-        user_auth: UserAuth = UserAuth(db_extension) 
+        user_auth: UserAuth = UserAuth(db_extension)
         try:
             user_auth.register(username, email, password, confirmation)
             return make_response(jsonify({"message": "Registration successful!"}), 201)

@@ -7,11 +7,13 @@ from services.recipe_manager import RecipeDict
 from .schemas import RecipeSchema, RecipeUpdateSchema
 from marshmallow import ValidationError
 from flask.wrappers import Response
+from flask_sqlalchemy import SQLAlchemy
 
 
-class RecipeListResource(Resource): 
+class RecipeListResource(Resource):
     def __init__(self) -> None:
-        self.recipe_manager: RecipeManager = RecipeManager(current_app.config['db'])
+        db: SQLAlchemy = current_app.config['db']  # type: ignore
+        self.recipe_manager: RecipeManager = RecipeManager(db)  # type: ignore
         self.schema: RecipeSchema = RecipeSchema()
 
     @jwt_required()
@@ -19,7 +21,7 @@ class RecipeListResource(Resource):
         user_id: int = get_jwt_identity()
         current_app.logger.info(f"Attempting to get recipes for user ID: {user_id}")
 
-        recipes: list[RecipeDict] | None = self.recipe_manager.get_recipes(user_id)
+        recipes = self.recipe_manager.get_recipes(user_id)
 
         if not recipes:
             current_app.logger.info(f"No recipes found for user ID: {user_id}")
@@ -45,7 +47,8 @@ class RecipeListResource(Resource):
             return make_response(jsonify(err.messages), 422)  # type: ignore
 
         try:
-            self.recipe_manager.add_recipe(user_id, 
+            self.recipe_manager.add_recipe(
+                user_id,
                 meal_name=recipe_data["meal_name"],
                 meal_type=recipe_data["meal_type"],
                 ingredients=recipe_data["ingredients"],
@@ -64,7 +67,8 @@ class RecipeListResource(Resource):
 
 class RecipeResource(Resource):
     def __init__(self) -> None:
-        self.recipe_manager: RecipeManager = RecipeManager(current_app.config['db'])
+        db: SQLAlchemy = current_app.config['db']  # type: ignore
+        self.recipe_manager: RecipeManager = RecipeManager(db)  # type: ignore
         self.schema: RecipeSchema = RecipeSchema()
 
     @jwt_required()
@@ -102,7 +106,7 @@ class RecipeResource(Resource):
 
         schema = RecipeUpdateSchema()
         try:
-            validated_data: dict[str, Any] = schema.load(json_data)  # type: ignore 
+            validated_data: dict[str, Any] = schema.load(json_data)  # type: ignore
             self.recipe_manager.update_recipe(
                 recipe_id,
                 user_id,
@@ -113,9 +117,9 @@ class RecipeResource(Resource):
             )
 
             updated_recipe: RecipeDict | None = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
-            
+
             current_app.logger.info(f"Recipe with ID {recipe_id} updated successfully.")
-    
+
             return make_response(jsonify(updated_recipe), 200)
         except ValidationError as err:
             return make_response(jsonify({"errors": err.messages}), 400)  # type: ignore

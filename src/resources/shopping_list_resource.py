@@ -11,9 +11,11 @@ from flask_sqlalchemy import SQLAlchemy
 class ShoppingListResource(Resource):
     def __init__(self) -> None:
         db: SQLAlchemy = current_app.config["db"]  # type: ignore
-        self.recipe_manager = RecipeManager(db)
-        self.user_plan_manager = SqliteUserPlanManager(db)  # type: ignore
-        self.shopping_list_service = ShoppingListService(self.user_plan_manager, self.recipe_manager)
+        self.recipe_manager: RecipeManager = RecipeManager(db)  # type: ignore
+        self.user_plan_manager: SqliteUserPlanManager = SqliteUserPlanManager(db)  # type: ignore
+        self.shopping_list_service: ShoppingListService = ShoppingListService(
+            self.user_plan_manager, self.recipe_manager
+        )
 
     @jwt_required()
     def get(self) -> Response:
