@@ -15,7 +15,7 @@ class RecipeDict(TypedDict):
 class AbstractRecipeManager(ABC):
 
     @abstractmethod
-    def get_recipes(self, user_id: int) -> list[RecipeDict] | None:
+    def get_recipes(self, user_id: int) -> list[RecipeDict]:
         raise NotImplementedError('Retrieve a list of recipes for the specified user ID.')
 
     @abstractmethod
