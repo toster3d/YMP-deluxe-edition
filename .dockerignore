@@ -1,11 +1,21 @@
-__pycache__
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.sqlite3
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+tests/
 *.log
-.env
-.git
+.DS_Store
+*.swp
+*.swo
+.git/
 .gitignore
-# *.db
-!src/instance/recipes.db
+README.md
+LICENSE
+*.egg-info/
+#*.lock

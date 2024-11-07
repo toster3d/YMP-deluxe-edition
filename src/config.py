@@ -7,6 +7,7 @@ from extensions import db
 dotenv_path: str = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 basedir = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback_secret_key')
     DEBUG = os.environ.get('DEBUG', None) is not None
@@ -15,10 +16,8 @@ class Config:
     SESSION_TYPE = os.environ.get('SESSION_TYPE', 'filesystem')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback_jwt_secret')
     JWT_BLACKLIST: set[str] = set()
-    # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'sqlite:///src/instance/recipes.db')
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(basedir, "instance", "recipes.db")}'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or f'sqlite:////{os.path.join("/app", "src", "instance", "recipes.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
 def create_app(config_class: type[Config] = Config) -> Flask:
     app: Flask = Flask(__name__)
     app.config.from_object(config_class)

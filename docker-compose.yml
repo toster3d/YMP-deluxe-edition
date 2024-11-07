@@ -4,8 +4,15 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_APP=src.app
+      - FLASK_APP=app:app
       - FLASK_DEBUG=1
-      - PYTHONPATH=/app/src:/app
+      - PYTHONPATH=/app/src
+      - DATABASE_URI=sqlite:////app/src/instance/recipes.db
     volumes:
-      - ./src/instance:/app/src/instance
+      - .:/app
+      - db-data:/app/src/instance
+    env_file:
+      - .env
+
+volumes:
+  db-data:

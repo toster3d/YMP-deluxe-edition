@@ -1,7 +1,7 @@
 from typing import Any
 from flask import request, jsonify, make_response, current_app, Response
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, date
 from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
@@ -48,7 +48,7 @@ class ChooseMealResource(Resource):
         recipes: list[dict[str, Any]] | None = self.user_plan_manager.get_user_recipes(user_id)
         return make_response(jsonify({'recipes': recipes}), 200)
 
-    @jwt_required()
+    @jwt_required() # type: ignore
     def post(self) -> Response:
         user_id: int = get_jwt_identity()
         data: dict[str, Any] | None = request.get_json()
