@@ -1,15 +1,17 @@
 from datetime import date, datetime
 from typing import Generator
-from helpers.ingredient_parser import parse_ingredients
 from helpers.date_range_generator import generate_date_list
 from services.user_plan_manager import AbstractUserPlanManager
 from services.recipe_manager import AbstractRecipeManager
 import logging
 
 class ShoppingListService:
+    user_plan_manager: AbstractUserPlanManager
+    recipe_manager: AbstractRecipeManager
+
     def __init__(self, user_plan_manager: AbstractUserPlanManager, recipe_manager: AbstractRecipeManager) -> None:
-        self.user_plan_manager: AbstractUserPlanManager = user_plan_manager
-        self.recipe_manager: AbstractRecipeManager = recipe_manager
+        self.user_plan_manager = user_plan_manager
+        self.recipe_manager = recipe_manager
 
     def get_ingredients_for_date_range(self, user_id: int, date_range: tuple[datetime, datetime]) -> set[str]:
         start_date, end_date = date_range
@@ -18,7 +20,7 @@ class ShoppingListService:
 
         logging.info(f"Fetching ingredients for user {user_id} from {start_date} to {end_date}")
         for current_date in date_list:
-            user_plan: dict[str, int | date | str] = self.user_plan_manager.get_plans(user_id=user_id, date=current_date.date())
+            user_plan = self.user_plan_manager.get_plans(user_id=user_id, date=current_date.date())
             logging.info(f"User plan for {current_date}: {user_plan}")
 
             if not user_plan:
@@ -57,7 +59,5 @@ class ShoppingListService:
             if (recipe := self.recipe_manager.get_recipe_by_name(user_id, meal_name)):
                 logging.info(f"Recipe for {meal_name}: {recipe}")
                 if 'ingredients' in recipe:
-                    if (parsed_ingredients := parse_ingredients(recipe['ingredients'])):
-                        logging.info(f"Parsed ingredients for {meal_name}: {parsed_ingredients}")
-                        ingredients.update(parsed_ingredients)
+                    ingredients.update(recipe['ingredients'])
         return ingredients

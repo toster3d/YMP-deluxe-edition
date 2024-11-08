@@ -340,6 +340,8 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "sqlparse" },
     { name = "termcolor" },
+    { name = "types-cryptography" },
+    { name = "types-jwt" },
     { name = "typing" },
     { name = "typing-extensions" },
     { name = "urllib3" },
@@ -379,6 +381,8 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.35" },
     { name = "sqlparse", specifier = ">=0.5.1" },
     { name = "termcolor", specifier = ">=2.4.0" },
+    { name = "types-cryptography", specifier = "==3.3.23.2" },
+    { name = "types-jwt", specifier = "==0.1.3" },
     { name = "typing", specifier = ">=3.10.0.0" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
     { name = "urllib3" },
@@ -538,6 +542,26 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/72/88311445fd44c455c7d553e61f95412cf89054308a1aa2434ab835075fc5/termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f", size = 13057 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/be/df630c387a0a054815d60be6a97eb4e8f17385d5d6fe660e1c02750062b4/termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8", size = 7755 },
+]
+
+[[package]]
+name = "types-cryptography"
+version = "3.3.23.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/18/05/a57fe8bbed10fe4b739fac6e16c4e80c5199ce2f74ae67fa7d7f6e3750da/types-cryptography-3.3.23.2.tar.gz", hash = "sha256:09cc53f273dd4d8c29fa7ad11fefd9b734126d467960162397bc5e3e604dea75", size = 15461 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/36/92dfe7e5056694e78caefd05b383140c74c7fcbfc63d26ee514c77f2d8a2/types_cryptography-3.3.23.2-py3-none-any.whl", hash = "sha256:b965d548f148f8e87f353ccf2b7bd92719fdf6c845ff7cedf2abb393a0643e4f", size = 30223 },
+]
+
+[[package]]
+name = "types-jwt"
+version = "0.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "types-cryptography" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a1/cf/623cc072ddd67f2ffe897201516f7c7899f4e660d1fcb481b347ccadcca1/types_jwt-0.1.3-py2.py3-none-any.whl", hash = "sha256:36a1d5f99b349428f9ca5695e5caf3378398ae31d7aaed1c668c81451ba79b08", size = 4672 },
 ]
 
 [[package]]

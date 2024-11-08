@@ -1,11 +1,27 @@
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token  # type: ignore
+from flask_jwt_extended import create_access_token #type: ignore
 from flask import current_app
 from models.recipes import User
 from flask_sqlalchemy import SQLAlchemy
 
 
 class UserAuth:
+    def __init__(self, db: SQLAlchemy) -> None:
+        self.login_service = LoginService(db)
+        self.registration_service = RegistrationService(db)
+        self.password_validator = PasswordValidator()
+
+    def login(self, username: str, password: str) -> str:
+        return self.login_service.login(username, password)
+
+    def register(self, username: str, email: str, password: str, confirmation: str) -> str:
+        return self.registration_service.register(username, email, password, confirmation)
+
+    def validate_password(self, password: str) -> bool:
+        return self.password_validator.validate(password)
+
+
+class LoginService:
     def __init__(self, db: SQLAlchemy) -> None:
         self.db: SQLAlchemy = db
 
@@ -23,11 +39,15 @@ class UserAuth:
             current_app.logger.warning('Invalid username or password.')
             raise InvalidCredentialsError()
 
-        user_id: int = user.id
+        user_id = user.id
         current_app.logger.info(f"User ID for {username}: {user_id}")
 
         access_token: str = create_access_token(identity=user_id)
         return access_token
+
+class RegistrationService:
+    def __init__(self, db: SQLAlchemy) -> None:
+        self.db: SQLAlchemy = db
 
     def register(self, username: str, email: str, password: str, confirmation: str) -> str:
         if password != confirmation:
@@ -44,8 +64,9 @@ class UserAuth:
             self.db.session.rollback()
             current_app.logger.error(f"Error during registration: {error}")
             raise RegistrationError("Registration failed due to an unexpected error.")
-
-    def validate_password(self, password: str) -> bool:
+        
+class PasswordValidator:
+    def validate(self, password: str) -> bool:
         symbols: set[str] = {'!', '#', '?', '%', '$', '&'}
         if not (8 <= len(password) <= 20):
             return False
@@ -69,14 +90,7 @@ class UserAuth:
                 return True
 
         return has_digit and has_upper and has_lower and has_symbol
-
-    def get_user_id(self, username: str) -> int:
-        user: User | None = self.db.session.query(User).filter_by(user_name=username).first()
-        if user is None:
-            raise ValueError(f"User with username {username} not found")
-        return user.id
-
-
+        
 class AuthenticationError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)

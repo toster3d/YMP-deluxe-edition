@@ -67,8 +67,8 @@ class RegisterSchema(Schema):
 class RecipeSchema(Schema):
     meal_name = fields.Str(required=True)
     meal_type = fields.Str(required=True)
-    ingredients = fields.Str(required=False)
-    instructions = fields.Str(required=False)
+    ingredients = fields.List(fields.Str(), required=True)
+    instructions = fields.List(fields.Str(), required=True)
 
 
 class PlanSchema(Schema):
@@ -80,5 +80,5 @@ class PlanSchema(Schema):
 class RecipeUpdateSchema(Schema):
     meal_name = fields.Str(required=False)
     meal_type = fields.Str(required=False)
-    ingredients = fields.Str(required=False)
-    instructions = fields.Str(required=False)
+    ingredients = fields.List(fields.Str(), required=False)
+    instructions = fields.List(fields.Str(), required=False)

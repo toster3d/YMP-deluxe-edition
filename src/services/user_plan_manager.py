@@ -38,7 +38,7 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
         ).first()
 
         if plan:
-            result: dict[str, int | date_type | str] = {
+            result = {
                 'user_id': plan.user_id,
                 'date': plan.date,
                 'breakfast': plan.breakfast,

@@ -21,10 +21,10 @@ def create_flask_app() -> Flask:
 
     return app
 
-app: Flask = create_flask_app()
-jwt: JWTManager = JWTManager(app)
+app = create_flask_app()
+jwt = JWTManager(app)
 
-@jwt.token_in_blocklist_loader #type: ignore
+@jwt.token_in_blocklist_loader # type: ignore
 def check_if_token_in_blocklist(
     jwt_header: Any,
     jwt_payload: Any
