@@ -1,9 +1,9 @@
-from ctypes import cast
-from typing import Any
+import json
+from typing import Any, cast
 from flask import jsonify, request, make_response, current_app
 from flask.wrappers import Response
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt #type: ignore
+from flask_jwt_extended import jwt_required, get_jwt # type: ignore
 from marshmallow import ValidationError
 from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredentialsError, RegistrationError
 from .schemas import LoginSchema, RegisterSchema
@@ -19,9 +19,9 @@ class AuthResource(Resource):
 
         schema: LoginSchema = LoginSchema()
         try:
-            validated_data: cast(dict[str, Any]) = schema.load(data)
+            validated_data = cast(dict[str, Any], schema.load(data))
         except ValidationError as err:
-            current_app.logger.warning(f"Validation error: {err.messages}")
+            current_app.logger.warning(f"Validation error: {json.dumps(err.messages)}") # type: ignore
             return make_response(jsonify({"message": "Invalid input data."}), 400)
 
         username = validated_data['username']
@@ -50,15 +50,15 @@ class RegisterResource(Resource):
 
         schema: RegisterSchema = RegisterSchema()
         try:
-            validated_data: cast(dict[str, Any]) = schema.load(data)
+            validated_data = cast(dict[str, Any], schema.load(data))
         except ValidationError as err:
-            current_app.logger.warning(f"Validation error: {err.messages}")
+            current_app.logger.warning(f"Validation error: {err.messages}")  # type: ignore
             return make_response(jsonify({"message": "Invalid input data."}), 400)
 
-        username: cast(str, Any) = validated_data['username']
-        email: cast(str, Any) = validated_data['email']
-        password: cast(str, Any) = validated_data['password']
-        confirmation: cast(str, Any) = validated_data['confirmation']
+        username = validated_data['username']
+        email = validated_data['email']
+        password = validated_data['password']
+        confirmation = validated_data['confirmation']
 
         user_auth: UserAuth = UserAuth(db_extension)
         try:
@@ -70,11 +70,11 @@ class RegisterResource(Resource):
 
 
 class LogoutResource(Resource):
-    @jwt_required()
+    @jwt_required() #type: ignore
     def post(self) -> Response:
         try:
-            jti: cast(str, Any) = get_jwt()['jti']
-            current_app.config['JWT_BLACKLIST'].add(jti)
+            jti = get_jwt()['jti'] # type: ignore
+            current_app.config['JWT_BLACKLIST'].add(jti)  # type: ignore
             return make_response(jsonify({"message": "Logout successful!"}), 200)
         except Exception as e:
             current_app.logger.error(f"Error during logout: {str(e)}")

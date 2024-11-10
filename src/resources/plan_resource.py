@@ -1,7 +1,7 @@
 from typing import Any, cast
 from flask import request, jsonify, make_response, current_app, Response
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
 from datetime import datetime, date
 from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
@@ -13,7 +13,7 @@ class ScheduleResource(Resource):
         db = cast(SQLAlchemy, current_app.config['db'])
         self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required()
+    @jwt_required() # type: ignore
     def get(self) -> Response:
         user_id = get_jwt_identity()
         date_str = request.args.get('date', datetime.now().strftime("%A %d %B %Y"))
@@ -44,13 +44,13 @@ class ChooseMealResource(Resource):
         db = cast(SQLAlchemy, current_app.config['db'])
         self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required()
+    @jwt_required() #type: ignore
     def get(self) -> Response:
         user_id = get_jwt_identity()
         recipes = self.user_plan_manager.get_user_recipes(user_id)
         return make_response(jsonify({'recipes': recipes}), 200)
 
-    @jwt_required()
+    @jwt_required() # type: ignore
     def post(self) -> Response:
         user_id = get_jwt_identity()
         data = request.get_json()

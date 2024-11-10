@@ -22,7 +22,7 @@ class ShoppingListResource(Resource):
             self.user_plan_manager, self.recipe_manager
         )
 
-    @jwt_required() #type: ignore       
+    @jwt_required() # type: ignore       
     def get(self) -> Response:
         user_id = get_jwt_identity()
         current_app.logger.info(f"Fetching shopping list for user_id: {user_id}")

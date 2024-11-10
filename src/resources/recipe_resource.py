@@ -18,7 +18,7 @@ class RecipeListResource(Resource):
         self.recipe_manager = RecipeManager(db)
         self.schema = RecipeSchema()
 
-    @jwt_required()
+    @jwt_required() type: ignore
     def get(self) -> Response:
         user_id = get_jwt_identity()
         current_app.logger.info(f"Attempting to get recipes for user ID: {user_id}")
@@ -42,11 +42,11 @@ class RecipeListResource(Resource):
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
         try:
-            recipe_data: dict[str, Any] = self.schema.load(json_data)
+            recipe_data = cast(dict[str, Any], self.schema.load(json_data))
             current_app.logger.info(f"Validated data: {recipe_data}")
         except ValidationError as err:
-            current_app.logger.error(f"Validation error: {err.messages}")
-            return make_response(jsonify(err.messages), 422)
+            current_app.logger.error(f"Validation error: {err.messages}")  # type: ignore
+            return make_response(jsonify(err.messages), 422) # type: ignore
 
         try:
             self.recipe_manager.add_recipe(
@@ -112,7 +112,7 @@ class RecipeResource(Resource):
 
         schema = RecipeUpdateSchema()
         try:
-            validated_data: cast(dict[str, Any]) = schema.load(json_data)
+            validated_data = cast(dict[str, Any], schema.load(json_data))
             self.recipe_manager.update_recipe(
                 recipe_id,
                 user_id,
@@ -128,7 +128,7 @@ class RecipeResource(Resource):
 
             return make_response(jsonify(updated_recipe), 200)
         except ValidationError as err:
-            return make_response(jsonify({"errors": err.messages}), 400)
+            return make_response(jsonify({"errors": err.messages}), 400) # type: ignore
         except Exception as e:
             current_app.logger.error(f"Error updating recipe: {e}")
             return make_response(jsonify({"message": "Failed to update recipe."}), 500)
