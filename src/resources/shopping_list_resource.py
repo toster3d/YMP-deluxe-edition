@@ -1,7 +1,7 @@
 from typing import cast
 from flask import jsonify, request, current_app, Response, make_response
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt_identity #type: ignore
+from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
 from datetime import datetime
 from services.shopping_list_service import ShoppingListService
 from services.recipe_manager import RecipeManager
@@ -9,7 +9,7 @@ from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
 
 
-class ShoppingListResource(Resource):
+class ShoppingListResource(Resource): # type: ignore
     recipe_manager: RecipeManager
     user_plan_manager: SqliteUserPlanManager
     shopping_list_service: ShoppingListService

@@ -1,5 +1,5 @@
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token #type: ignore
+from flask_jwt_extended import create_access_token # type: ignore
 from flask import current_app
 from models.recipes import User
 from flask_sqlalchemy import SQLAlchemy

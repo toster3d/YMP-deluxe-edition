@@ -7,7 +7,7 @@ from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
 
 
-class ScheduleResource(Resource):
+class ScheduleResource(Resource): # type: ignore
     user_plan_manager: SqliteUserPlanManager
     def __init__(self) -> None:
         db = cast(SQLAlchemy, current_app.config['db'])
@@ -38,7 +38,7 @@ class ScheduleResource(Resource):
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
 
-class ChooseMealResource(Resource):
+class ChooseMealResource(Resource): # type: ignore
     user_plan_manager: SqliteUserPlanManager
     def __init__(self) -> None:
         db = cast(SQLAlchemy, current_app.config['db'])

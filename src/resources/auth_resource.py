@@ -1,9 +1,9 @@
 import json
 from typing import Any, cast
+from flask_restful import Resource
 from flask import jsonify, request, make_response, current_app
 from flask.wrappers import Response
-from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt # type: ignore
+from flask_jwt_extended import jwt_required, get_jwt # type: ignore 
 from marshmallow import ValidationError
 from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredentialsError, RegistrationError
 from .schemas import LoginSchema, RegisterSchema
@@ -69,8 +69,8 @@ class RegisterResource(Resource):
             return make_response(jsonify({"error": "Registration failed."}), 500)
 
 
-class LogoutResource(Resource):
-    @jwt_required() #type: ignore
+    class LogoutResource(Resource): # type: ignore
+    @jwt_required() # type: ignore
     def post(self) -> Response:
         try:
             jti = get_jwt()['jti'] # type: ignore
