@@ -1,0 +1,18 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app:app
+      - FLASK_DEBUG=1
+      - PYTHONPATH=/app/src
+      - DATABASE_URI=sqlite:////app/src/instance/recipes.db
+    volumes:
+      - .:/app
+      - db-data:/app/src/instance
+    env_file:
+      - .env
+
+volumes:
+  db-data:

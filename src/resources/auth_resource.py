@@ -69,12 +69,12 @@ class RegisterResource(Resource):
             return make_response(jsonify({"error": "Registration failed."}), 500)
 
 
-    class LogoutResource(Resource): # type: ignore
-    @jwt_required() # type: ignore
+class LogoutResource(Resource): # type: ignore
+    @jwt_required()
     def post(self) -> Response:
         try:
             jti = get_jwt()['jti'] # type: ignore
-            current_app.config['JWT_BLACKLIST'].add(jti)  # type: ignore
+            current_app.config['JWT_BLACKLIST'].add(jti) # type: ignore
             return make_response(jsonify({"message": "Logout successful!"}), 200)
         except Exception as e:
             current_app.logger.error(f"Error during logout: {str(e)}")
