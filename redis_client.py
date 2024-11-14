@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, cast
 from datetime import timedelta
 import redis
 from flask import current_app
@@ -7,18 +7,17 @@ from redis.exceptions import ConnectionError, TimeoutError, ResponseError
 class RedisClient:
     _instance: Optional['RedisClient'] = None
 
-    @classmethod
-    def new(cls) -> 'RedisClient':
+    def __new__(cls) -> 'RedisClient':
         if cls._instance is None:
-            cls._instance = cls()
+            cls._instance = super(RedisClient, cls).__new__(cls)
             cls._instance.initialized = False
         return cls._instance
 
-    def init(self) -> None:
+    def __init__(self) -> None:
         if not getattr(self, 'initialized', False):
             self.redis: redis.Redis = redis.Redis(
-                host=current_app.config['REDIS_HOST'],
-                port=current_app.config['REDIS_PORT'],
+                host=cast(str, current_app.config['REDIS_HOST']),
+                port=cast(int, current_app.config['REDIS_PORT']),
                 decode_responses=True
             )
             self.initialized = True
@@ -37,4 +36,4 @@ class RedisClient:
             current_app.logger.error(f"Redis error: {e}")
             raise
 
-redis_client: RedisClient = RedisClient()
+#redis_client: RedisClient = RedisClient()

@@ -18,6 +18,8 @@ class Config:
     JWT_BLACKLIST: set[str] = set()
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or f'sqlite:////{os.path.join("/app", "src", "instance", "recipes.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
+    REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 
 def create_app(config_class: type[Config] = Config) -> Flask:
     app: Flask = Flask(__name__)
