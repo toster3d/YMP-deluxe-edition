@@ -3,20 +3,24 @@ from typing import Any, cast
 from flask_restful import Resource
 from flask import jsonify, request, make_response, current_app
 from flask.wrappers import Response
-from flask_jwt_extended import jwt_required, get_jwt # type: ignore 
+from flask_jwt_extended import jwt_required, get_jwt # type: ignore
 from marshmallow import ValidationError
 from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredentialsError, RegistrationError
 from .schemas import LoginSchema, RegisterSchema
 from extensions import db as db_extension
+from redis_client import RedisClient
 
 
 class AuthResource(Resource):
+    def __init__(self) -> None:
+        self.redis_client: RedisClient = RedisClient()
+
     def post(self) -> Response:
-        data = request.get_json()
+        data: dict[str, str] | None = request.get_json()
         if data is None:
             current_app.logger.warning("No input data provided for login.")
             return make_response(jsonify({"message": "No input data provided"}), 400)
-
+        
         schema: LoginSchema = LoginSchema()
         try:
             validated_data = cast(dict[str, Any], schema.load(data))
@@ -26,11 +30,14 @@ class AuthResource(Resource):
 
         username = validated_data['username']
         password = validated_data['password']
-
         user_auth: UserAuth = UserAuth(db_extension)
+        
         try:
             access_token: str = user_auth.login(username, password)
-            return make_response(jsonify({"message": "Login successful!", "access_token": access_token}), 200)
+            return make_response(jsonify({
+                "message": "Login successful!", 
+                "access_token": access_token
+            }), 200)
         except MissingCredentialsError as e:
             current_app.logger.warning(f"Missing credentials: {e}")
             return make_response(jsonify({"error": "Missing credentials."}), 400)
@@ -40,6 +47,7 @@ class AuthResource(Resource):
         except Exception as e:
             current_app.logger.error(f"Unexpected error during login: {e}")
             return make_response(jsonify({"error": "An unexpected error occurred."}), 500)
+
 
 
 class RegisterResource(Resource):
@@ -69,13 +77,20 @@ class RegisterResource(Resource):
             return make_response(jsonify({"error": "Registration failed."}), 500)
 
 
-    class LogoutResource(Resource):
-        @jwt_required()
-        def post(self) -> Response:
-            try:
-                jti = get_jwt()['jti'] # type: ignore
-                current_app.config['JWT_BLACKLIST'].add(jti) # type: ignore
-                return make_response(jsonify({"message": "Logout successful!"}), 200)
-            except Exception as e:
-                current_app.logger.error(f"Error during logout: {str(e)}")
-                return make_response(jsonify({"message": "An error occurred during logout."}), 500)
+class LogoutResource(Resource):
+    def __init__(self) -> None:
+        self.redis_client: RedisClient = RedisClient()
+
+    @jwt_required()
+    def post(self) -> Response:
+        try:
+            jwt_data: dict[str, Any] = get_jwt()
+            jti: str = jwt_data['jti']
+            self.redis_client.add_to_blacklist(
+                jti, 
+                expires_delta=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] # type: ignore
+            )
+            return make_response(jsonify({"message": "Logout successful!"}), 200)
+        except Exception as e:
+            current_app.logger.error(f"Error during logout: {str(e)}")
+            return make_response(jsonify({"message": "An error occurred during logout."}), 500)
