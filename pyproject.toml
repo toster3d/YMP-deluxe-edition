@@ -1,13 +1,70 @@
 [project]
 name = "moj-projekt"
 version = "0.1.0"
-description = "Add your description here"
+description = "A comprehensive meal planning and shopping list application"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "moj-projekt",
+    "flask>=3.0.3",
+    "cs50>=9.3.4",
     "requests>=2.32.3",
+    "flask-session>=0.3.2",
+    "flask-jwt-extended>=4.6.0",
+    "marshmallow>=3.22.0",
+    "flask-restful>=0.3.10",
+    "flask-wrappers>=1.0.2",
+    "typing>=3.10.0.0",
+    "python-dotenv>=1.0.1",
+    "SQLAlchemy>=2.0.35",
+    "greenlet>=3.1.1",
+    "sqlparse>=0.5.1",
+    "termcolor>=2.4.0",
+    "typing-extensions>=4.12.2",
+    "wheel>=0.44.0",
+    "flask-sqlalchemy>=3.1.1",
+    "aniso8601",
+    "cachelib",
+    "certifi",
+    "charset-normalizer",
+    "click",
+    "idna",
+    "itsdangerous",
+    "jinja2",
+    "markupsafe",
+    "msgspec",
+    "mypy",
+    "mypy-extensions",
+    "packaging",
+    "pyjwt",
+    "pytz",
+    "six",
+    "urllib3",
+    "werkzeug",
+    "types-cryptography==3.3.23.2",
+    "types-jwt==0.1.3",
+    "redis==5.2.0",
 ]
 
 [tool.uv.sources]
 moj-projekt = { workspace = true }
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "flask.*",
+    "flask_sqlalchemy.*",
+    "flask_restful.*"
+]
+ignore_missing_imports = true
