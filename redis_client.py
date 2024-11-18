@@ -16,9 +16,11 @@ class RedisClient:
     def __init__(self) -> None:
         if not getattr(self, 'initialized', False):
             self.redis: redis.Redis = redis.Redis(
-                host=cast(str, current_app.config['REDIS_HOST']),
-                port=cast(int, current_app.config['REDIS_PORT']),
-                decode_responses=True
+                connection_pool=redis.ConnectionPool(
+                    host=cast(str, current_app.config['REDIS_HOST']),
+                    port=cast(int, current_app.config['REDIS_PORT']),
+                    decode_responses=True
+                )
             )
             self.initialized = True
 
