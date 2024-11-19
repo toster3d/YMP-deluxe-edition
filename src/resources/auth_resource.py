@@ -8,13 +8,10 @@ from marshmallow import ValidationError
 from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredentialsError, RegistrationError
 from .schemas import LoginSchema, RegisterSchema
 from extensions import db as db_extension
-from redis_client import RedisClient
+from token_storage import RedisTokenStorage
 
 
 class AuthResource(Resource):
-    def __init__(self) -> None:
-        self.redis_client: RedisClient = RedisClient()
-
     def post(self) -> Response:
         data: dict[str, str] | None = request.get_json()
         if data is None:
@@ -78,15 +75,13 @@ class RegisterResource(Resource):
 
 
 class LogoutResource(Resource):
-    def __init__(self) -> None:
-        self.redis_client: RedisClient = RedisClient()
-
     @jwt_required()
     def post(self) -> Response:
         try:
             jwt_data: dict[str, Any] = get_jwt()
             jti: str = jwt_data['jti']
-            self.redis_client.add_to_blacklist(
+            token_storage = cast(RedisTokenStorage, current_app.config['token_storage'])
+            token_storage.store(
                 jti, 
                 expires_delta=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] # type: ignore
             )
