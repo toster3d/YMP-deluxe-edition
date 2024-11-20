@@ -156,3 +156,4 @@ env.bak/
 
 # uv specific
 .uv/
+dump.edb

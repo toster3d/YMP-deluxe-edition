@@ -39,10 +39,16 @@ class LoginService:
             current_app.logger.warning('Invalid username or password.')
             raise InvalidCredentialsError()
 
-        user_id = user.id
+        user_id = str(user.id)
         current_app.logger.info(f"User ID for {username}: {user_id}")
 
-        access_token: str = create_access_token(identity=user_id)
+        access_token: str = create_access_token(
+            identity=user_id,
+            additional_claims={
+                "username": username,
+                "type": "access"
+            }
+        )
         return access_token
 
 class RegistrationService:
