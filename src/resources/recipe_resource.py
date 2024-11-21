@@ -9,7 +9,7 @@ from services.recipe_manager import RecipeManager
 from .schemas import RecipeSchema, RecipeUpdateSchema
 
 
-class RecipeListResource(Resource): # type: ignore  
+class RecipeListResource(Resource):
     recipe_manager: RecipeManager
     schema: RecipeSchema
     
@@ -18,7 +18,7 @@ class RecipeListResource(Resource): # type: ignore
         self.recipe_manager = RecipeManager(db)
         self.schema = RecipeSchema()
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def get(self) -> Response:
         user_id = get_jwt_identity()
         current_app.logger.info(f"Attempting to get recipes for user ID: {user_id}")
@@ -31,7 +31,7 @@ class RecipeListResource(Resource): # type: ignore
 
         return make_response(jsonify(recipes), 200)
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def post(self) -> Response:
         user_id = get_jwt_identity()
         current_app.logger.info(f"Attempting to add recipe for user ID: {user_id}")
@@ -67,7 +67,7 @@ class RecipeListResource(Resource): # type: ignore
             return make_response(jsonify({"message": "Failed to add recipe"}), 500)
 
 
-class RecipeResource(Resource): # type: ignore
+class RecipeResource(Resource):
     recipe_manager: RecipeManager
     schema: RecipeSchema
 
@@ -76,7 +76,7 @@ class RecipeResource(Resource): # type: ignore
         self.recipe_manager = RecipeManager(db)
         self.schema = RecipeSchema()
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def get(self, recipe_id: int) -> Response:
         user_id = get_jwt_identity()
         recipe = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
@@ -87,7 +87,7 @@ class RecipeResource(Resource): # type: ignore
         current_app.logger.info(f"Recipe with id {recipe_id} not found for user_id {user_id}.")
         return make_response(jsonify({"message": "Recipe not found"}), 404)
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def delete(self, recipe_id: int) -> Response:
         user_id = get_jwt_identity()
         try:
@@ -102,7 +102,7 @@ class RecipeResource(Resource): # type: ignore
             current_app.logger.error(f"Error deleting recipe: {e}")
             return make_response(jsonify({"message": "Failed to delete recipe."}), 500)
 
-    @jwt_required() # type: ignore          
+    @jwt_required()        
     def patch(self, recipe_id: int) -> Response:
         user_id = get_jwt_identity()
         json_data: dict[str, Any] | None = request.get_json()

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator, ValidationInfo
-import re
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
+
 
 class LoginSchema(BaseModel):
     username: str = Field(
@@ -15,9 +15,11 @@ class LoginSchema(BaseModel):
     )
 
     @field_validator('password')
-    def validate_password(class_reference, value: str) -> str:
-        pattern: str = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$'
-        if not re.match(pattern, value):
+    def validate_password(cls, value: str) -> str:
+        if (not any(c.islower() for c in value) or
+            not any(c.isupper() for c in value) or
+            not any(c.isdigit() for c in value) or
+            not any(c in '@$!%*?&' for c in value)):
             raise ValueError(
                 'Password must contain at least one lowercase letter, '
                 'one uppercase letter, one digit, and one special character'
@@ -35,16 +37,17 @@ class RegisterSchema(LoginSchema):
     )
 
     @field_validator('confirmation')
-    def passwords_match(class_reference, value: str, info: ValidationInfo) -> str:
-        if 'password' in info.data and value != info.data['password']:
+    def passwords_match(cls, value: str, info: ValidationInfo) -> str:
+        password = info.data.get('password')
+        if password and value != password:
             raise ValueError('Passwords do not match. Please ensure both passwords are identical.')
         return value
 
 class RecipeSchema(BaseModel):
     meal_name: str = Field(..., description="Name of the meal")
     meal_type: str = Field(..., description="Type of the meal")
-    ingredients: list[str] = Field(None, description="List of ingredients required for the meal")
-    instructions: list[str] = Field(None, description="Step-by-step instructions to prepare the meal")
+    ingredients: list[str] = Field(default_factory=list, description="List of ingredients required for the meal")
+    instructions: list[str] = Field(default_factory=list, description="Step-by-step instructions to prepare the meal")
 
 class RecipeUpdateSchema(BaseModel):
     meal_name: str | None = None

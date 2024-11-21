@@ -9,7 +9,7 @@ from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
 
 
-class ShoppingListResource(Resource): # type: ignore
+class ShoppingListResource(Resource):
     recipe_manager: RecipeManager
     user_plan_manager: SqliteUserPlanManager
     shopping_list_service: ShoppingListService
@@ -22,7 +22,7 @@ class ShoppingListResource(Resource): # type: ignore
             self.user_plan_manager, self.recipe_manager
         )
 
-    @jwt_required() # type: ignore       
+    @jwt_required()     
     def get(self) -> Response:
         user_id = get_jwt_identity()
         current_app.logger.info(f"Fetching shopping list for user_id: {user_id}")
@@ -34,7 +34,7 @@ class ShoppingListResource(Resource): # type: ignore
 
         return make_response(jsonify({"ingredients": list(ingredients), "current_date": now.isoformat()}), 200)
 
-    @jwt_required() #type: ignore           
+    @jwt_required()        
     def post(self) -> Response:
         user_id = get_jwt_identity()
         date_range: str | None = request.form.get("date_range")

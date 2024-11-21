@@ -7,13 +7,13 @@ from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
 
 
-class ScheduleResource(Resource): # type: ignore
+class ScheduleResource(Resource): 
     user_plan_manager: SqliteUserPlanManager
     def __init__(self) -> None:
         db = cast(SQLAlchemy, current_app.config['db'])
         self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def get(self) -> Response:
         user_id = get_jwt_identity()
         date_str = request.args.get('date', datetime.now().strftime("%A %d %B %Y"))
@@ -38,19 +38,18 @@ class ScheduleResource(Resource): # type: ignore
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
 
-class ChooseMealResource(Resource): # type: ignore
+class ChooseMealResource(Resource):
     user_plan_manager: SqliteUserPlanManager
     def __init__(self) -> None:
         db = cast(SQLAlchemy, current_app.config['db'])
         self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required() #type: ignore
     def get(self) -> Response:
         user_id = get_jwt_identity()
         recipes = self.user_plan_manager.get_user_recipes(user_id)
         return make_response(jsonify({'recipes': recipes}), 200)
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def post(self) -> Response:
         user_id = get_jwt_identity()
         data = request.get_json()

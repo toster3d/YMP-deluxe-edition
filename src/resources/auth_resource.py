@@ -1,14 +1,22 @@
-import json
+from datetime import timedelta
 from typing import Any, cast
-from flask_restful import Resource
-from flask import jsonify, request, make_response, current_app
+
+from flask import current_app, jsonify, make_response, request
 from flask.wrappers import Response
-from flask_jwt_extended import jwt_required, get_jwt # type: ignore
-from marshmallow import ValidationError
-from services.user_auth import UserAuth, MissingCredentialsError, InvalidCredentialsError, RegistrationError
-from .schemas import LoginSchema, RegisterSchema
+from flask_jwt_extended import get_jwt, jwt_required  # type: ignore
+from flask_restful import Resource
+from pydantic import ValidationError
+
 from extensions import db as db_extension
+from services.user_auth import (
+    InvalidCredentialsError,
+    MissingCredentialsError,
+    RegistrationError,
+    UserAuth,
+)
 from token_storage import RedisTokenStorage
+
+from .pydantic_schemas import LoginSchema, RegisterSchema
 
 
 class AuthResource(Resource):
@@ -18,19 +26,15 @@ class AuthResource(Resource):
             current_app.logger.warning("No input data provided for login.")
             return make_response(jsonify({"message": "No input data provided"}), 400)
         
-        schema: LoginSchema = LoginSchema()
         try:
-            validated_data = cast(dict[str, Any], schema.load(data))
+            login_data = LoginSchema(**data)
         except ValidationError as err:
-            current_app.logger.warning(f"Validation error: {json.dumps(err.messages)}") # type: ignore
+            current_app.logger.warning(f"Validation error: {err.errors()}")
             return make_response(jsonify({"message": "Invalid input data."}), 400)
 
-        username = validated_data['username']
-        password = validated_data['password']
         user_auth: UserAuth = UserAuth(db_extension)
-        
         try:
-            access_token: str = user_auth.login(username, password)
+            access_token: str = user_auth.login(login_data.username, login_data.password)
             return make_response(jsonify({
                 "message": "Login successful!", 
                 "access_token": access_token
@@ -46,28 +50,26 @@ class AuthResource(Resource):
             return make_response(jsonify({"error": "An unexpected error occurred."}), 500)
 
 
-
 class RegisterResource(Resource):
     def post(self) -> Response:
         data: dict[str, str] | None = request.get_json()
         if not data:
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
-        schema: RegisterSchema = RegisterSchema()
         try:
-            validated_data = cast(dict[str, Any], schema.load(data))
+            register_data = RegisterSchema(**data)
         except ValidationError as err:
-            current_app.logger.warning(f"Validation error: {err.messages}")  # type: ignore
+            current_app.logger.warning(f"Validation error: {err.errors()}")
             return make_response(jsonify({"message": "Invalid input data."}), 400)
-
-        username = validated_data['username']
-        email = validated_data['email']
-        password = validated_data['password']
-        confirmation = validated_data['confirmation']
 
         user_auth: UserAuth = UserAuth(db_extension)
         try:
-            user_auth.register(username, email, password, confirmation)
+            user_auth.register(
+                register_data.username, 
+                register_data.email, 
+                register_data.password, 
+                register_data.confirmation
+            )
             return make_response(jsonify({"message": "Registration successful!"}), 201)
         except RegistrationError as e:
             current_app.logger.error(f"Registration error: {str(e)}")
@@ -83,7 +85,7 @@ class LogoutResource(Resource):
             token_storage = cast(RedisTokenStorage, current_app.config['token_storage'])
             token_storage.store(
                 jti, 
-                expires_delta=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] # type: ignore
+                expires_delta=cast(timedelta, current_app.config['JWT_ACCESS_TOKEN_EXPIRES']) 
             )
             return make_response(jsonify({"message": "Logout successful!"}), 200)
         except Exception as e:
