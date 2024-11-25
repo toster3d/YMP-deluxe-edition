@@ -58,8 +58,12 @@ class RecipeUpdateSchema(BaseModel):
 class PlanSchema(BaseModel):
     selected_date: str = Field(
         ...,
-        pattern=r'^[A-Za-z]+ \d{2} [A-Za-z]+ \d{4}$',
         description="Date must be in format: Day DD Month YYYY"
     )
-    user_plan: str = Field(..., description="User plan details")
-    meal_name: str = Field(..., description="Name of the meal")
+    recipe_id: int = Field(..., description="ID of the recipe to be used")
+    meal_type: str = Field(..., description="Types of the meal are breakfast, lunch, dinner or dessert")
+
+    @field_validator('selected_date')
+    def validate_date_format(cls, value: str) -> str:
+        # Możesz dodać walidację formatu daty, jeśli to konieczne
+        return value
