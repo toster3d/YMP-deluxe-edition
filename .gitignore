@@ -160,3 +160,6 @@ dump.edb
 
 # Ignore typings directory
 @typings/
+
+# Ignore Python type stub files
+*.pyi
