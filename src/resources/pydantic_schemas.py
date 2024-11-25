@@ -63,7 +63,5 @@ class PlanSchema(BaseModel):
     recipe_id: int = Field(..., description="ID of the recipe to be used")
     meal_type: str = Field(..., description="Types of the meal are breakfast, lunch, dinner or dessert")
 
-    @field_validator('selected_date')
-    def validate_date_format(cls, value: str) -> str:
-        # Możesz dodać walidację formatu daty, jeśli to konieczne
-        return value
+class DateRangeSchema(BaseModel):
+    date_range: str = Field(..., description="Date range in format: 'Day Month Year to Day Month Year'")
