@@ -1,9 +1,11 @@
-from datetime import date, datetime
-from typing import Generator
-from helpers.date_range_generator import generate_date_list
-from services.user_plan_manager import AbstractUserPlanManager
-from services.recipe_manager import AbstractRecipeManager
 import logging
+from datetime import date
+from typing import Generator
+
+from helpers.date_range_generator import generate_date_list
+from services.recipe_manager import AbstractRecipeManager
+from services.user_plan_manager import AbstractUserPlanManager
+
 
 class ShoppingListService:
     user_plan_manager: AbstractUserPlanManager
@@ -13,14 +15,14 @@ class ShoppingListService:
         self.user_plan_manager = user_plan_manager
         self.recipe_manager = recipe_manager
 
-    def get_ingredients_for_date_range(self, user_id: int, date_range: tuple[datetime, datetime]) -> set[str]:
+    def get_ingredients_for_date_range(self, user_id: int, date_range: tuple[date, date]) -> set[str]:
         start_date, end_date = date_range
         ingredients: set[str] = set()
         date_list = generate_date_list(start_date, end_date)
 
         logging.info(f"Fetching ingredients for user {user_id} from {start_date} to {end_date}")
         for current_date in date_list:
-            user_plan = self.user_plan_manager.get_plans(user_id=user_id, date=current_date.date())
+            user_plan = self.user_plan_manager.get_plans(user_id=user_id, date=current_date)
             logging.info(f"User plan for {current_date}: {user_plan}")
 
             if not user_plan:

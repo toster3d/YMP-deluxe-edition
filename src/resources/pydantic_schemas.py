@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
 
 
@@ -56,7 +58,7 @@ class RecipeUpdateSchema(BaseModel):
     instructions: list[str] | None = None
 
 class PlanSchema(BaseModel):
-    selected_date: str = Field(
+    selected_date: datetime = Field(
         ...,
         description="Date must be in format: Day DD Month YYYY"
     )
@@ -64,4 +66,5 @@ class PlanSchema(BaseModel):
     meal_type: str = Field(..., description="Types of the meal are breakfast, lunch, dinner or dessert")
 
 class DateRangeSchema(BaseModel):
-    date_range: str = Field(..., description="Date range in format: 'Day Month Year to Day Month Year'")
+    start_date: date = Field(..., description="Start date in format: Day Month Year")
+    end_date: date = Field(..., description="End date in format: Day Month Year")

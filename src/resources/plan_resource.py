@@ -67,11 +67,11 @@ class ChooseMealResource(Resource):
 
         try:
             plan_data = PlanSchema(**json_data)
-            selected_date_obj = datetime.strptime(plan_data.selected_date, "%A %d %B %Y")
+            selected_date_obj = datetime.strptime(plan_data.selected_date.strftime("%A %d %B %Y"), "%A %d %B %Y")
         except ValidationError as err:
             current_app.logger.warning(f"Validation error: {err.errors()}")
             return make_response(jsonify({"message": "Invalid input data.", "errors": err.errors()}), 400)
-        except ValueError:
+        except TypeError:
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
         try:
