@@ -1,19 +1,25 @@
+from datetime import date, datetime
 from typing import Any, cast
-from flask import request, jsonify, make_response, current_app, Response
+
+from flask import Response, current_app, jsonify, make_response, request
+from flask_jwt_extended import get_jwt_identity, jwt_required  # type: ignore
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt_identity # type: ignore
-from datetime import datetime, date
-from services.user_plan_manager import SqliteUserPlanManager
 from flask_sqlalchemy import SQLAlchemy
+from pydantic import ValidationError
+
+from services.user_plan_manager import SqliteUserPlanManager
+
+from .pydantic_schemas import PlanSchema
 
 
-class ScheduleResource(Resource): # type: ignore
+class ScheduleResource(Resource):
     user_plan_manager: SqliteUserPlanManager
+
     def __init__(self) -> None:
         db = cast(SQLAlchemy, current_app.config['db'])
         self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def get(self) -> Response:
         user_id = get_jwt_identity()
         date_str = request.args.get('date', datetime.now().strftime("%A %d %B %Y"))
@@ -38,41 +44,39 @@ class ScheduleResource(Resource): # type: ignore
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
 
-class ChooseMealResource(Resource): # type: ignore
+class ChooseMealResource(Resource):
     user_plan_manager: SqliteUserPlanManager
+
     def __init__(self) -> None:
         db = cast(SQLAlchemy, current_app.config['db'])
         self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required() #type: ignore
+    @jwt_required()
     def get(self) -> Response:
         user_id = get_jwt_identity()
         recipes = self.user_plan_manager.get_user_recipes(user_id)
         return make_response(jsonify({'recipes': recipes}), 200)
 
-    @jwt_required() # type: ignore
+    @jwt_required()
     def post(self) -> Response:
         user_id = get_jwt_identity()
-        data = request.get_json()
+        json_data: dict[str, Any] | None = request.get_json()
 
-        if not data:
+        if not json_data:
             return make_response(jsonify({"message": "No input data provided"}), 400)
 
-        selected_date = data.get('selected_date')
-        recipe_id = data.get('recipe_id')
-        meal_type = data.get('meal_type')
-
-        if selected_date is None or recipe_id is None or meal_type is None or recipe_id <= 0:
-            return make_response(jsonify({"message": "Missing required fields or invalid values"}), 400)
-
         try:
-            selected_date_obj = datetime.strptime(selected_date, "%A %d %B %Y")
-        except ValueError:
+            plan_data = PlanSchema(**json_data)
+            selected_date_obj = datetime.strptime(plan_data.selected_date.strftime("%A %d %B %Y"), "%A %d %B %Y")
+        except ValidationError as err:
+            current_app.logger.warning(f"Validation error: {err.errors()}")
+            return make_response(jsonify({"message": "Invalid input data.", "errors": err.errors()}), 400)
+        except TypeError:
             return make_response(jsonify({"message": "Invalid date format"}), 400)
 
         try:
             updated_plan = self.user_plan_manager.create_or_update_plan(
-                user_id, selected_date_obj, recipe_id, meal_type
+                user_id, selected_date_obj, plan_data.recipe_id, plan_data.meal_type
             )
             return make_response(jsonify({
                 "message": "Meal plan updated successfully!",
