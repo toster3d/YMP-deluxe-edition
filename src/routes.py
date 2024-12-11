@@ -1,35 +1,62 @@
-from flask import Flask
-from flask_restful import Api
+from fastapi import APIRouter, Depends
+from typing import Any
 
 from resources.auth_resource import AuthResource, LogoutResource, RegisterResource
 from resources.plan_resource import ChooseMealResource, ScheduleResource
 from resources.recipe_resource import RecipeListResource, RecipeResource
 from resources.shopping_list_resource import ShoppingListResource
 
+router = APIRouter()
 
-def register_routes(app: Flask, api: Api) -> None:
-    app.add_url_rule(
-        '/auth/login',
-        'auth.login',
-        AuthResource.as_view('login'),
-        methods=['GET', 'POST']
-    )
-    app.add_url_rule(
-        '/auth/register',
-        'auth.register',
-        RegisterResource.as_view('register'),
-        methods=['GET', 'POST']
-    )
-    app.add_url_rule(
-        '/auth/logout',
-        'auth.logout',
-        LogoutResource.as_view('logout'),
-        methods=['POST']
-    )
+# Trasy dla autoryzacji
+@router.post("/auth/login", response_model=dict)
+async def login(auth_resource: AuthResource = Depends()) -> Any:
+    return await auth_resource.post() 
 
-    api.add_resource(RecipeListResource, '/recipe')  #type: ignore  
-    api.add_resource(RecipeResource, '/recipe/<int:recipe_id>')  #type: ignore
-    api.add_resource(ScheduleResource, '/schedule')  #type: ignore
-    api.add_resource(ChooseMealResource, '/meal_plan')  #type: ignore
-    api.add_resource(ShoppingListResource, '/shopping_list')  #type: ignore
-    api.add_resource(RegisterResource, '/auth/register')  #type: ignore
+@router.post("/auth/register", response_model=dict)
+async def register(register_resource: RegisterResource = Depends()) -> Any:
+    return await register_resource.post()
+
+@router.post("/auth/logout", response_model=dict)
+    async def logout(logout_resource: LogoutResource = Depends()) -> Any:
+    return await logout_resource.post()
+
+# Trasy dla przepisów
+@router.get("/recipe", response_model=list)
+async def get_recipes(recipe_list_resource: RecipeListResource = Depends()) -> Any:
+    return await recipe_list_resource.get()
+
+@router.post("/recipe", response_model=dict)
+async def create_recipe(recipe_list_resource: RecipeListResource = Depends()) -> Any:
+    return await recipe_list_resource.post()
+
+@router.get("/recipe/{recipe_id}", response_model=dict)
+    async def get_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends()) -> Any:
+    return await recipe_resource.get(recipe_id)
+
+@router.patch("/recipe/{recipe_id}", response_model=dict)
+    async def update_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends()) -> Any:
+    return await recipe_resource.patch(recipe_id)
+
+@router.delete("/recipe/{recipe_id}", response_model=dict)
+async def delete_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends())-> Any:
+    return await recipe_resource.delete(recipe_id)
+
+# Trasy dla planu posiłków
+@router.get("/meal_plan", response_model=list)
+    async def choose_meal(choose_meal_resource: ChooseMealResource = Depends()) -> Any:
+    return await choose_meal_resource.get()
+
+@router.post("/meal_plan", response_model=dict)
+    async def create_meal_plan(choose_meal_resource: ChooseMealResource = Depends()) -> Any:
+    return await choose_meal_resource.post()
+
+# Trasy dla harmonogramu
+@router.get("/schedule", response_model=dict)
+async def get_schedule(schedule_resource: ScheduleResource = Depends()) -> Any:
+    return await schedule_resource.get()
+
+# Trasa dla listy zakupów
+@router.get("/shopping_list", response_model=dict)
+async def get_shopping_list(shopping_list_resource: ShoppingListResource = Depends()) -> Any:
+    return await shopping_list_resource.get()
