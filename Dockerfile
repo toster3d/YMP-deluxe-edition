@@ -22,11 +22,11 @@ COPY . .
 
 RUN chown -R appuser:appuser src/instance
 
-ENV FLASK_APP=src.app:app
+ENV FLASK_APP=src.app:fastapi_app
 ENV PYTHONPATH=/app
 
 USER appuser
 
 EXPOSE 5000
 
-CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0"]
+CMD ["uvicorn", "src.app:fastapi_app", "--host", "0.0.0.0", "--port", "5000", "--reload", "--proxy-headers", "--forwarded-allow-ips", "*"]

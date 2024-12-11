@@ -1,9 +1,10 @@
 from flask import Flask
 from flask_restful import Api
-from resources.auth_resource import AuthResource, RegisterResource, LogoutResource
-from resources.shopping_list_resource import ShoppingListResource
+
+from resources.auth_resource import AuthResource, LogoutResource, RegisterResource
+from resources.plan_resource import ChooseMealResource, ScheduleResource
 from resources.recipe_resource import RecipeListResource, RecipeResource
-from resources.plan_resource import ScheduleResource, ChooseMealResource
+from resources.shopping_list_resource import ShoppingListResource
 
 
 def register_routes(app: Flask, api: Api) -> None:
