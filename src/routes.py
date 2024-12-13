@@ -5,20 +5,21 @@ from resources.auth_resource import AuthResource, LogoutResource, RegisterResour
 from resources.plan_resource import ChooseMealResource, ScheduleResource
 from resources.recipe_resource import RecipeListResource, RecipeResource
 from resources.shopping_list_resource import ShoppingListResource
+from pydantic_schemas import LoginSchema, RegisterSchema, RecipeSchema, PlanSchema
 
 router = APIRouter()
 
 # Trasy dla autoryzacji
 @router.post("/auth/login", response_model=dict)
-async def login(auth_resource: AuthResource = Depends()) -> Any:
-    return await auth_resource.post() 
+async def login(login_data: LoginSchema, auth_resource: AuthResource = Depends()) -> Any:
+    return await auth_resource.post(login_data)
 
 @router.post("/auth/register", response_model=dict)
-async def register(register_resource: RegisterResource = Depends()) -> Any:
-    return await register_resource.post()
+async def register(register_data: RegisterSchema, register_resource: RegisterResource = Depends()) -> Any:
+    return await register_resource.post(register_data)
 
 @router.post("/auth/logout", response_model=dict)
-    async def logout(logout_resource: LogoutResource = Depends()) -> Any:
+async def logout(logout_resource: LogoutResource = Depends()) -> Any:
     return await logout_resource.post()
 
 # Trasy dla przepisów
@@ -27,29 +28,29 @@ async def get_recipes(recipe_list_resource: RecipeListResource = Depends()) -> A
     return await recipe_list_resource.get()
 
 @router.post("/recipe", response_model=dict)
-async def create_recipe(recipe_list_resource: RecipeListResource = Depends()) -> Any:
-    return await recipe_list_resource.post()
+async def create_recipe(recipe_data: RecipeSchema, recipe_list_resource: RecipeListResource = Depends()) -> Any:
+    return await recipe_list_resource.post(recipe_data)
 
 @router.get("/recipe/{recipe_id}", response_model=dict)
-    async def get_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends()) -> Any:
+async def get_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends()) -> Any:
     return await recipe_resource.get(recipe_id)
 
 @router.patch("/recipe/{recipe_id}", response_model=dict)
-    async def update_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends()) -> Any:
-    return await recipe_resource.patch(recipe_id)
+async def update_recipe(recipe_id: int, recipe_data: RecipeSchema, recipe_resource: RecipeResource = Depends()) -> Any:
+    return await recipe_resource.patch(recipe_id, recipe_data)
 
 @router.delete("/recipe/{recipe_id}", response_model=dict)
-async def delete_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends())-> Any:
+async def delete_recipe(recipe_id: int, recipe_resource: RecipeResource = Depends()) -> Any:
     return await recipe_resource.delete(recipe_id)
 
 # Trasy dla planu posiłków
 @router.get("/meal_plan", response_model=list)
-    async def choose_meal(choose_meal_resource: ChooseMealResource = Depends()) -> Any:
+async def choose_meal(choose_meal_resource: ChooseMealResource = Depends()) -> Any:
     return await choose_meal_resource.get()
 
 @router.post("/meal_plan", response_model=dict)
-    async def create_meal_plan(choose_meal_resource: ChooseMealResource = Depends()) -> Any:
-    return await choose_meal_resource.post()
+async def create_meal_plan(plan_data: PlanSchema, choose_meal_resource: ChooseMealResource = Depends()) -> Any:
+    return await choose_meal_resource.post(plan_data)
 
 # Trasy dla harmonogramu
 @router.get("/schedule", response_model=dict)

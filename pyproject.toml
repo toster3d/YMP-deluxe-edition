@@ -15,7 +15,7 @@ dependencies = [
     "flask-wrappers>=1.0.2",
     "typing>=3.10.0.0",
     "python-dotenv>=1.0.1",
-    "SQLAlchemy>=2.0.35",
+    "sqlalchemy>=2.0.35",
     "greenlet>=3.1.1",
     "sqlparse>=0.5.1",
     "termcolor>=2.4.0",
@@ -46,6 +46,8 @@ dependencies = [
     "pydantic[email]>=2.9.2",
     "fastapi>=0.115.6",
     "uvicorn>=0.32.1",
+    "aiosqlite>=0.20.0",
+    "asyncio>=3.4.3",
 ]
 
 [tool.uv.sources]

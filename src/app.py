@@ -8,16 +8,17 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from flask import Flask, request
 from flask_jwt_extended import JWTManager  # type: ignore
 from flask_restful import Api
-from markupsafe import escape
+from markupsafe import escape  # Dodaj ten import
 
 from config import create_app
 from extensions import db
-from routes import register_routes, router  # Importuj router z routes.py
+from routes import register_routes
 from token_storage import RedisTokenStorage
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def create_flask_app() -> Flask:
+    """Create and configure Flask application"""
     app: Flask = create_app()
     api: Api = Api(app)
     jwt = JWTManager(app)
@@ -30,7 +31,7 @@ def create_flask_app() -> Flask:
 
     # Dodaj trasę do aplikacji Flask
     @app.route("/")
-    def flask_main() -> str:
+    def flask_main():
         name = request.args.get("name", "World")
         return f"Hello, {escape(name)} from Flask!"
 
@@ -63,15 +64,13 @@ fastapi_app.mount("/v1", WSGIMiddleware(flask_app))  # Zmiana na /v1
 # FastAPI routes
 @fastapi_app.get("/v2")
 async def read_main() -> dict[str, str]:
+    """Root endpoint for FastAPI"""
     return {"message": "Hello World from FastAPI"}
-
-# Rejestracja routera
-fastapi_app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "src.app:fastapi_app",  # Poprawiono ścieżkę do aplikacji FastAPI
+        "app:fastapi_app",
         host="0.0.0.0",
         port=5000,
         reload=True,

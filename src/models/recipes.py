@@ -1,10 +1,12 @@
-from extensions import db
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey
 from datetime import date as date_type
 
-class Base(DeclarativeBase):
-    pass
+from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from extensions import Base
+
+# class Base(DeclarativeBase):
+#     pass
 
 class User(Base):
     __tablename__ = 'users'
@@ -27,8 +29,8 @@ class Recipe(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     meal_name: Mapped[str] = mapped_column(nullable=False)
     meal_type: Mapped[str] = mapped_column(nullable=False)
-    ingredients: Mapped[str] = mapped_column(db.Text)
-    instructions: Mapped[str] = mapped_column(db.Text)
+    ingredients: Mapped[str] = mapped_column(Text)
+    instructions: Mapped[str] = mapped_column(Text)
 
     # a many-to-one relationship with User
     user: Mapped[User] = relationship("User", back_populates="recipes")

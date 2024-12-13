@@ -1,49 +1,51 @@
-from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token # type: ignore
+from typing import Any, Coroutine
+
+from fastapi import HTTPException
 from flask import current_app
-from models.recipes import User
+from flask_jwt_extended import create_access_token
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from models.recipes import User
 
 
 class UserAuth:
-    def __init__(self, db: SQLAlchemy) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.login_service = LoginService(db)
         self.registration_service = RegistrationService(db)
         self.password_validator = PasswordValidator()
 
-    def login(self, username: str, password: str) -> str:
+    def login(self, username: str, password: str) -> Coroutine[Any, Any, str]:
         return self.login_service.login(username, password)
 
-    def register(self, username: str, email: str, password: str, confirmation: str) -> str:
-        return self.registration_service.register(username, email, password, confirmation)
+    async def register(self, username: str, email: str, password: str, confirmation: str) -> str:
+        return await self.registration_service.register(username, email, password, confirmation)
 
     def validate_password(self, password: str) -> bool:
         return self.password_validator.validate(password)
 
-
 class LoginService:
-    def __init__(self, db: SQLAlchemy) -> None:
-        self.db: SQLAlchemy = db
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
 
-    def login(self, username: str, password: str) -> str:
-        if not username or not password:
-            raise MissingCredentialsError()
+    async def login(self, username: str, password: str) -> str:
+        # Asynchroniczne zapytanie do bazy
+        result = await self.db.execute(
+            select(User).filter_by(user_name=username)
+        )
+        user = result.scalar_one_or_none()
 
-        user: User | None = self.db.session.query(User).filter_by(user_name=username).first()
-        current_app.logger.info(f"User found: {user}")
-
-        if user is None:
-            raise InvalidCredentialsError()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
 
         if not check_password_hash(user.hash, password):
-            current_app.logger.warning('Invalid username or password.')
-            raise InvalidCredentialsError()
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        user_id = str(user.id)
-        current_app.logger.info(f"User ID for {username}: {user_id}")
 
         access_token: str = create_access_token(
-            identity=user_id,
+            identity=str(user.id),
             additional_claims={
                 "username": username,
                 "type": "access"
@@ -52,25 +54,23 @@ class LoginService:
         return access_token
 
 class RegistrationService:
-    def __init__(self, db: SQLAlchemy) -> None:
-        self.db: SQLAlchemy = db
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
 
-    def register(self, username: str, email: str, password: str, confirmation: str) -> str:
+    async def register(self, username: str, email: str, password: str, confirmation: str) -> str:
         if password != confirmation:
             raise PasswordMismatchError()
 
         hashed_password: str = generate_password_hash(password)
         new_user: User = User(user_name=username, email=email, hash=hashed_password)
         try:
-            self.db.session.add(new_user)
-            self.db.session.commit()
-            current_app.logger.info(f"User {username} registered successfully.")
+            self.db.add(new_user)
+            await self.db.commit()
             return "Registration successful."
         except Exception as error:
-            self.db.session.rollback()
-            current_app.logger.error(f"Error during registration: {error}")
+            await self.db.rollback()
             raise RegistrationError("Registration failed due to an unexpected error.")
-        
+
 class PasswordValidator:
     def validate(self, password: str) -> bool:
         symbols: set[str] = {'!', '#', '?', '%', '$', '&'}
@@ -96,7 +96,7 @@ class PasswordValidator:
                 return True
 
         return has_digit and has_upper and has_lower and has_symbol
-        
+
 class AuthenticationError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
@@ -120,3 +120,31 @@ class RegistrationError(Exception):
 class PasswordMismatchError(RegistrationError):
     def __init__(self) -> None:
         super().__init__("Passwords do not match.")
+
+
+
+    # async def register(self, username: str, email: str, password: str) -> User:
+    #     # Sprawdzenie, czy użytkownik już istnieje
+    #     existing_user = await self.db.execute(
+    #         select(User).filter_by(user_name=username)
+    #     )
+    #     if existing_user.scalar_one_or_none():
+    #         raise HTTPException(status_code=400, detail="Username already exists")
+
+    #     # Hashowanie hasła
+    #     hashed_password = generate_password_hash(password)
+        
+    #     # Tworzenie nowego użytkownika
+    #     new_user = User(
+    #         user_name=username, 
+    #         email=email, 
+    #         hash=hashed_password
+    #     )
+        
+    #     # Dodanie i zatwierdzenie
+    #     self.db.add(new_user)
+    #     await self.db.commit()
+    #     await self.db.refresh(new_user)
+        
+    #     return new_user
+

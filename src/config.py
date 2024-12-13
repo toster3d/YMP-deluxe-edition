@@ -1,9 +1,10 @@
-import os
 import logging
+import os
+from datetime import timedelta
+
 from dotenv import load_dotenv
 from flask import Flask
-from extensions import db
-from datetime import timedelta
+
 
 dotenv_path: str = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
@@ -21,6 +22,12 @@ class Config:
     REDIS_PREFIX = 'token_blacklist:'
     REDIS_DB = int(os.environ.get('REDIS_DB', 0))
 
+class AsyncConfig:
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        'ASYNC_DATABASE_URI', 
+        'sqlite+aiosqlite:///./recipes.db'
+    )
+
 def create_app(config_class: type[Config] = Config) -> Flask:
     app: Flask = Flask(__name__)
     app.config.from_object(config_class)
@@ -29,5 +36,5 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     logging.getLogger('flask_app').setLevel(log_level)
     app.logger.setLevel(log_level)
     
-    db.init_app(app)
+
     return app
