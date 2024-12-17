@@ -2,35 +2,27 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
 
+from services.user_auth_manager import PasswordValidator
 
-class LoginSchema(BaseModel):
+
+class TokenResponse(BaseModel):
+    """Schema for token response."""
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field("bearer", description="Token type")
+
+class RegisterSchema(BaseModel):
+    email: EmailStr = Field(
+        description="Email is required for registration",
+    )
     username: str = Field(
         min_length=3,
         max_length=30,
-        pattern=r'^[a-zA-Z0-9_]+$',
-        description="Username can only contain letters, numbers, and underscores"
+        description="Username must be between 3 and 30 characters long"
     )
     password: str = Field(
         min_length=8,
         max_length=50,
-        description="Password must meet complexity requirements"
-    )
-
-    @field_validator('password')
-    def validate_password(cls, value: str) -> str:
-        if (not any(c.islower() for c in value) or
-            not any(c.isupper() for c in value) or
-            not any(c.isdigit() for c in value) or
-            not any(c in '@$!%*?&' for c in value)):
-            raise ValueError(
-                'Password must contain at least one lowercase letter, '
-                'one uppercase letter, one digit, and one special character'
-            )
-        return value
-
-class RegisterSchema(LoginSchema):
-    email: EmailStr = Field(
-        description="Email is required for registration",
+        description="Password must be at least 8 characters long and meet complexity requirements"
     )
     confirmation: str = Field(
         min_length=8,
@@ -43,6 +35,13 @@ class RegisterSchema(LoginSchema):
         password = info.data.get('password')
         if password and value != password:
             raise ValueError('Passwords do not match. Please ensure both passwords are identical.')
+        return value
+
+    @field_validator('password')
+    def validate_password(cls, value: str) -> str:
+        validator = PasswordValidator()
+        if not validator.validate(value):
+            raise ValueError('Password does not meet complexity requirements.')
         return value
 
 class RecipeSchema(BaseModel):

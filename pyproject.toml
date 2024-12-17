@@ -35,19 +35,20 @@ dependencies = [
     "mypy",
     "mypy-extensions",
     "packaging",
-    "pyjwt",
+    "pyjwt==2.10.1",
     "pytz",
     "six",
     "urllib3",
     "werkzeug",
     "types-cryptography==3.3.23.2",
     "types-jwt==0.1.3",
-    "redis==5.2.0",
+    "redis==5.2.1",
     "pydantic[email]>=2.9.2",
     "fastapi>=0.115.6",
     "uvicorn>=0.32.1",
     "aiosqlite>=0.20.0",
     "asyncio>=3.4.3",
+    "types-redis>=4.6.0.20241004",
 ]
 
 [tool.uv.sources]

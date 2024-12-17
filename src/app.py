@@ -1,79 +1,125 @@
 import os
 import sys
-from typing import Any, cast
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
 
-import redis
-from fastapi import FastAPI
-from fastapi.middleware.wsgi import WSGIMiddleware
-from flask import Flask, request
-from flask_jwt_extended import JWTManager  # type: ignore
-from flask_restful import Api
-from markupsafe import escape  # Dodaj ten import
+import uvicorn.config
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
+from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
-from config import create_app
-from extensions import db
-from routes import register_routes
-from token_storage import RedisTokenStorage
+from config import get_settings
+from extensions import Base, async_engine
+from routes import router
+from src.token_storage import RedisTokenStorage
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def create_flask_app() -> Flask:
-    """Create and configure Flask application"""
-    app: Flask = create_app()
-    api: Api = Api(app)
-    jwt = JWTManager(app)
+settings = get_settings()
 
-    @jwt.token_in_blocklist_loader  # type: ignore
-    def check_if_token_in_blocklist(jwt_header: Any, jwt_payload: Any) -> bool:  # type: ignore
-        jti: str = jwt_payload['jti']
-        token_storage = cast(RedisTokenStorage, app.config['token_storage'])
-        return token_storage.exists(jti)
+# OAuth2 scheme for token authentication
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="v2/api/auth/login",
+    scheme_name="JWT"
+)
 
-    # Dodaj trasę do aplikacji Flask
-    @app.route("/")
-    def flask_main():
-        name = request.args.get("name", "World")
-        return f"Hello, {escape(name)} from Flask!"
+async def initialize_database() -> None:
+    async with async_engine.begin() as conn:
+        def inspect_tables(sync_conn: Any) -> list[str]:
+            return sync_conn.get_bind().table_names()
+            
+        tables = await conn.run_sync(inspect_tables)
+        required_tables = {"users", "recipes", "user_plan"}
+        
+        if not required_tables.issubset(tables):
+            print("Creating missing tables...")
+            await conn.run_sync(Base.metadata.create_all)
+        else:
+            print("All required tables already exist")
 
-    register_routes(app, api)
 
-    with app.app_context():
-        db.create_all()
-        app.config['db'] = db
-
-        redis_pool = redis.ConnectionPool(
-            host=cast(str, app.config['REDIS_HOST']),
-            port=cast(int, app.config['REDIS_PORT']),
-            decode_responses=True
+async def get_redis() -> AsyncGenerator[Redis[str], None]:
+    """Get Redis client from the pool."""
+    redis_client = Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+        decode_responses=True,
+        socket_timeout=5,
+        retry_on_timeout=True,
+        health_check_interval=30
+    )
+    
+    try:
+        # Verify connection
+        if not await redis_client.ping():
+            raise RedisError("Redis ping failed")
+            
+        yield redis_client
+    except RedisError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Redis connection error: {str(e)}"
         )
-        redis_client = redis.Redis(connection_pool=redis_pool)
-        token_storage = RedisTokenStorage(redis_client)
-        app.config['token_storage'] = token_storage
+    finally:
+        await redis_client.close()
+
+async def get_token_storage(redis: Redis[str] = Depends(get_redis)) -> RedisTokenStorage:
+    """Get token storage instance."""
+    return RedisTokenStorage(redis)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manage startup and shutdown events."""
+    await initialize_database()
+    yield  # This will allow the application to run
+    # Here you can add any shutdown logic if needed
+
+def create_application() -> FastAPI:
+    """Create and configure FastAPI application."""
+    app = FastAPI(
+        title="YMP API",
+        description="Your Modern Project API",
+        version="2.0.0",
+        docs_url="/v2/docs",
+        redoc_url="/v2/redoc",
+        openapi_url="/v2/openapi.json",
+        lifespan=lifespan  # Set the lifespan context manager here
+    )
+
+    # Configure CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Include routers
+    app.include_router(
+        router,
+        prefix="/v2",
+        dependencies=[Depends(oauth2_scheme)],
+        tags=["v2"]
+    )
 
     return app
 
-# Create the Flask app
-flask_app = create_flask_app()
-
 # Create the FastAPI app
-fastapi_app = FastAPI()
-
-# Mount the Flask app under a specific path
-fastapi_app.mount("/v1", WSGIMiddleware(flask_app))  # Zmiana na /v1
-
-# FastAPI routes
-@fastapi_app.get("/v2")
-async def read_main() -> dict[str, str]:
-    """Root endpoint for FastAPI"""
-    return {"message": "Hello World from FastAPI"}
+app = create_application()
 
 if __name__ == "__main__":
     import uvicorn
+    
     uvicorn.run(
-        "app:fastapi_app",
-        host="0.0.0.0",
-        port=5000,
-        reload=True,
+        "app:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug,
         proxy_headers=True,
-        forwarded_allow_ips="*"
+        forwarded_allow_ips="*",
+        log_level="debug" if settings.debug else "info"
     )

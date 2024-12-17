@@ -1,0 +1,1 @@
+async def get(self, recipe_id: int, token: str = Depends(oauth2_scheme)) -> RecipeDict: 

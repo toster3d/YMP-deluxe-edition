@@ -1,40 +1,150 @@
-import logging
 import os
 from datetime import timedelta
 
-from dotenv import load_dotenv
-from flask import Flask
+from pydantic import Field, PositiveInt, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-dotenv_path: str = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)
-basedir = os.path.abspath(os.path.dirname(__file__))
-
-class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback_secret_key')
-    DEBUG = os.environ.get('DEBUG', None) is not None
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback_jwt_secret')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 3600)))
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or f'sqlite:////{os.path.join("/app", "src", "instance", "recipes.db")}'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
-    REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
-    REDIS_PREFIX = 'token_blacklist:'
-    REDIS_DB = int(os.environ.get('REDIS_DB', 0))
-
-class AsyncConfig:
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'ASYNC_DATABASE_URI', 
-        'sqlite+aiosqlite:///./recipes.db'
+class Settings(BaseSettings):
+    """
+    Application settings and configuration.
+    
+    This class manages all configuration settings for the application,
+    including secrets, database connections, and feature flags.
+    """
+    
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        env_file_encoding="utf-8", 
+        extra="ignore",
+        case_sensitive=False
+    )
+    
+    # Basic settings
+    secret_key: SecretStr = Field(
+        default="change_me_in_production",
+        validation_alias="SECRET_KEY",
+        description="Secret key for session signing"
+    )
+    debug: bool = Field(
+        default=False,
+        validation_alias="DEBUG",
+        description="Debug mode flag"
     )
 
-def create_app(config_class: type[Config] = Config) -> Flask:
-    app: Flask = Flask(__name__)
-    app.config.from_object(config_class)
-    
-    log_level: int = logging.DEBUG if app.config['DEBUG'] else logging.INFO
-    logging.getLogger('flask_app').setLevel(log_level)
-    app.logger.setLevel(log_level)
-    
+    # JWT Configuration
+    jwt_secret_key: SecretStr = Field(
+        default="change_me",
+        validation_alias="JWT_SECRET_KEY",
+        description="Secret key for JWT token signing"
+    )
+    jwt_algorithm: str = Field(
+        default="HS256",
+        validation_alias="JWT_ALGORITHM",
+        pattern="^(HS256|HS384|HS512|RS256|RS384|RS512)$",
+        description="Algorithm used for JWT signing"
+    )
+    jwt_access_token_expires: timedelta = Field(
+        default=timedelta(minutes=30),
+        validation_alias="JWT_ACCESS_TOKEN_EXPIRES",
+        description="JWT token expiration time"
+    )
 
-    return app
+    # Database settings
+    async_database_uri: str = Field(
+        default_factory=lambda: f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'instance', 'recipes.db')}",
+        validation_alias="ASYNC_DATABASE_URI",
+        description="Async SQLAlchemy database URI"
+    )
+    sqlalchemy_database_uri: str = Field(
+        default_factory=lambda: f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'recipes.db')}",
+        validation_alias="DATABASE_URI",
+        description="SQLAlchemy database URI"
+    )
+
+    # Redis settings
+    redis_host: str = Field(
+        default="redis",
+        validation_alias="REDIS_HOST",
+        description="Redis server hostname"
+    )
+    redis_port: PositiveInt = Field(
+        default=6379,
+        validation_alias="REDIS_PORT",
+        description="Redis server port"
+    )
+    redis_db: int = Field(
+        default=0,
+        validation_alias="REDIS_DB",
+        ge=0,
+        description="Redis database number"
+    )
+    redis_prefix: str = Field(
+        default="token_blacklist:",
+        validation_alias="REDIS_PREFIX",
+        pattern="^[a-zA-Z0-9_-]+:$",
+        description="Prefix for Redis keys"
+    )
+
+    # Server settings
+    host: str = Field(
+        default="0.0.0.0",
+        validation_alias="HOST",
+        description="Server host"
+    )
+    port: PositiveInt = Field(
+        default=5000,
+        validation_alias="PORT",
+        description="Server port"
+    )
+    cors_origins: list[str] = Field(
+        default=["*"],
+        validation_alias="CORS_ORIGINS",
+        description="Allowed CORS origins"
+    )
+
+    # Additional database settings
+    pool_size: PositiveInt = Field(
+        default=5,
+        validation_alias="DB_POOL_SIZE",
+        description="Database connection pool size"
+    )
+    max_overflow: PositiveInt = Field(
+        default=10,
+        validation_alias="DB_MAX_OVERFLOW",
+        description="Maximum number of connections that can be created beyond pool_size"
+    )
+
+    @field_validator("jwt_access_token_expires", mode="before")
+    @classmethod
+    def validate_jwt_expires(cls, v: timedelta) -> timedelta:
+        """Validate that JWT expiration is reasonable."""
+        if v.total_seconds() < 60:  # minimum 1 minute
+            raise ValueError("JWT expiration must be at least 1 minute")
+        if v.total_seconds() > 86400:  # maximum 24 hours
+            raise ValueError("JWT expiration must not exceed 24 hours")
+        return v
+
+    class Config:
+        """Additional configuration for Settings class."""
+        json_schema_extra = {
+            "example": {
+                "secret_key": "your-secret-key",
+                "debug": False,
+                "jwt_secret_key": "your-jwt-secret",
+                "jwt_algorithm": "HS256",
+                "redis_host": "localhost",
+                "redis_port": 6379
+            }
+        }
+
+
+def get_settings() -> Settings:
+    """
+    Get application settings.
+    
+    Returns:
+        Settings: Application configuration instance
+    """
+    return Settings()
