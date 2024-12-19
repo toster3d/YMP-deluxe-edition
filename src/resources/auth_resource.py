@@ -1,11 +1,13 @@
 from datetime import timedelta
+from typing import Annotated
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic_schemas import RegisterSchema, TokenResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from extensions import DbSession
-from jwt_utils import verify_jwt  # Importuj funkcję weryfikującą token
+from dependencies import get_token_storage
+from extensions import get_async_db
+from jwt_utils import verify_jwt
 from services.user_auth_manager import (
     InvalidCredentialsError,
     MissingCredentialsError,
@@ -15,11 +17,13 @@ from services.user_auth_manager import (
 )
 from token_storage import RedisTokenStorage
 
+from .pydantic_schemas import RegisterSchema, TokenResponse
+
 
 class AuthResource:
     """Resource handling user authentication."""
     
-    def __init__(self, db: DbSession):
+    def __init__(self, db: AsyncSession = Depends(get_async_db)):
         """Initialize auth resource with database session."""
         self.user_auth = UserAuth(db)
 
@@ -64,11 +68,10 @@ class AuthResource:
                 detail="An unexpected error occurred during login"
             ) from e
 
-
 class RegisterResource:
     """Resource handling user registration."""
     
-    def __init__(self, db: DbSession) -> None:
+    def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
         """Initialize register resource with database session."""
         self.user_auth = UserAuth(db)
 
@@ -104,11 +107,12 @@ class RegisterResource:
                 detail="An unexpected error occurred during registration"
             )
 
-
 class LogoutResource:
     """Resource handling user logout."""
     
-    def __init__(self, db: DbSession, token_storage: RedisTokenStorage) -> None:
+    def __init__(self, 
+                 token_storage: Annotated[RedisTokenStorage, Depends(get_token_storage)],
+                 db: Annotated[AsyncSession, Depends(get_async_db)]) -> None:
         """Initialize logout resource with database session and token storage."""
         self.db = db
         self.token_storage = token_storage
@@ -122,25 +126,17 @@ class LogoutResource:
             
         Returns:
             dict: Logout confirmation message
-            
-        Raises:
-            HTTPException: If logout fails
         """
         try:
-            # Weryfikacja tokena
             payload = verify_jwt(token)
-            jti = payload.get("jti")  # Zakładając, że jti jest częścią payloadu
-
+            jti = payload.get("jti")
             if not jti:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid token data: missing jti"
                 )
-
-            # Add token to blacklist
             expires_delta = timedelta(minutes=30)
             await self.token_storage.store(jti, expires_delta=expires_delta)
-            
             return {"message": "Logout successful!"}
         except Exception as e:
             raise HTTPException(

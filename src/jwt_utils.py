@@ -5,6 +5,10 @@ import jwt
 from fastapi import HTTPException, status
 
 from config import get_settings
+from fastapi.security import OAuth2PasswordBearer
+
+# Konfiguracja OAuth2
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 settings = get_settings()
 

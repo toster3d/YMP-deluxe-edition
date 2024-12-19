@@ -1,10 +1,9 @@
-
-from jwt_utils import create_access_token
 from sqlalchemy import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import get_settings
 from extensions import DbSession
+from jwt_utils import create_access_token
 from models.recipes import User
 
 settings = get_settings()
@@ -46,7 +45,6 @@ class PasswordMismatchError(RegistrationError):
 
 class UserAuth:
     """Main authentication service."""
-    
     def __init__(self, db: DbSession) -> None:
         """Initialize auth service with database session."""
         self.login_service = LoginService(db)
@@ -109,7 +107,6 @@ class LoginService:
         """Initialize login service with database session."""
         self.db = db
 
-
     async def login(self, username: str, password: str) -> str:
         """
         Authenticate user and create access token.
@@ -131,7 +128,7 @@ class LoginService:
         result = await self.db.execute(
             select(User).filter_by(user_name=username)
         )
-        user = result.scalar_one_or_none()
+        user: User | None = result.scalar_one_or_none()
 
         if not user:
             raise InvalidCredentialsError()

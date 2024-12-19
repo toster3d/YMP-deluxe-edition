@@ -56,6 +56,14 @@ class RecipeUpdateSchema(BaseModel):
     ingredients: list[str] | None = None
     instructions: list[str] | None = None
 
+class UserPlanSchema(BaseModel):
+    user_id: int
+    date: date
+    breakfast: str | None = None
+    lunch: str | None = None
+    dinner: str | None = None
+    dessert: str | None = None
+
 class PlanSchema(BaseModel):
     selected_date: datetime = Field(
         ...,

@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from typing import TypedDict
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from extensions import DbSession
 from models.recipes import Recipe
 
 
@@ -18,13 +18,18 @@ class RecipeDict(TypedDict):
 class AbstractRecipeManager(ABC):
     @abstractmethod
     async def get_recipes(self, user_id: int) -> list[RecipeDict]:
-        """Retrieve a list of recipes for the specified user ID."""
-        pass
+        raise NotImplementedError('Retrieve a list of recipes for the specified user ID.')
+
 
     @abstractmethod
     async def get_recipe_by_id(self, recipe_id: int, user_id: int) -> RecipeDict | None:
-        """Fetch a recipe by its ID for the specified user ID."""
-        pass
+        raise NotImplementedError('Fetch a recipe by its ID for the specified user ID.')
+
+
+    @abstractmethod
+    async def get_recipe_by_name(self, user_id: int, meal_name: str) -> RecipeDict | None:
+        raise NotImplementedError('Find a recipe by its name for the specified user ID.')
+
 
     @abstractmethod
     async def add_recipe(
@@ -35,8 +40,8 @@ class AbstractRecipeManager(ABC):
         ingredients: list[str], 
         instructions: list[str]
     ) -> Recipe:
-        """Add a new recipe for the specified user ID."""
-        pass
+        raise NotImplementedError('Add a new recipe for the specified user ID with the provided details.')
+
 
     @abstractmethod
     async def update_recipe(
@@ -48,21 +53,21 @@ class AbstractRecipeManager(ABC):
         ingredients: list[str] | None = None,
         instructions: list[str] | None = None
     ) -> Recipe | None:
-        """Update an existing recipe for the specified user ID."""
-        pass
+        raise NotImplementedError('Update an existing recipe for the specified user ID.')
+
 
     @abstractmethod
     async def delete_recipe(self, recipe_id: int, user_id: int) -> bool:
-        """Delete a recipe for the specified user ID."""
-        pass
+        raise NotImplementedError('Delete a recipe by its ID for the specified user ID.')
+
 
     @abstractmethod
     async def get_ingredients_by_meal_name(self, user_id: int, meal: str) -> str | None:
-        """Retrieve ingredients for a recipe by its meal name for the specified user ID."""
-        pass
+        raise NotImplementedError('Retrieve ingredients for a recipe by its meal name for the specified user ID.')
+
 
 class RecipeManager(AbstractRecipeManager):
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: DbSession) -> None:
         self.db = db
 
     async def get_recipes(self, user_id: int) -> list[RecipeDict]:
@@ -85,6 +90,21 @@ class RecipeManager(AbstractRecipeManager):
         query = select(Recipe).filter_by(id=recipe_id, user_id=user_id)
         result = await self.db.execute(query)
         recipe = result.scalar_one_or_none()
+        if recipe is not None:
+            return RecipeDict(
+                id=recipe.id,
+                meal_name=recipe.meal_name,
+                meal_type=recipe.meal_type,
+                ingredients=json.loads(recipe.ingredients),
+                instructions=json.loads(recipe.instructions)
+            )
+        return None
+
+    async def get_recipe_by_name(self, user_id: int, meal_name: str) -> RecipeDict | None:
+        """Find a recipe by its name for the specified user ID."""
+        query = select(Recipe).filter_by(user_id=user_id, meal_name=meal_name)
+        result = await self.db.execute(query)
+        recipe = result.scalar_one_or_none()
         
         if recipe:
             return RecipeDict(
@@ -95,7 +115,7 @@ class RecipeManager(AbstractRecipeManager):
                 instructions=json.loads(recipe.instructions)
             )
         return None
-
+    
     async def add_recipe(
         self, 
         user_id: int, 

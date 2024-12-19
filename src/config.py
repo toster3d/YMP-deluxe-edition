@@ -18,7 +18,17 @@ class Settings(BaseSettings):
         env_file=".env", 
         env_file_encoding="utf-8", 
         extra="ignore",
-        case_sensitive=False
+        case_sensitive=False,
+        json_schema_extra={
+            "example": {
+                "secret_key": "your-secret-key",
+                "debug": False,
+                "jwt_secret_key": "your-jwt-secret",
+                "jwt_algorithm": "HS256",
+                "redis_host": "localhost",
+                "redis_port": 6379
+            }
+        }
     )
     
     # Basic settings
@@ -118,26 +128,21 @@ class Settings(BaseSettings):
 
     @field_validator("jwt_access_token_expires", mode="before")
     @classmethod
-    def validate_jwt_expires(cls, v: timedelta) -> timedelta:
+    def validate_jwt_expires(cls, v: str | timedelta) -> timedelta:
         """Validate that JWT expiration is reasonable."""
+        if isinstance(v, str):
+            try:
+                # Próba konwersji stringa na minuty
+                minutes = int(v)
+                v = timedelta(minutes=minutes)
+            except ValueError as e:
+                raise ValueError(f"Invalid JWT expiration format: {e}")
+        
         if v.total_seconds() < 60:  # minimum 1 minute
             raise ValueError("JWT expiration must be at least 1 minute")
         if v.total_seconds() > 86400:  # maximum 24 hours
             raise ValueError("JWT expiration must not exceed 24 hours")
         return v
-
-    class Config:
-        """Additional configuration for Settings class."""
-        json_schema_extra = {
-            "example": {
-                "secret_key": "your-secret-key",
-                "debug": False,
-                "jwt_secret_key": "your-jwt-secret",
-                "jwt_algorithm": "HS256",
-                "redis_host": "localhost",
-                "redis_port": 6379
-            }
-        }
 
 
 def get_settings() -> Settings:

@@ -4,10 +4,10 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_APP=app:app
-      - FLASK_DEBUG=1
       - PYTHONPATH=/app/src
       - DATABASE_URI=sqlite:////app/src/instance/recipes.db
+      - ASYNC_DATABASE_URI=sqlite+aiosqlite:////app/src/instance/recipes.db
+      - DEBUG=1
     volumes:
       - .:/app
       - db-data:/app/src/instance
