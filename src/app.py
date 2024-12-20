@@ -1,46 +1,101 @@
-import sys
 import os
-from flask import Flask
-from flask_restful import Api
-from typing import Any, cast
-from flask_jwt_extended import JWTManager # type: ignore
-from config import create_app
-from routes import register_routes
-from extensions import db
-import redis
-from token_storage import RedisTokenStorage
+import sys
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Never
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect
+
+from config import get_settings
+from extensions import Base, async_engine
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def create_flask_app() -> Flask:
-    app: Flask = create_app()
-    api: Api = Api(app)
-    jwt = JWTManager(app)
+settings = get_settings()
 
-    @jwt.token_in_blocklist_loader # type: ignore
-    def check_if_token_in_blocklist(jwt_header: Any, jwt_payload: Any) -> bool: #type: ignore
-        jti: str = jwt_payload['jti']
-        token_storage = cast(RedisTokenStorage, app.config['token_storage'])
-        return token_storage.exists(jti)
 
-    register_routes(app, api)
-    
-    with app.app_context():
-        db.create_all()
-        app.config['db'] = db
-        
-        redis_pool = redis.ConnectionPool(
-            host=cast(str, app.config['REDIS_HOST']),
-            port=cast(int, app.config['REDIS_PORT']),
-            decode_responses=True
-        )
-        redis_client = redis.Redis(connection_pool=redis_pool)
-        token_storage = RedisTokenStorage(redis_client)
-        app.config['token_storage'] = token_storage
-    
+async def initialize_database() -> None:
+    """Initialize database tables if they don't exist."""
+    try:
+        async with async_engine.begin() as conn:
+            tables = await conn.run_sync(lambda sync_conn: inspect(sync_conn).get_table_names())
+            required_tables = {"users", "recipes", "user_plan"}
+
+            if not required_tables.issubset(tables):
+                print("Creating missing tables...")
+                await conn.run_sync(Base.metadata.create_all)
+                print("Tables created successfully")
+            else:
+                print("All required tables already exist")
+    except Exception as e:
+        print(f"Error initializing database: {str(e)}")
+        raise
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Manage startup and shutdown events.
+
+    Args:
+        app: FastAPI application instance
+
+    Yields:
+        None
+    """
+    await initialize_database()
+    yield
+
+
+def create_application() -> FastAPI:
+    """
+    Create and configure FastAPI application.
+
+    Returns:
+        FastAPI: Configured FastAPI application instance
+    """
+    app = FastAPI(
+        title="Your Meal Planner API",
+        description="API for meal planning and recipe management",
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        lifespan=lifespan
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    from routes import router
+
+    app.include_router(router)
+
     return app
 
-app = create_flask_app()
+
+app = create_application()
+
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    import uvicorn
+    
+    def run_server() -> Never:
+        """Run the server."""
+        uvicorn.run(
+            "app:app",
+            host=settings.host,
+            port=settings.port,
+            reload=settings.debug,
+            proxy_headers=True,
+            forwarded_allow_ips="*",
+            log_level="debug" if settings.debug else "info"
+        )
+        raise SystemExit(0)
+
+    run_server()
