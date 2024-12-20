@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Never
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import inspect  # Dodaj ten import
+from sqlalchemy import inspect
 
 from config import get_settings
 from extensions import Base, async_engine
@@ -21,7 +21,7 @@ async def initialize_database() -> None:
         async with async_engine.begin() as conn:
             tables = await conn.run_sync(lambda sync_conn: inspect(sync_conn).get_table_names())
             required_tables = {"users", "recipes", "user_plan"}
-            
+
             if not required_tables.issubset(tables):
                 print("Creating missing tables...")
                 await conn.run_sync(Base.metadata.create_all)
@@ -37,10 +37,10 @@ async def initialize_database() -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Manage startup and shutdown events.
-    
+
     Args:
         app: FastAPI application instance
-        
+
     Yields:
         None
     """
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 def create_application() -> FastAPI:
     """
     Create and configure FastAPI application.
-    
+
     Returns:
         FastAPI: Configured FastAPI application instance
     """
@@ -73,12 +73,12 @@ def create_application() -> FastAPI:
     )
 
     from routes import router
+
     app.include_router(router)
-    
+
     return app
 
 
-# Create the FastAPI app
 app = create_application()
 
 
@@ -97,5 +97,5 @@ if __name__ == "__main__":
             log_level="debug" if settings.debug else "info"
         )
         raise SystemExit(0)
-    
+
     run_server()

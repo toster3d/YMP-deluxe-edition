@@ -28,7 +28,6 @@ async def get_redis() -> AsyncGenerator[Redis, None]: # type: ignore
         retry_on_timeout=True,
         health_check_interval=30
     )
-    
     try:
         if not await redis_client.ping():
             raise RedisError("Redis ping failed")
@@ -45,13 +44,5 @@ async def get_redis() -> AsyncGenerator[Redis, None]: # type: ignore
 async def get_token_storage(
     redis: Annotated[Redis, Depends(get_redis)] # type: ignore
 ) -> RedisTokenStorage:
-    """
-    Get token storage instance.
-    
-    Args:
-        redis: Redis client instance
-        
-    Returns:
-        RedisTokenStorage: Token storage instance
-    """
+    """Get token storage instance."""
     return RedisTokenStorage(redis)

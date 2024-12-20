@@ -1,6 +1,5 @@
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, TypeAlias
 
 from fastapi import HTTPException, status
 from sqlalchemy import text
@@ -18,41 +17,32 @@ from token_storage import logger
 
 settings = get_settings()
 
-
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy models."""
+    pass
 
-
-# Konfiguracja silnika bazy danych z parametrami odpowiednimi dla SQLite
 async_engine: AsyncEngine = create_async_engine(
     url=settings.async_database_uri,
     echo=settings.debug,
-    # Optymalne ustawienia dla SQLite
-    pool_pre_ping=True,  # Sprawdza połączenie przed użyciem
-    # Ustawienia specyficzne dla SQLite
+    pool_pre_ping=True,
     connect_args={
         "check_same_thread": False,
-        "timeout": 30,    # Timeout połączenia w sekundach
-    }
+        "timeout": 30,
+    },
 )
 
-# Konfiguracja sesji
 AsyncSessionLocal = async_sessionmaker[AsyncSession](
-    bind=async_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False
+    bind=async_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )
-
 
 @asynccontextmanager
 async def get_async_db_context() -> AsyncGenerator[AsyncSession, None]:
     """
     Async database session context manager.
-    
+
     Yields:
         AsyncSession: Database session
-        
+
     Raises:
         HTTPException: If database operation fails
     """
@@ -64,16 +54,15 @@ async def get_async_db_context() -> AsyncGenerator[AsyncSession, None]:
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
+            detail=f"Database error: {str(e)}",
         ) from e
     finally:
         await session.close()
 
-
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Async database session dependency.
-    
+
     Yields:
         AsyncSession: Database session
     """
@@ -86,10 +75,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
-
-# Dependency dla FastAPI
-DbSession = AsyncSession
-
+DbSession: TypeAlias = AsyncSession
 
 async def test_database_connection() -> None:
     try:

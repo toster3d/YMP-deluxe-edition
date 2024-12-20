@@ -23,14 +23,12 @@ from resources.recipe_resource import RecipeListResource, RecipeResource
 from resources.shopping_list_resource import ShoppingListResource
 from services.recipe_manager import RecipeDict
 
-# Create router with prefix and tags
 router = APIRouter(
     responses={
         404: {"description": "Not found"},
-        500: {"description": "Internal server error"}
+        500: {"description": "Internal server error"},
     }
 )
-
 
 
 async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
@@ -40,72 +38,77 @@ async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     except HTTPException as e:
         raise e  # Przekaż wyjątek dalej
 
+
 # Auth routes
 @router.post(
     "/auth/login",
     tags=["auth"],
     description="Login endpoint using OAuth2",
-    response_model=TokenResponse
+    response_model=TokenResponse,
 )
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    auth_resource: Annotated[AuthResource, Depends()]
+    auth_resource: Annotated[AuthResource, Depends()],
 ) -> TokenResponse:
     """Login using OAuth2 credentials."""
     try:
         # Dodaj logowanie dla debugowania
-        print(f"Attempting login for user: {form_data.username}")  # Tymczasowe logowanie
+        print(
+            f"Attempting login for user: {form_data.username}"
+        )  # Tymczasowe logowanie
         result = await auth_resource.login_with_form(form_data)
         return result
     except Exception as e:
         # Dodaj szczegółowe logowanie błędu
         print(f"Login error: {str(e)}")  # Tymczasowe logowanie
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+
 
 @router.post(
     "/auth/register",
     status_code=status.HTTP_201_CREATED,
     tags=["auth"],
     description="Register new user",
-    response_model=dict[str, str]
+    response_model=dict[str, str],
 )
 async def register(
     register_data: RegisterSchema,
-    register_resource: Annotated[RegisterResource, Depends()]
+    register_resource: Annotated[RegisterResource, Depends()],
 ) -> dict[str, str]:
     """Register new user."""
     return await register_resource.post(register_data)
+
 
 @router.post(
     "/auth/logout",
     tags=["auth"],
     description="Logout user and invalidate token",
-    response_model=dict[str, str]
+    response_model=dict[str, str],
 )
 async def logout(
     token: Annotated[str, Depends(oauth2_scheme)],
-    logout_resource: Annotated[LogoutResource, Depends()]
+    logout_resource: Annotated[LogoutResource, Depends()],
 ) -> dict[str, str]:
     """Logout user and invalidate their token."""
     return await logout_resource.post(token)
 
-# Recipe routes
+
 @router.get(
     "/recipe",
     tags=["recipes"],
     description="Get all recipes for authenticated user",
     response_model=dict[str, list[RecipeDict]],
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def get_recipes(
     recipe_list_resource: Annotated[RecipeListResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> dict[str, list[RecipeDict]]:
     """Get all recipes for authenticated user."""
     return await recipe_list_resource.get(user_id=int(current_user["sub"]))
+
 
 @router.post(
     "/recipe",
@@ -113,69 +116,69 @@ async def get_recipes(
     tags=["recipes"],
     description="Create new recipe",
     response_model=dict[str, Any],
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def create_recipe(
     recipe_data: RecipeSchema,
     recipe_list_resource: Annotated[RecipeListResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> dict[str, Any]:
     """Create a new recipe."""
     return await recipe_list_resource.post(
-        recipe_data=recipe_data,
-        user_id=int(current_user["sub"])
+        recipe_data=recipe_data, user_id=int(current_user["sub"])
     )
+
 
 @router.get(
     "/recipe/{recipe_id}",
     tags=["recipes"],
     description="Get specific recipe by ID",
     response_model=RecipeDict,
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def get_recipe(
     recipe_id: int,
     recipe_resource: Annotated[RecipeResource, Depends()],
-    token: dict[str, Any] = Depends(verify_token)
+    token: dict[str, Any] = Depends(verify_token),
 ) -> RecipeDict:
     """Get recipe by ID."""
-    user_id = int(token['sub'])
+    user_id = int(token["sub"])
     return await recipe_resource.get(recipe_id, user_id)
+
 
 @router.patch(
     "/recipe/{recipe_id}",
     tags=["recipes"],
     description="Update specific recipe",
     response_model=RecipeDict,
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def update_recipe(
     recipe_id: int,
     recipe_data: RecipeUpdateSchema,
     recipe_resource: Annotated[RecipeResource, Depends()],
-    token: dict[str, Any] = Depends(verify_token)
+    token: dict[str, Any] = Depends(verify_token),
 ) -> RecipeDict:
     """Update recipe by ID."""
-    user_id = int(token['sub'])
+    user_id = int(token["sub"])
     return await recipe_resource.patch(recipe_id, recipe_data, user_id)
+
 
 @router.delete(
     "/recipe/{recipe_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=["recipes"],
     description="Delete specific recipe",
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def delete_recipe(
     recipe_id: int,
     recipe_resource: Annotated[RecipeResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> None:
     """Delete recipe by ID."""
-    await recipe_resource.delete(
-        recipe_id=recipe_id,
-        user_id=int(current_user["sub"])
-    )
+    await recipe_resource.delete(recipe_id=recipe_id, user_id=int(current_user["sub"]))
+
 
 # Meal plan routes
 @router.get(
@@ -183,19 +186,20 @@ async def delete_recipe(
     tags=["meal_plans"],
     description="Get meal plan options",
     response_model=dict[str, list[dict[str, Any]]],
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def choose_meal(
     choose_meal_resource: Annotated[ChooseMealResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> dict[str, list[dict[str, Any]]]:
     """
     Get meal plan options endpoint.
-    
+
     Returns:
         dict: Available recipes for meal planning
     """
     return await choose_meal_resource.get(user_id=int(current_user["sub"]))
+
 
 @router.post(
     "/meal_plan",
@@ -203,23 +207,23 @@ async def choose_meal(
     tags=["meal_plans"],
     description="Create new meal plan",
     response_model=dict[str, Any],
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def create_meal_plan(
     plan_data: PlanSchema,
     choose_meal_resource: Annotated[ChooseMealResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> dict[str, Any]:
     """
     Create meal plan endpoint.
-    
+
     Returns:
         dict: Created meal plan details
     """
     return await choose_meal_resource.post(
-        user_id=int(current_user["sub"]),
-        plan_data=plan_data
+        user_id=int(current_user["sub"]), plan_data=plan_data
     )
+
 
 # Schedule routes
 @router.get(
@@ -227,12 +231,12 @@ async def create_meal_plan(
     tags=["schedules"],
     description="Get user's schedule",
     response_model=ScheduleResponse,
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def get_schedule(
     schedule_resource: Annotated[ScheduleResource, Depends()],
     current_user: dict[str, Any] = Depends(verify_token),
-    date: str | None = Query(None, description="Date in ISO format (YYYY-MM-DD)")
+    date: str | None = Query(None, description="Date in ISO format (YYYY-MM-DD)"),
 ) -> ScheduleResponse:
     """Get schedule endpoint."""
     try:
@@ -240,16 +244,16 @@ async def get_schedule(
             schedule_date = date_type.fromisoformat(date)
         else:
             schedule_date = date_type.today()
-            
+
         return await schedule_resource.get(
-            user_id=int(current_user["sub"]),
-            date_param=schedule_date
+            user_id=int(current_user["sub"]), date_param=schedule_date
         )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid date format. Use YYYY-MM-DD format: {str(e)}"
+            detail=f"Invalid date format. Use YYYY-MM-DD format: {str(e)}",
         )
+
 
 # Shopping list routes
 @router.get(
@@ -257,29 +261,29 @@ async def get_schedule(
     tags=["shopping_lists"],
     description="Get shopping list for today",
     response_model=dict[str, list[str] | str],
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def get_shopping_list(
     shopping_list_resource: Annotated[ShoppingListResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> dict[str, list[str] | str]:
     """Get shopping list for today's meal plan."""
     return await shopping_list_resource.get(user_id=int(current_user["sub"]))
+
 
 @router.post(
     "/shopping_list",
     tags=["shopping_lists"],
     description="Get shopping list for date range",
     response_model=dict[str, list[str] | str],
-    dependencies=[Depends(verify_token)]
+    dependencies=[Depends(verify_token)],
 )
 async def get_shopping_list_for_range(
     date_range: DateRangeSchema,
     shopping_list_resource: Annotated[ShoppingListResource, Depends()],
-    current_user: dict[str, Any] = Depends(verify_token)
+    current_user: dict[str, Any] = Depends(verify_token),
 ) -> dict[str, list[str] | str]:
     """Get shopping list for specified date range."""
     return await shopping_list_resource.post(
-        user_id=int(current_user["sub"]),
-        date_range_data=date_range
+        user_id=int(current_user["sub"]), date_range_data=date_range
     )

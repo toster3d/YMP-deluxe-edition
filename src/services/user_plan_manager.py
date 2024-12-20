@@ -16,11 +16,7 @@ class AbstractUserPlanManager(ABC):
 
     @abstractmethod
     async def create_or_update_plan(
-        self, 
-        user_id: int, 
-        selected_date: date_type, 
-        recipe_id: int, 
-        meal_type: str
+        self, user_id: int, selected_date: date_type, recipe_id: int, meal_type: str
     ) -> dict[str, Any]:
         """Create or update a meal plan for the user."""
         raise NotImplementedError()
@@ -39,12 +35,11 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
     async def get_plans(self, user_id: int, date: date_type) -> dict[str, Any]:
         """Get user plans for specific date."""
         query = select(UserPlan).filter(
-            UserPlan.user_id == user_id,
-            UserPlan.date == date
+            UserPlan.user_id == user_id, UserPlan.date == date
         )
         result = await self.db.execute(query)
         plan = result.scalar_one_or_none()
-        
+
         if not plan:
             return {
                 "user_id": user_id,
@@ -52,24 +47,20 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
                 "breakfast": None,
                 "lunch": None,
                 "dinner": None,
-                "dessert": None
+                "dessert": None,
             }
-        
+
         return {
             "user_id": plan.user_id,
             "date": plan.date,
             "breakfast": plan.breakfast,
             "lunch": plan.lunch,
             "dinner": plan.dinner,
-            "dessert": plan.dessert
+            "dessert": plan.dessert,
         }
 
     async def create_or_update_plan(
-        self, 
-        user_id: int, 
-        selected_date: date_type, 
-        recipe_id: int, 
-        meal_type: str
+        self, user_id: int, selected_date: date_type, recipe_id: int, meal_type: str
     ) -> dict[str, Any]:
         """Create or update a meal plan for the user."""
         async with self.db.begin():
@@ -87,7 +78,7 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
             if not recipe_instance:
                 raise ValueError(f"Recipe with id {recipe_id} not found")
 
-            if meal_type in ['breakfast', 'lunch', 'dinner', 'dessert']:
+            if meal_type in ["breakfast", "lunch", "dinner", "dessert"]:
                 setattr(plan_instance, meal_type, recipe_instance.meal_name)
             else:
                 raise ValueError(f"Invalid meal_type: {meal_type}")
@@ -97,7 +88,7 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
                 "meal_type": meal_type,
                 "recipe_name": recipe_instance.meal_name,
                 "recipe_id": recipe_id,
-                "date": selected_date.isoformat()
+                "date": selected_date.isoformat(),
             }
 
     async def get_user_recipes(self, user_id: int) -> list[dict[str, Any]]:
@@ -105,9 +96,9 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
         recipes = await self.db.execute(select(Recipe).filter_by(user_id=user_id))
         return [
             {
-                'id': recipe.id,
-                'name': recipe.meal_name,
-                'meal_type': recipe.meal_type,
+                "id": recipe.id,
+                "name": recipe.meal_name,
+                "meal_type": recipe.meal_type,
             }
             for recipe in recipes.scalars()
         ]
