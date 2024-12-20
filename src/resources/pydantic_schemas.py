@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
 
@@ -64,14 +64,24 @@ class UserPlanSchema(BaseModel):
     dinner: str | None = None
     dessert: str | None = None
 
+    class Config:
+        from_attributes = True
+
 class PlanSchema(BaseModel):
-    selected_date: datetime = Field(
-        ...,
-        description="Date must be in format: Day DD Month YYYY"
+    selected_date: date = Field(
+        ..., 
+        description="Date in ISO format (YYYY-MM-DD)"
     )
-    recipe_id: int = Field(..., description="ID of the recipe to be used")
-    meal_type: str = Field(..., description="Types of the meal are breakfast, lunch, dinner or dessert")
+    recipe_id: int = Field(..., description="ID of the recipe")
+    meal_type: str = Field(..., description="Type of meal (breakfast, lunch, dinner, dessert)")
 
 class DateRangeSchema(BaseModel):
-    start_date: date = Field(..., description="Start date in format: Day Month Year")
-    end_date: date = Field(..., description="End date in format: Day Month Year")
+    start_date: date = Field(..., description="Start date (YYYY-MM-DD)")
+    end_date: date = Field(..., description="End date (YYYY-MM-DD)")
+
+class ScheduleResponse(BaseModel):
+    date: date
+    breakfast: str | None = None
+    lunch: str | None = None
+    dinner: str | None = None
+    dessert: str | None = None

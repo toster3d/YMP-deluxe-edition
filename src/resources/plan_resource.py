@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date as date_type
 from typing import Any, TypedDict
 
 from fastapi import Depends, HTTPException, status
@@ -29,30 +29,16 @@ class ScheduleResource:
     def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
         """Initialize resource with database session."""
         self.user_plan_manager = SqliteUserPlanManager(db)
+        self.db = db
 
-    async def get(self, user_id: int, date_str: str | None = None) -> ScheduleResponse:
-        """
-        Get user schedule for a specific date.
-        
-        Args:
-            user_id: ID of the user
-            date_str: Optional date string in format "Day DD Month YYYY"
-            
-        Returns:
-            ScheduleResponse: User's schedule for the specified date
-            
-        Raises:
-            HTTPException: If date format is invalid
-        """
+    async def get(self, user_id: int, date_param: date_type | None = None) -> ScheduleResponse:
+        """Get user's schedule for a specific date."""
         try:
-            if date_str is None:
-                date_str = datetime.now().strftime("%A %d %B %Y")
-                
-            selected_date = datetime.strptime(date_str, "%A %d %B %Y").date()
+            selected_date: date_type = date_param or date_type.today()
             user_plans = await self.user_plan_manager.get_plans(user_id, selected_date)
-
+            
             return {
-                "date": date_str,
+                "date": selected_date.isoformat(),
                 "user_plans": {
                     "user_id": user_id,
                     "breakfast": user_plans.get("breakfast"),
@@ -61,10 +47,10 @@ class ScheduleResource:
                     "dessert": user_plans.get("dessert"),
                 }
             }
-        except ValueError:
+        except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid date format"
+                detail=f"Invalid date format: {str(e)}"
             )
 
 
@@ -89,28 +75,11 @@ class ChooseMealResource:
         return {'recipes': recipes}
 
     async def post(self, user_id: int, plan_data: PlanSchema) -> dict[str, Any]:
-        """
-        Create or update meal plan.
-        
-        Args:
-            user_id: ID of the user
-            plan_data: Plan data from request
-            
-        Returns:
-            dict: Updated plan details
-            
-        Raises:
-            HTTPException: If plan creation/update fails
-        """
+        """Create or update meal plan."""
         try:
-            selected_date_obj = datetime.strptime(
-                plan_data.selected_date.strftime("%A %d %B %Y"), 
-                "%A %d %B %Y"
-            )
-            
             updated_plan = await self.user_plan_manager.create_or_update_plan(
                 user_id=user_id,
-                selected_date=selected_date_obj,
+                selected_date=plan_data.selected_date,
                 recipe_id=plan_data.recipe_id,
                 meal_type=plan_data.meal_type
             )
@@ -119,7 +88,6 @@ class ChooseMealResource:
                 "message": "Meal plan updated successfully!",
                 **updated_plan
             }
-            
         except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

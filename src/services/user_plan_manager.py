@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
 from datetime import date as date_type
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
 
 from extensions import DbSession
 from models.recipes import Recipe, UserPlan
-from resources.pydantic_schemas import UserPlanSchema
 
 
 class AbstractUserPlanManager(ABC):
@@ -20,7 +18,7 @@ class AbstractUserPlanManager(ABC):
     async def create_or_update_plan(
         self, 
         user_id: int, 
-        selected_date: datetime, 
+        selected_date: date_type, 
         recipe_id: int, 
         meal_type: str
     ) -> dict[str, Any]:
@@ -39,31 +37,49 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
         self.db = db
 
     async def get_plans(self, user_id: int, date: date_type) -> dict[str, Any]:
-        """Retrieve user plans for a specific date."""
-        query = select(UserPlan).filter(UserPlan.user_id == user_id, UserPlan.date == date)
+        """Get user plans for specific date."""
+        query = select(UserPlan).filter(
+            UserPlan.user_id == user_id,
+            UserPlan.date == date
+        )
         result = await self.db.execute(query)
         plan = result.scalar_one_or_none()
-
-        if plan:
-            return UserPlanSchema.model_validate(plan).model_dump()
-        return {}
+        
+        if not plan:
+            return {
+                "user_id": user_id,
+                "date": date,
+                "breakfast": None,
+                "lunch": None,
+                "dinner": None,
+                "dessert": None
+            }
+        
+        return {
+            "user_id": plan.user_id,
+            "date": plan.date,
+            "breakfast": plan.breakfast,
+            "lunch": plan.lunch,
+            "dinner": plan.dinner,
+            "dessert": plan.dessert
+        }
 
     async def create_or_update_plan(
         self, 
         user_id: int, 
-        selected_date: datetime, 
+        selected_date: date_type, 
         recipe_id: int, 
         meal_type: str
     ) -> dict[str, Any]:
         """Create or update a meal plan for the user."""
         async with self.db.begin():
             plan = await self.db.execute(
-                select(UserPlan).filter_by(user_id=user_id, date=selected_date.date())
+                select(UserPlan).filter_by(user_id=user_id, date=selected_date)
             )
             plan_instance = plan.scalar_one_or_none()
 
             if plan_instance is None:
-                plan_instance = UserPlan(user_id=user_id, date=selected_date.date())
+                plan_instance = UserPlan(user_id=user_id, date=selected_date)
                 self.db.add(plan_instance)
 
             recipe = await self.db.execute(select(Recipe).filter_by(id=recipe_id))
@@ -81,7 +97,7 @@ class SqliteUserPlanManager(AbstractUserPlanManager):
                 "meal_type": meal_type,
                 "recipe_name": recipe_instance.meal_name,
                 "recipe_id": recipe_id,
-                "date": selected_date.date()
+                "date": selected_date.isoformat()
             }
 
     async def get_user_recipes(self, user_id: int) -> list[dict[str, Any]]:

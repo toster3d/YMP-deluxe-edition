@@ -73,46 +73,38 @@ class RegisterResource:
     
     def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
         """Initialize register resource with database session."""
+        self.db = db
         self.user_auth = UserAuth(db)
 
     async def post(self, register_data: RegisterSchema) -> dict[str, str]:
-        """
-        Register new user.
-        
-        Args:
-            register_data: User registration data
-            
-        Returns:
-            dict: Registration confirmation message
-            
-        Raises:
-            HTTPException: If registration fails
-        """
+        """Register new user."""
         try:
-            await self.user_auth.register(
+            message = await self.user_auth.register(
                 register_data.username, 
                 register_data.email, 
                 register_data.password, 
                 register_data.confirmation
             )
-            return {"message": "Registration successful!"}
+            return {"message": message}
         except RegistrationError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
-        except Exception:
+        except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="An unexpected error occurred during registration"
+                detail=f"An unexpected error occurred during registration: {str(e)}"
             )
 
 class LogoutResource:
     """Resource handling user logout."""
     
-    def __init__(self, 
-                 token_storage: Annotated[RedisTokenStorage, Depends(get_token_storage)],
-                 db: Annotated[AsyncSession, Depends(get_async_db)]) -> None:
+    def __init__(
+        self, 
+        token_storage: Annotated[RedisTokenStorage, Depends(get_token_storage)], # type: ignore
+        db: AsyncSession = Depends(get_async_db)
+    ) -> None:
         """Initialize logout resource with database session and token storage."""
         self.db = db
         self.token_storage = token_storage

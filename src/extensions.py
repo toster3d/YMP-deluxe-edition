@@ -1,7 +1,9 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -12,6 +14,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 
 from config import get_settings
+from token_storage import logger
 
 settings = get_settings()
 
@@ -67,26 +70,32 @@ async def get_async_db_context() -> AsyncGenerator[AsyncSession, None]:
         await session.close()
 
 
-@asynccontextmanager
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Async database session dependency.
     
     Yields:
         AsyncSession: Database session
-        
-    Raises:
-        HTTPException: If database operation fails
     """
-    async with async_sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False)() as session:
+    async with AsyncSessionLocal() as session:
         try:
             yield session
-        except SQLAlchemyError as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Database error: {str(e)}"
-            )
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
 # Dependency dla FastAPI
 DbSession = AsyncSession
+
+
+async def test_database_connection() -> None:
+    try:
+        async with async_engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+            logger.info("Database connection successful")
+    except SQLAlchemyError as e:
+        logger.error(f"Database connection failed: {str(e)}")
+        raise

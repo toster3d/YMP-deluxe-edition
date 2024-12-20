@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,22 +23,11 @@ class ShoppingListResource:
         )
 
     async def get(self, user_id: int) -> dict[str, list[str] | str]:
-        """
-        Get shopping list for today.
-        
-        Args:
-            user_id: ID of the user
-            
-        Returns:
-            dict: Shopping list with ingredients
-            
-        Raises:
-            HTTPException: If no meal plan found
-        """
-        now: date = datetime.now().date()
+        """Get shopping list for today."""
+        today: date = date.today()
         ingredients = await self.shopping_list_service.get_ingredients_for_date_range(
             user_id, 
-            (now, now)
+            (today, today)
         )
         
         if not ingredients:
@@ -49,7 +38,7 @@ class ShoppingListResource:
 
         return {
             "ingredients": list(ingredients), 
-            "current_date": now.isoformat()
+            "current_date": today.isoformat()
         }
 
     async def post(

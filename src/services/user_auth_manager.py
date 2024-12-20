@@ -147,22 +147,7 @@ class RegistrationService:
         self.db = db
 
     async def register(self, username: str, email: str, password: str, confirmation: str) -> str:
-        """
-        Register new user.
-        
-        Args:
-            username: Desired username
-            email: User's email
-            password: Desired password
-            confirmation: Password confirmation
-            
-        Returns:
-            str: Success message
-            
-        Raises:
-            PasswordMismatchError: If passwords don't match
-            RegistrationError: If registration fails
-        """
+        """Register new user."""
         if password != confirmation:
             raise PasswordMismatchError()
 
@@ -177,6 +162,7 @@ class RegistrationService:
         
         try:
             self.db.add(new_user)
+            await self.db.flush()
             await self.db.commit()
             return "Registration successful."
         except Exception as error:

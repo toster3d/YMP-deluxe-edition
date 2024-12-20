@@ -10,7 +10,7 @@ services:
       - DEBUG=1
     volumes:
       - .:/app
-      - db-data:/app/src/instance
+      - db-data:/app/src/instance:rw
     env_file:
       - .env
     depends_on:

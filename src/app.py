@@ -3,13 +3,12 @@ import sys
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Never
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect  # Dodaj ten import
 
 from config import get_settings
 from extensions import Base, async_engine
-from jwt_utils import oauth2_scheme
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -18,16 +17,20 @@ settings = get_settings()
 
 async def initialize_database() -> None:
     """Initialize database tables if they don't exist."""
-    async with async_engine.begin() as conn:
-        # Użyj inspect() do uzyskania listy tabel
-        tables = await conn.run_sync(lambda sync_conn: inspect(sync_conn).get_table_names())
-        required_tables = {"users", "recipes", "user_plan"}
-        
-        if not required_tables.issubset(tables):
-            print("Creating missing tables...")
-            await conn.run_sync(Base.metadata.create_all)
-        else:
-            print("All required tables already exist")
+    try:
+        async with async_engine.begin() as conn:
+            tables = await conn.run_sync(lambda sync_conn: inspect(sync_conn).get_table_names())
+            required_tables = {"users", "recipes", "user_plan"}
+            
+            if not required_tables.issubset(tables):
+                print("Creating missing tables...")
+                await conn.run_sync(Base.metadata.create_all)
+                print("Tables created successfully")
+            else:
+                print("All required tables already exist")
+    except Exception as e:
+        print(f"Error initializing database: {str(e)}")
+        raise
 
 
 @asynccontextmanager
@@ -70,12 +73,7 @@ def create_application() -> FastAPI:
     )
 
     from routes import router
-    app.include_router(
-        router,
-        prefix="/v2",
-        dependencies=[Depends(oauth2_scheme)],
-        tags=["v2"]
-    )
+    app.include_router(router)
     
     return app
 
@@ -88,6 +86,7 @@ if __name__ == "__main__":
     import uvicorn
     
     def run_server() -> Never:
+        """Run the server."""
         uvicorn.run(
             "app:app",
             host=settings.host,

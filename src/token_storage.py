@@ -34,15 +34,15 @@ class TokenStorage(ABC):
 class RedisTokenStorage(TokenStorage):
     """Redis implementation of token storage."""
     
-    def __init__(self, redis_client: Redis) -> None:
+    def __init__(self, redis_client: Redis) -> None:  # type: ignore[type-arg]
         """Initialize Redis token storage."""
-        self.redis = redis_client
+        self.redis = redis_client  # type: ignore
         self.prefix = settings.redis_prefix
 
     async def store(self, token: str, expires_delta: timedelta) -> None:
         """Store token in Redis with expiration time."""
         try:
-            await self.redis.setex(
+            await self.redis.setex( # type: ignore
                 f'{self.prefix}{token}', 
                 int(expires_delta.total_seconds()), 
                 'blacklisted'
@@ -54,7 +54,7 @@ class RedisTokenStorage(TokenStorage):
     async def exists(self, token: str) -> bool:
         """Check if token exists in Redis."""
         try:
-            result = await self.redis.exists(f'{self.prefix}{token}')
+            result = await self.redis.exists(f'{self.prefix}{token}') # type: ignore
             return bool(result)
         except (ConnectionError, TimeoutError, ResponseError) as e:
             logger.error(f"Redis error while checking token: {e}")
@@ -63,10 +63,10 @@ class RedisTokenStorage(TokenStorage):
     async def cleanup(self) -> None:
         """Remove expired tokens from blacklist."""
         try:
-            async_iter: AsyncIterator[str] = self.redis.scan_iter(f"{self.prefix}*")
+            async_iter: AsyncIterator[str] = self.redis.scan_iter(f"{self.prefix}*") # type: ignore
             keys: list[str] = [key async for key in async_iter]
             if keys:
-                await self.redis.delete(*keys)
+                await self.redis.delete(*keys) # type: ignore
         except (ConnectionError, TimeoutError, ResponseError) as e:
             logger.error(f"Redis error during cleanup: {e}")
             raise TokenStorageError(f"Failed to cleanup tokens: {str(e)}")

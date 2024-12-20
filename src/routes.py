@@ -1,6 +1,7 @@
+from datetime import date as date_type
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from jwt_utils import oauth2_scheme, verify_jwt
@@ -24,8 +25,6 @@ from services.recipe_manager import RecipeDict
 
 # Create router with prefix and tags
 router = APIRouter(
-    prefix="/api",
-    tags=["api"],
     responses={
         404: {"description": "Not found"},
         500: {"description": "Internal server error"}
@@ -53,7 +52,18 @@ async def login(
     auth_resource: Annotated[AuthResource, Depends()]
 ) -> TokenResponse:
     """Login using OAuth2 credentials."""
-    return await auth_resource.login_with_form(form_data)
+    try:
+        # Dodaj logowanie dla debugowania
+        print(f"Attempting login for user: {form_data.username}")  # Tymczasowe logowanie
+        result = await auth_resource.login_with_form(form_data)
+        return result
+    except Exception as e:
+        # Dodaj szczegółowe logowanie błędu
+        print(f"Login error: {str(e)}")  # Tymczasowe logowanie
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @router.post(
     "/auth/register",
@@ -69,11 +79,17 @@ async def register(
     """Register new user."""
     return await register_resource.post(register_data)
 
-@router.post("/logout")
+@router.post(
+    "/auth/logout",
+    tags=["auth"],
+    description="Logout user and invalidate token",
+    response_model=dict[str, str]
+)
 async def logout(
     token: Annotated[str, Depends(oauth2_scheme)],
     logout_resource: Annotated[LogoutResource, Depends()]
 ) -> dict[str, str]:
+    """Logout user and invalidate their token."""
     return await logout_resource.post(token)
 
 # Recipe routes
@@ -216,18 +232,24 @@ async def create_meal_plan(
 async def get_schedule(
     schedule_resource: Annotated[ScheduleResource, Depends()],
     current_user: dict[str, Any] = Depends(verify_token),
-    date_str: str | None = None
+    date: str | None = Query(None, description="Date in ISO format (YYYY-MM-DD)")
 ) -> ScheduleResponse:
-    """
-    Get schedule endpoint.
-    
-    Returns:
-        ScheduleResponse: User's schedule for specified date
-    """
-    return await schedule_resource.get(
-        user_id=int(current_user["sub"]),
-        date_str=date_str
-    )
+    """Get schedule endpoint."""
+    try:
+        if date:
+            schedule_date = date_type.fromisoformat(date)
+        else:
+            schedule_date = date_type.today()
+            
+        return await schedule_resource.get(
+            user_id=int(current_user["sub"]),
+            date_param=schedule_date
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid date format. Use YYYY-MM-DD format: {str(e)}"
+        )
 
 # Shopping list routes
 @router.get(

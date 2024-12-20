@@ -24,6 +24,7 @@ RUN chown -R appuser:appuser src/instance
 
 #ENV FLASK_APP=src.app:fastapi_app
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1 
 
 USER appuser
 

@@ -9,12 +9,12 @@ from token_storage import RedisTokenStorage
 
 settings = get_settings()
 
-async def get_redis() -> AsyncGenerator[Redis, None]:
+async def get_redis() -> AsyncGenerator[Redis, None]: # type: ignore
     """
     Get Redis client from the pool.
     
     Yields:
-        Redis[str]: Redis client instance
+        Redis: Redis client instance
         
     Raises:
         HTTPException: If Redis connection fails
@@ -43,7 +43,7 @@ async def get_redis() -> AsyncGenerator[Redis, None]:
 
 
 async def get_token_storage(
-    redis: Annotated[Redis, Depends(get_redis)]
+    redis: Annotated[Redis, Depends(get_redis)] # type: ignore
 ) -> RedisTokenStorage:
     """
     Get token storage instance.
