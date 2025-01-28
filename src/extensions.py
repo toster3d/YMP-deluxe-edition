@@ -52,6 +52,7 @@ async def get_async_db_context() -> AsyncGenerator[AsyncSession, None]:
         await session.commit()
     except SQLAlchemyError as e:
         await session.rollback()
+        logger.exception("Database session error")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}",
@@ -82,6 +83,6 @@ async def test_database_connection() -> None:
         async with async_engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
             logger.info("Database connection successful")
-    except SQLAlchemyError as e:
-        logger.error(f"Database connection failed: {str(e)}")
+    except SQLAlchemyError:
+        logger.exception("Database connection failed")
         raise

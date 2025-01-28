@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from extensions import get_async_db
-from services.user_plan_manager import SqliteUserPlanManager
+from services.user_plan_manager import SqlAlchemyUserPlanManager
 
 from .pydantic_schemas import PlanSchema
 
@@ -28,7 +28,7 @@ class ScheduleResource:
 
     def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
         """Initialize resource with database session."""
-        self.user_plan_manager = SqliteUserPlanManager(db)
+        self.user_plan_manager = SqlAlchemyUserPlanManager(db)
         self.db = db
 
     async def get(
@@ -61,7 +61,7 @@ class ChooseMealResource:
 
     def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
         """Initialize resource with database session."""
-        self.user_plan_manager = SqliteUserPlanManager(db)
+        self.user_plan_manager = SqlAlchemyUserPlanManager(db)
 
     async def get(self, user_id: int) -> dict[str, list[dict[str, Any]]]:
         """

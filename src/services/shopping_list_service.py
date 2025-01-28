@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import date
 from typing import Generator
@@ -92,8 +93,13 @@ class ShoppingListService:
     ) -> set[str]:
         """Get ingredients for specified meals."""
         ingredients: set[str] = set()
-        for meal_name in meal_names:
-            recipe = await self.recipe_manager.get_recipe_by_name(user_id, meal_name)
+        recipes = await asyncio.gather(
+            *(
+                self.recipe_manager.get_recipe_by_name(user_id, meal_name)
+                for meal_name in meal_names
+            )
+        )
+        for recipe in recipes:
             if recipe and "ingredients" in recipe:
                 ingredients.update(recipe["ingredients"])
         return ingredients

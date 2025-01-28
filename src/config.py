@@ -87,7 +87,17 @@ class Settings(BaseSettings):
         default="token_blacklist:",
         validation_alias="REDIS_PREFIX",
         pattern="^[a-zA-Z0-9_-]+:$",
-        description="Prefix for Redis keys",
+        description="Prefix for Redis keys"
+    )
+    redis_blacklist_value: str = Field(
+        default="blacklisted",
+        validation_alias="REDIS_BLACKLIST_VALUE",
+        description="Value stored for blacklisted tokens"
+    )
+    redis_key_pattern: str = Field(
+        default="*",
+        validation_alias="REDIS_KEY_PATTERN",
+        description="Pattern for scanning Redis keys"
     )
 
     host: str = Field(

@@ -1,13 +1,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import (
-    BaseModel,
-    EmailStr,
-    Field,
-    ValidationInfo,
-    field_validator
-)
+from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
 
 from services.user_auth_manager import PasswordValidator
 
@@ -108,3 +102,23 @@ class ScheduleResponse(BaseModel):
     lunch: str | None = None
     dinner: str | None = None
     dessert: str | None = None
+
+
+class ShoppingListResponse(BaseModel):
+    """Schema for shopping list response."""
+    ingredients: list[str] = Field(
+        description="List of ingredients needed for planned meals"
+    )
+    current_date: str = Field(
+        description="Current date in ISO format (YYYY-MM-DD)"
+    )
+
+
+class ShoppingListRangeResponse(BaseModel):
+    """Schema for shopping list date range response."""
+    ingredients: list[str] = Field(
+        description="List of ingredients needed for planned meals"
+    )
+    date_range: str = Field(
+        description="Date range in format 'YYYY-MM-DD to YYYY-MM-DD'"
+    )

@@ -27,7 +27,7 @@ class AbstractUserPlanManager(ABC):
         raise NotImplementedError()
 
 
-class SqliteUserPlanManager(AbstractUserPlanManager):
+class SqlAlchemyUserPlanManager(AbstractUserPlanManager):
     def __init__(self, db: DbSession) -> None:
         """Initialize the user plan manager with a database session."""
         self.db = db
