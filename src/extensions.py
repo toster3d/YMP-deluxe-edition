@@ -26,7 +26,6 @@ async_engine: AsyncEngine = create_async_engine(
     echo=settings.debug,
     pool_pre_ping=True,
     connect_args={
-        "check_same_thread": False,
         "timeout": 30,
     },
 )

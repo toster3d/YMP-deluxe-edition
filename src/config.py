@@ -59,14 +59,9 @@ class Settings(BaseSettings):
     )
 
     async_database_uri: str = Field(
-        default_factory=lambda: f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'instance', 'recipes.db')}",
+        default="postgresql+asyncpg://postgres:postgres@db:5432/recipes",
         validation_alias="ASYNC_DATABASE_URI",
         description="Async SQLAlchemy database URI",
-    )
-    sqlalchemy_database_uri: str = Field(
-        default_factory=lambda: f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'recipes.db')}",
-        validation_alias="DATABASE_URI",
-        description="SQLAlchemy database URI",
     )
 
     redis_host: str = Field(
