@@ -8,9 +8,11 @@ from models.recipes import User
 
 settings = get_settings()
 
-
 class AuthenticationError(Exception):
     """Base class for authentication errors."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
 
 
 class MissingCredentialsError(AuthenticationError):
@@ -29,10 +31,7 @@ class InvalidCredentialsError(AuthenticationError):
 
 class TokenError(AuthenticationError):
     """Raised when token operations fail."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-
+    pass
 
 class RegistrationError(Exception):
     """Base class for registration errors."""

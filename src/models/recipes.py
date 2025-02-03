@@ -47,10 +47,10 @@ class UserPlan(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     date: Mapped[date_type] = mapped_column(nullable=False)
-    breakfast: Mapped[str] = mapped_column(String(50))
-    lunch: Mapped[str] = mapped_column(String(50))
-    dinner: Mapped[str] = mapped_column(String(50))
-    dessert: Mapped[str] = mapped_column(String(50))
+    breakfast: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    lunch: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    dinner: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    dessert: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     user: Mapped[User] = relationship("User", back_populates="user_plans")
 

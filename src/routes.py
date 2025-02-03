@@ -23,7 +23,6 @@ from resources.pydantic_schemas import (
 )
 from resources.recipe_resource import RecipeListResource, RecipeResource
 from resources.shopping_list_resource import ShoppingListResource
-from services.recipe_manager import RecipeDict
 
 router = APIRouter(
     responses={
@@ -53,11 +52,9 @@ async def login(
 ) -> TokenResponse:
     """Login using OAuth2 credentials."""
     try:
-        print(f"Attempting login for user: {form_data.username}")
         result = await auth_resource.login_with_form(form_data)
         return result
     except Exception as e:
-        print(f"Login error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
@@ -95,13 +92,13 @@ async def logout(
     "/recipe",
     tags=["recipes"],
     description="Get all recipes for authenticated user",
-    response_model=dict[str, list[RecipeDict]],
+    response_model=dict[str, list[RecipeUpdateSchema]],
     dependencies=[Depends(verify_token)]
 )
 async def get_recipes(
     recipe_list_resource: Annotated[RecipeListResource, Depends()],
     current_user: dict[str, Any] = Depends(verify_token)
-) -> dict[str, list[RecipeDict]]:
+) -> dict[str, list[RecipeUpdateSchema]]:
     """Get all recipes for authenticated user."""
     return await recipe_list_resource.get(user_id=int(current_user["sub"]))
 
@@ -128,14 +125,14 @@ async def create_recipe(
     "/recipe/{recipe_id}",
     tags=["recipes"],
     description="Get specific recipe by ID",
-    response_model=RecipeDict,
+    response_model=RecipeUpdateSchema,
     dependencies=[Depends(verify_token)]
 )
 async def get_recipe(
     recipe_id: int,
     recipe_resource: Annotated[RecipeResource, Depends()],
     token: dict[str, Any] = Depends(verify_token)
-) -> RecipeDict:
+) -> RecipeUpdateSchema:
     """Get recipe by ID."""
     user_id = int(token['sub'])
     return await recipe_resource.get(recipe_id, user_id)
@@ -144,7 +141,7 @@ async def get_recipe(
     "/recipe/{recipe_id}",
     tags=["recipes"],
     description="Update specific recipe",
-    response_model=RecipeDict,
+    response_model=RecipeUpdateSchema,
     dependencies=[Depends(verify_token)]
 )
 async def update_recipe(
@@ -152,7 +149,7 @@ async def update_recipe(
     recipe_data: RecipeUpdateSchema,
     recipe_resource: Annotated[RecipeResource, Depends()],
     token: dict[str, Any] = Depends(verify_token)
-) -> RecipeDict:
+) -> RecipeUpdateSchema:
     """Update recipe by ID."""
     user_id = int(token['sub'])
     return await recipe_resource.patch(recipe_id, recipe_data, user_id)

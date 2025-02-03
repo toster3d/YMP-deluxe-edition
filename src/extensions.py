@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, TypeAlias
+from typing import AsyncGenerator
 
 from fastapi import HTTPException, status
 from sqlalchemy import text
@@ -75,7 +75,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
-DbSession: TypeAlias = AsyncSession
+DbSession = AsyncSession
 
 async def test_database_connection() -> None:
     try:

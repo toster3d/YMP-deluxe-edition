@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from extensions import get_async_db
-from services.recipe_manager import RecipeDict, RecipeManager
+from services.recipe_manager import RecipeManager
 
 from .pydantic_schemas import RecipeSchema, RecipeUpdateSchema
 
@@ -16,7 +16,7 @@ class RecipeListResource:
         """Initialize resource with database session."""
         self.recipe_manager = RecipeManager(db)
 
-    async def get(self, user_id: int) -> dict[str, list[RecipeDict]]:
+    async def get(self, user_id: int) -> dict[str, list[RecipeUpdateSchema]]:
         """
         Get all recipes for a user.
 
@@ -82,7 +82,7 @@ class RecipeResource:
         """Initialize resource with database session."""
         self.recipe_manager = RecipeManager(db)
 
-    async def get(self, recipe_id: int, user_id: int) -> RecipeDict:
+    async def get(self, recipe_id: int, user_id: int) -> RecipeUpdateSchema:
         """
         Get a specific recipe.
 
@@ -91,7 +91,7 @@ class RecipeResource:
             user_id: ID of the user
 
         Returns:
-            RecipeDict: Recipe details
+            RecipeUpdateSchema: Recipe details
 
         Raises:
             HTTPException: If recipe not found
@@ -105,7 +105,7 @@ class RecipeResource:
 
     async def patch(
         self, recipe_id: int, recipe_data: RecipeUpdateSchema, user_id: int
-    ) -> RecipeDict:
+    ) -> RecipeUpdateSchema:
         """Update a specific recipe."""
         try:
             updated_recipe = await self.recipe_manager.update_recipe(

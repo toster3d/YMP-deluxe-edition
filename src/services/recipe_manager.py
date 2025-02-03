@@ -1,92 +1,23 @@
 import json
-from abc import ABC, abstractmethod
-from typing import TypedDict
 
 from sqlalchemy import select
 
 from extensions import DbSession
 from models.recipes import Recipe
+from resources.pydantic_schemas import RecipeUpdateSchema
 
 
-class RecipeDict(TypedDict):
-    id: int
-    meal_name: str
-    meal_type: str
-    ingredients: list[str]
-    instructions: list[str]
-
-
-class AbstractRecipeManager(ABC):
-    @abstractmethod
-    async def get_recipes(self, user_id: int) -> list[RecipeDict]:
-        raise NotImplementedError(
-            "Retrieve a list of recipes for the specified user ID."
-        )
-
-    @abstractmethod
-    async def get_recipe_by_id(self, recipe_id: int, user_id: int) -> RecipeDict | None:
-        raise NotImplementedError("Fetch a recipe by its ID for the specified user ID.")
-
-    @abstractmethod
-    async def get_recipe_by_name(
-        self, user_id: int, meal_name: str
-    ) -> RecipeDict | None:
-        raise NotImplementedError(
-            "Find a recipe by its name for the specified user ID."
-        )
-
-    @abstractmethod
-    async def add_recipe(
-        self,
-        user_id: int,
-        meal_name: str,
-        meal_type: str,
-        ingredients: list[str],
-        instructions: list[str],
-    ) -> Recipe:
-        raise NotImplementedError(
-            "Add a new recipe for the specified user ID with the provided details."
-        )
-
-    @abstractmethod
-    async def update_recipe(
-        self,
-        recipe_id: int,
-        user_id: int,
-        meal_name: str | None = None,
-        meal_type: str | None = None,
-        ingredients: list[str] | None = None,
-        instructions: list[str] | None = None,
-    ) -> Recipe | None:
-        raise NotImplementedError(
-            "Update an existing recipe for the specified user ID."
-        )
-
-    @abstractmethod
-    async def delete_recipe(self, recipe_id: int, user_id: int) -> bool:
-        raise NotImplementedError(
-            "Delete a recipe by its ID for the specified user ID."
-        )
-
-    @abstractmethod
-    async def get_ingredients_by_meal_name(self, user_id: int, meal: str) -> str | None:
-        raise NotImplementedError(
-            "Retrieve ingredients for a recipe by its meal name for the specified user ID."
-        )
-
-
-class RecipeManager(AbstractRecipeManager):
+class RecipeManager:
     def __init__(self, db: DbSession) -> None:
         self.db = db
 
-    async def get_recipes(self, user_id: int) -> list[RecipeDict]:
+    async def get_recipes(self, user_id: int) -> list[RecipeUpdateSchema]:
         query = select(Recipe).filter_by(user_id=user_id)
         result = await self.db.execute(query)
         recipes = result.scalars().all()
 
         return [
-            RecipeDict(
-                id=recipe.id,
+            RecipeUpdateSchema(
                 meal_name=recipe.meal_name,
                 meal_type=recipe.meal_type,
                 ingredients=json.loads(recipe.ingredients),
@@ -95,13 +26,12 @@ class RecipeManager(AbstractRecipeManager):
             for recipe in recipes
         ]
 
-    async def get_recipe_by_id(self, recipe_id: int, user_id: int) -> RecipeDict | None:
+    async def get_recipe_by_id(self, recipe_id: int, user_id: int) -> RecipeUpdateSchema | None:
         query = select(Recipe).filter_by(id=recipe_id, user_id=user_id)
         result = await self.db.execute(query)
         recipe = result.scalar_one_or_none()
         if recipe is not None:
-            return RecipeDict(
-                id=recipe.id,
+            return RecipeUpdateSchema(
                 meal_name=recipe.meal_name,
                 meal_type=recipe.meal_type,
                 ingredients=json.loads(recipe.ingredients),
@@ -111,15 +41,14 @@ class RecipeManager(AbstractRecipeManager):
 
     async def get_recipe_by_name(
         self, user_id: int, meal_name: str
-    ) -> RecipeDict | None:
+    ) -> RecipeUpdateSchema | None:
         """Find a recipe by its name for the specified user ID."""
         query = select(Recipe).filter_by(user_id=user_id, meal_name=meal_name)
         result = await self.db.execute(query)
         recipe = result.scalar_one_or_none()
 
         if recipe:
-            return RecipeDict(
-                id=recipe.id,
+            return RecipeUpdateSchema(
                 meal_name=recipe.meal_name,
                 meal_type=recipe.meal_type,
                 ingredients=json.loads(recipe.ingredients),

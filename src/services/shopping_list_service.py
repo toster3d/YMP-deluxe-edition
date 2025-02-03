@@ -4,7 +4,7 @@ from datetime import date
 from typing import Generator
 
 from helpers.date_range_generator import generate_date_list
-from services.recipe_manager import AbstractRecipeManager
+from services.recipe_manager import RecipeManager
 from services.user_plan_manager import AbstractUserPlanManager
 
 
@@ -14,7 +14,7 @@ class ShoppingListService:
     def __init__(
         self,
         user_plan_manager: AbstractUserPlanManager,
-        recipe_manager: AbstractRecipeManager,
+        recipe_manager: RecipeManager,
     ) -> None:
         """Initialize service with plan manager and recipe manager."""
         self.user_plan_manager = user_plan_manager
@@ -62,25 +62,23 @@ class ShoppingListService:
                 ingredients.update(new_ingredients)
 
         if not ingredients:
-            logging.warning(
-                f"No ingredients found for user {user_id} in the date range "
-                f"{start_date} to {end_date}."
-            )
             return set()
 
         logging.info(f"Final ingredients set: {ingredients}")
         return ingredients
-
+    
     def _get_meal_names(
         self, user_plan: dict[str, int | date | str]
     ) -> Generator[str, None, None]:
         """Extract meal names from user plan."""
+        # FIXME: refactor
         for meal in ["breakfast", "lunch", "dinner", "dessert"]:
             if meal_info := user_plan.get(meal):
                 if isinstance(meal_info, str) and (
                     meal_name := self._extract_meal_name(meal_info)
                 ):
                     yield meal_name
+        #FIXME: refactor
 
     def _extract_meal_name(self, meal_info: str) -> str | None:
         """Extract meal name from meal info string."""
@@ -97,9 +95,10 @@ class ShoppingListService:
             *(
                 self.recipe_manager.get_recipe_by_name(user_id, meal_name)
                 for meal_name in meal_names
-            )
+            ),
+            return_exceptions=True
         )
         for recipe in recipes:
-            if recipe and "ingredients" in recipe:
+            if isinstance(recipe, dict) and "ingredients" in recipe:
                 ingredients.update(recipe["ingredients"])
         return ingredients

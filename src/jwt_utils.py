@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Any
 
 import jwt
@@ -27,15 +27,15 @@ def create_access_token(user_id: int, username: str) -> str:
         HTTPException: If token creation fails
     """
     expires_delta = settings.jwt_access_token_expires
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.now(UTC) + expires_delta
 
     to_encode = {
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
         "sub": str(user_id),
         "username": username,
         "type": "access",
-        "jti": f"{user_id}-{int(datetime.now(timezone.utc).timestamp())}",
+        "jti": f"{user_id}-{int(datetime.now(UTC).timestamp())}",
     }
 
     try:

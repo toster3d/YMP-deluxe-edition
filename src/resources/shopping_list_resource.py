@@ -1,5 +1,6 @@
 import logging
-from datetime import date
+from datetime import datetime, UTC
+
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,13 +32,12 @@ class ShoppingListResource:
     async def get(self, user_id: int) -> ShoppingListResponse:
         """Get shopping list for today."""
         logger.info(f"Fetching shopping list for user {user_id} for today")
-        today: date = date.today()
+        today: datetime = datetime.now(UTC)
         try:
             ingredients = await self.shopping_list_service.get_ingredients_for_date_range(
                 user_id, (today, today)
             )
             if not ingredients:
-                logger.warning(f"No meal plan found for user {user_id} today")
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="No meal plan for today. Check your schedule.",
