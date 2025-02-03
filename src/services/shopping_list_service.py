@@ -4,7 +4,7 @@ from datetime import date
 from typing import Generator
 
 from helpers.date_range_generator import generate_date_list
-from services.recipe_manager import RecipeManager
+from services.recipe_manager import AbstractRecipeManager
 from services.user_plan_manager import AbstractUserPlanManager
 
 
@@ -14,7 +14,7 @@ class ShoppingListService:
     def __init__(
         self,
         user_plan_manager: AbstractUserPlanManager,
-        recipe_manager: RecipeManager,
+        recipe_manager: AbstractRecipeManager,
     ) -> None:
         """Initialize service with plan manager and recipe manager."""
         self.user_plan_manager = user_plan_manager

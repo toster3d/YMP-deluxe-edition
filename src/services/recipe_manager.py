@@ -1,4 +1,5 @@
 import json
+from abc import ABC, abstractmethod
 
 from sqlalchemy import select
 
@@ -7,7 +8,66 @@ from models.recipes import Recipe
 from resources.pydantic_schemas import RecipeUpdateSchema
 
 
-class RecipeManager:
+class AbstractRecipeManager(ABC):
+    @abstractmethod
+    async def get_recipes(self, user_id: int) -> list[RecipeUpdateSchema]:
+        raise NotImplementedError(
+            "Retrieve a list of recipes for the specified user ID."
+        )
+
+    @abstractmethod
+    async def get_recipe_by_id(self, recipe_id: int, user_id: int) -> RecipeUpdateSchema | None:
+        raise NotImplementedError("Fetch a recipe by its ID for the specified user ID.")
+
+    @abstractmethod
+    async def get_recipe_by_name(
+        self, user_id: int, meal_name: str
+    ) -> RecipeUpdateSchema | None:
+        raise NotImplementedError(
+            "Find a recipe by its name for the specified user ID."
+        )
+
+    @abstractmethod
+    async def add_recipe(
+        self,
+        user_id: int,
+        meal_name: str,
+        meal_type: str,
+        ingredients: list[str],
+        instructions: list[str],
+    ) -> Recipe:
+        raise NotImplementedError(
+            "Add a new recipe for the specified user ID with the provided details."
+        )
+
+    @abstractmethod
+    async def update_recipe(
+        self,
+        recipe_id: int,
+        user_id: int,
+        meal_name: str | None = None,
+        meal_type: str | None = None,
+        ingredients: list[str] | None = None,
+        instructions: list[str] | None = None,
+    ) -> Recipe | None:
+        raise NotImplementedError(
+            "Update an existing recipe for the specified user ID."
+        )
+
+    @abstractmethod
+    async def delete_recipe(self, recipe_id: int, user_id: int) -> bool:
+        raise NotImplementedError(
+            "Delete a recipe by its ID for the specified user ID."
+        )
+
+    @abstractmethod
+    async def get_ingredients_by_meal_name(self, user_id: int, meal: str) -> str | None:
+        raise NotImplementedError(
+            "Retrieve ingredients for a recipe by its meal name for the specified user ID."
+        )
+
+
+class RecipeManager(AbstractRecipeManager):
     def __init__(self, db: DbSession) -> None:
         self.db = db
 
