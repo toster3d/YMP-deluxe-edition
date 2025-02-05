@@ -1,6 +1,5 @@
 import logging
-from datetime import datetime, UTC
-
+from datetime import UTC, date, datetime
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +31,7 @@ class ShoppingListResource:
     async def get(self, user_id: int) -> ShoppingListResponse:
         """Get shopping list for today."""
         logger.info(f"Fetching shopping list for user {user_id} for today")
-        today: datetime = datetime.now(UTC)
+        today: date = datetime.now(UTC).date()
         try:
             ingredients = await self.shopping_list_service.get_ingredients_for_date_range(
                 user_id, (today, today)

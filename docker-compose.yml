@@ -5,8 +5,12 @@ services:
       - "5000:5000"
     environment:
       - PYTHONPATH=/app/src
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/recipes
-      - DEBUG=1
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=recipes
+      - ASYNC_DATABASE_URI=postgresql+asyncpg://postgres:postgres@db:5432/recipes
     volumes:
       - .:/app
     env_file:
@@ -16,6 +20,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app:app --host 0.0.0.0 --port 5000 --reload --workers 4"
 
   db:
     image: postgres:16-alpine
@@ -25,6 +38,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=recipes
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -34,11 +48,16 @@ services:
       retries: 5
 
   redis:
-    image: redis:6.2-alpine
+    image: redis:7.2-alpine
     ports:
       - "6380:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
 volumes:
   postgres-data:

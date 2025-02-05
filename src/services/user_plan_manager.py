@@ -35,7 +35,8 @@ class SqlAlchemyUserPlanManager(AbstractUserPlanManager):
     async def get_plans(self, user_id: int, date: date_type) -> dict[str, Any]:
         """Get user plans for specific date."""
         query = select(UserPlan).filter(
-            UserPlan.user_id == user_id, UserPlan.date == date
+            UserPlan.user_id == user_id, 
+            UserPlan.date == date
         )
         result = await self.db.execute(query)
         plan = result.scalar_one_or_none()

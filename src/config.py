@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     )
 
     async_database_uri: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@db:5432/recipes",
+        default="postgresql+asyncpg://postgres:postgres@localhost:5432/recipes",
         validation_alias="ASYNC_DATABASE_URI",
         description="Async SQLAlchemy database URI",
     )

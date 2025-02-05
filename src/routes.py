@@ -279,3 +279,17 @@ async def get_shopping_list_for_range(
         user_id=int(current_user["sub"]),
         date_range_data=date_range
     )
+
+@router.get(
+    "/health", 
+    status_code=status.HTTP_200_OK, 
+    response_model=dict[str, str]
+)
+async def health_check() -> dict[str, str]:
+    """
+    Health check endpoint.
+    
+    Returns:
+        dict: Status of the application
+    """
+    return {"status": "healthy"}

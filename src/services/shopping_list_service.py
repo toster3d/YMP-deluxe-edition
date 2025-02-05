@@ -23,32 +23,17 @@ class ShoppingListService:
     async def get_ingredients_for_date_range(
         self, user_id: int, date_range: tuple[date, date]
     ) -> set[str]:
-        """
-        Get ingredients for meal plans in date range.
-
-        Args:
-            user_id: ID of the user
-            date_range: Start and end dates
-
-        Returns:
-            set[str]: Set of ingredients
-        """
+        """Get ingredients for meal plans in date range."""
         start_date, end_date = date_range
         ingredients: set[str] = set()
         date_list = generate_date_list(start_date, end_date)
-
-        logging.info(
-            f"Fetching ingredients for user {user_id} from {start_date} to {end_date}"
-        )
 
         for current_date in date_list:
             user_plan = await self.user_plan_manager.get_plans(
                 user_id=user_id, date=current_date
             )
-            logging.info(f"User plan for {current_date}: {user_plan}")
-
+            
             if not user_plan:
-                logging.info(f"No plan found for user {user_id} on {current_date}.")
                 continue
 
             meal_names = self._get_meal_names(user_plan)
@@ -91,6 +76,7 @@ class ShoppingListService:
     ) -> set[str]:
         """Get ingredients for specified meals."""
         ingredients: set[str] = set()
+    
         recipes = await asyncio.gather(
             *(
                 self.recipe_manager.get_recipe_by_name(user_id, meal_name)
@@ -98,7 +84,13 @@ class ShoppingListService:
             ),
             return_exceptions=True
         )
+    
         for recipe in recipes:
-            if isinstance(recipe, dict) and "ingredients" in recipe:
-                ingredients.update(recipe["ingredients"])
+            if isinstance(recipe, Exception):
+                logging.error(f"Error fetching recipe: {recipe}")
+                continue
+            
+            if recipe and recipe.ingredients:
+                ingredients.update(recipe.ingredients)
+            
         return ingredients
