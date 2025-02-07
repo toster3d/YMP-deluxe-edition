@@ -1,90 +1,96 @@
-from datetime import date, datetime
-from typing import Any, cast
+from datetime import date as date_type
+from typing import Any, TypedDict
 
-from flask import Response, current_app, jsonify, make_response, request
-from flask_jwt_extended import get_jwt_identity, jwt_required  # type: ignore
-from flask_restful import Resource
-from flask_sqlalchemy import SQLAlchemy
-from pydantic import ValidationError
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.user_plan_manager import SqliteUserPlanManager
+from extensions import get_async_db
+from services.user_plan_manager import SqlAlchemyUserPlanManager
 
 from .pydantic_schemas import PlanSchema
 
 
-class ScheduleResource(Resource):
-    user_plan_manager: SqliteUserPlanManager
+class UserPlansDict(TypedDict):
+    user_id: int
+    breakfast: str | None
+    lunch: str | None
+    dinner: str | None
+    dessert: str | None
 
-    def __init__(self) -> None:
-        db = cast(SQLAlchemy, current_app.config['db'])
-        self.user_plan_manager = SqliteUserPlanManager(db)
 
-    @jwt_required()
-    def get(self) -> Response:
-        user_id = get_jwt_identity()
-        date_str = request.args.get('date', datetime.now().strftime("%A %d %B %Y"))
+class ScheduleResponse(TypedDict):
+    date: str
+    user_plans: UserPlansDict
 
+
+class ScheduleResource:
+    """Resource for handling user schedules."""
+
+    def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
+        """Initialize resource with database session."""
+        self.user_plan_manager = SqlAlchemyUserPlanManager(db)
+        self.db = db
+
+    async def get(
+        self, user_id: int, date_param: date_type | None = None
+    ) -> ScheduleResponse:
+        """Get user's schedule for a specific date."""
         try:
-            selected_date: date = datetime.strptime(date_str, "%A %d %B %Y").date()
-            user_plans = self.user_plan_manager.get_plans(user_id, selected_date)
+            selected_date: date_type = date_param or date_type.today()
+            user_plans = await self.user_plan_manager.get_plans(user_id, selected_date)
 
-            response_data: dict[str, Any] = {
-                "date": date_str,
+            return {
+                "date": selected_date.isoformat(),
                 "user_plans": {
                     "user_id": user_id,
                     "breakfast": user_plans.get("breakfast"),
                     "lunch": user_plans.get("lunch"),
                     "dinner": user_plans.get("dinner"),
                     "dessert": user_plans.get("dessert"),
-                }
+                },
             }
-
-            return make_response(jsonify(response_data), 200)
-        except ValueError:
-            return make_response(jsonify({"message": "Invalid date format"}), 400)
-
-
-class ChooseMealResource(Resource):
-    user_plan_manager: SqliteUserPlanManager
-
-    def __init__(self) -> None:
-        db = cast(SQLAlchemy, current_app.config['db'])
-        self.user_plan_manager = SqliteUserPlanManager(db)
-
-    @jwt_required()
-    def get(self) -> Response:
-        user_id = get_jwt_identity()
-        recipes = self.user_plan_manager.get_user_recipes(user_id)
-        return make_response(jsonify({'recipes': recipes}), 200)
-
-    @jwt_required()
-    def post(self) -> Response:
-        user_id = get_jwt_identity()
-        json_data: dict[str, Any] | None = request.get_json()
-
-        if not json_data:
-            return make_response(jsonify({"message": "No input data provided"}), 400)
-
-        try:
-            plan_data = PlanSchema(**json_data)
-            selected_date_obj = datetime.strptime(plan_data.selected_date.strftime("%A %d %B %Y"), "%A %d %B %Y")
-        except ValidationError as err:
-            current_app.logger.warning(f"Validation error: {err.errors()}")
-            return make_response(jsonify({"message": "Invalid input data.", "errors": err.errors()}), 400)
-        except TypeError:
-            return make_response(jsonify({"message": "Invalid date format"}), 400)
-
-        try:
-            updated_plan = self.user_plan_manager.create_or_update_plan(
-                user_id, selected_date_obj, plan_data.recipe_id, plan_data.meal_type
-            )
-            return make_response(jsonify({
-                "message": "Meal plan updated successfully!",
-                **updated_plan
-            }), 200)
         except ValueError as e:
-            current_app.logger.warning(f"ValueError occurred: {e}")
-            return make_response(jsonify({"message": "Invalid input provided."}), 400)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid date format: {str(e)}",
+            )
+
+
+class ChooseMealResource:
+    """Resource for handling meal choices."""
+
+    def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
+        """Initialize resource with database session."""
+        self.user_plan_manager = SqlAlchemyUserPlanManager(db)
+
+    async def get(self, user_id: int) -> dict[str, list[dict[str, Any]]]:
+        """
+        Get available recipes for user.
+
+        Args:
+            user_id: ID of the user
+
+        Returns:
+            dict: List of available recipes
+        """
+        recipes = await self.user_plan_manager.get_user_recipes(user_id)
+        return {"recipes": recipes}
+
+    async def post(self, user_id: int, plan_data: PlanSchema) -> dict[str, Any]:
+        """Create or update meal plan."""
+        try:
+            updated_plan = await self.user_plan_manager.create_or_update_plan(
+                user_id=user_id,
+                selected_date=plan_data.selected_date,
+                recipe_id=plan_data.recipe_id,
+                meal_type=plan_data.meal_type,
+            )
+
+            return {"message": "Meal plan updated successfully!", **updated_plan}
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            current_app.logger.error(f"Error updating meal plan: {str(e)}")
-            return make_response(jsonify({"message": "An error occurred while updating the meal plan"}), 500)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"An error occurred while updating the meal plan: {str(e)}",
+            )
