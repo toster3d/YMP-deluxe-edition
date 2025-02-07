@@ -76,7 +76,7 @@ class ShoppingListService:
     ) -> set[str]:
         """Get ingredients for specified meals."""
         ingredients: set[str] = set()
-    
+        # FIXME: refactor
         recipes = await asyncio.gather(
             *(
                 self.recipe_manager.get_recipe_by_name(user_id, meal_name)
@@ -94,3 +94,4 @@ class ShoppingListService:
                 ingredients.update(recipe.ingredients)
             
         return ingredients
+    # FIXME: refactor
