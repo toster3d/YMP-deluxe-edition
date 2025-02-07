@@ -1,132 +1,162 @@
-from typing import Any, cast
+from typing import Any
 
-from flask import current_app, jsonify, make_response, request
-from flask.wrappers import Response
-from flask_jwt_extended import get_jwt_identity, jwt_required  # type: ignore
-from flask_restful import Resource
-from flask_sqlalchemy import SQLAlchemy
-from pydantic import ValidationError
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from extensions import get_async_db
 from services.recipe_manager import RecipeManager
 
 from .pydantic_schemas import RecipeSchema, RecipeUpdateSchema
 
 
-class RecipeListResource(Resource):
-    recipe_manager: RecipeManager
+class RecipeListResource:
+    """Resource for handling recipe collections."""
 
-    def __init__(self) -> None:
-        db = cast(SQLAlchemy, current_app.config['db'])
+    def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
+        """Initialize resource with database session."""
         self.recipe_manager = RecipeManager(db)
 
-    @jwt_required()
-    def get(self) -> Response:
-        user_id = get_jwt_identity()
-        current_app.logger.info(f"Attempting to get recipes for user ID: {user_id}")
+    async def get(self, user_id: int) -> dict[str, list[RecipeUpdateSchema]]:
+        """
+        Get all recipes for a user.
 
-        recipes = self.recipe_manager.get_recipes(user_id)
+        Args:
+            user_id: ID of the user
+
+        Returns:
+            dict: List of user's recipes
+
+        Raises:
+            HTTPException: If no recipes found
+        """
+        recipes = await self.recipe_manager.get_recipes(user_id)
 
         if not recipes:
-            current_app.logger.info(f"No recipes found for user ID: {user_id}")
-            return make_response(jsonify({"message": "No recipes found for this user."}), 404)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No recipes found for this user.",
+            )
 
-        return make_response(jsonify(recipes), 200)
+        return {"recipes": recipes}
 
-    @jwt_required()
-    def post(self) -> Response:
-        user_id = get_jwt_identity()
-        current_app.logger.info(f"Attempting to add recipe for user ID: {user_id}")
+    async def post(self, recipe_data: RecipeSchema, user_id: int) -> dict[str, Any]:
+        """
+        Create a new recipe.
 
-        json_data: dict[str, Any] | None = request.get_json()
-        if not json_data:
-            current_app.logger.warning("No input data provided")
-            return make_response(jsonify({"message": "No input data provided"}), 400)
+        Args:
+            recipe_data: Recipe data
+            user_id: ID of the user
 
+        Returns:
+            dict: Created recipe details
+
+        Raises:
+            HTTPException: If recipe creation fails
+        """
         try:
-            recipe_data = RecipeSchema(**json_data)
-            current_app.logger.info(f"Validated data: {recipe_data.model_dump()}")
-        except ValidationError as err:
-            current_app.logger.error(f"Validation error: {err.errors()}")
-            return make_response(jsonify(err.errors()), 422)
-
-        try:
-            self.recipe_manager.add_recipe(
-                user_id,
+            recipe = await self.recipe_manager.add_recipe(
+                user_id=user_id,
                 meal_name=recipe_data.meal_name,
                 meal_type=recipe_data.meal_type,
                 ingredients=recipe_data.ingredients,
-                instructions=recipe_data.instructions
+                instructions=recipe_data.instructions,
             )
-            current_app.logger.info("Recipe added successfully")
-            return make_response(jsonify({
+
+            return {
                 "message": "Recipe added successfully!",
-                "meal_name": recipe_data.meal_name,
-                "meal_type": recipe_data.meal_type
-            }), 201)
+                "recipe_id": recipe.id,
+                "meal_name": recipe.meal_name,
+                "meal_type": recipe.meal_type,
+            }
         except Exception as e:
-            current_app.logger.error(f"Error adding recipe: {e}")
-            return make_response(jsonify({"message": "Failed to add recipe"}), 500)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to add recipe: {str(e)}",
+            )
 
 
-class RecipeResource(Resource):
-    recipe_manager: RecipeManager
+class RecipeResource:
+    """Resource for handling individual recipes."""
 
-    def __init__(self) -> None:
-        db = cast(SQLAlchemy, current_app.config['db'])
+    def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
+        """Initialize resource with database session."""
         self.recipe_manager = RecipeManager(db)
 
-    @jwt_required()
-    def get(self, recipe_id: int) -> Response:
-        user_id = get_jwt_identity()
-        recipe = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+    async def get(self, recipe_id: int, user_id: int) -> RecipeUpdateSchema:
+        """
+        Get a specific recipe.
 
-        if recipe:
-            return make_response(jsonify(recipe), 200)
+        Args:
+            recipe_id: ID of the recipe
+            user_id: ID of the user
 
-        current_app.logger.info(f"Recipe with id {recipe_id} not found for user_id {user_id}.")
-        return make_response(jsonify({"message": "Recipe not found"}), 404)
+        Returns:
+            RecipeUpdateSchema: Recipe details
 
-    @jwt_required()
-    def delete(self, recipe_id: int) -> Response:
-        user_id = get_jwt_identity()
+        Raises:
+            HTTPException: If recipe not found
+        """
+        recipe = await self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+        if not recipe:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found"
+            )
+        return recipe
+
+    async def patch(
+        self, recipe_id: int, recipe_data: RecipeUpdateSchema, user_id: int
+    ) -> RecipeUpdateSchema:
+        """Update a specific recipe."""
         try:
-            recipe = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
-            if recipe is None:
-                return make_response(jsonify({"message": "Recipe not found"}), 404)
-
-            self.recipe_manager.delete_recipe(recipe_id, user_id)
-            current_app.logger.info(f"Recipe with ID {recipe_id} deleted successfully.")
-            return make_response("", 204)
-        except Exception as e:
-            current_app.logger.error(f"Error deleting recipe: {e}")
-            return make_response(jsonify({"message": "Failed to delete recipe."}), 500)
-
-    @jwt_required()
-    def patch(self, recipe_id: int) -> Response:
-        user_id = get_jwt_identity()
-        json_data: dict[str, Any] | None = request.get_json()
-        if not json_data:
-            current_app.logger.warning("No input data provided")
-            return make_response(jsonify({"message": "No input data provided"}), 400)
-
-        try:
-            validated_data = RecipeUpdateSchema(**json_data)
-            self.recipe_manager.update_recipe(
-                recipe_id,
-                user_id,
-                meal_name=validated_data.meal_name,
-                meal_type=validated_data.meal_type,
-                ingredients=validated_data.ingredients,
-                instructions=validated_data.instructions
+            updated_recipe = await self.recipe_manager.update_recipe(
+                recipe_id=recipe_id,
+                user_id=user_id,
+                meal_name=recipe_data.meal_name,
+                meal_type=recipe_data.meal_type,
+                ingredients=recipe_data.ingredients,
+                instructions=recipe_data.instructions,
             )
 
-            updated_recipe = self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+            if not updated_recipe:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found"
+                )
 
-            current_app.logger.info(f"Recipe with ID {recipe_id} updated successfully.")
-
-            return make_response(jsonify(updated_recipe), 200)
-        except ValidationError as err:
-            return make_response(jsonify({"errors": err.errors()}), 400)
+            result = await self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+            if result is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Recipe not found after update",
+                )
+            return result
+        except HTTPException:
+            raise
         except Exception as e:
-            current_app.logger.error(f"Error updating recipe: {e}")
-            return make_response(jsonify({"message": "Failed to update recipe."}), 500)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update recipe: {str(e)}",
+            )
+
+    async def delete(self, recipe_id: int, user_id: int) -> None:
+        """
+        Delete a specific recipe.
+
+        Args:
+            recipe_id: ID of the recipe
+            user_id: ID of the user
+
+        Raises:
+            HTTPException: If recipe deletion fails
+        """
+        try:
+            if not await self.recipe_manager.delete_recipe(recipe_id, user_id):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found"
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete recipe: {str(e)}",
+            )
