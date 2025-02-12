@@ -1,0 +1,28 @@
+FROM ghcr.io/astral-sh/uv:python3.12-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache \
+    curl \
+    bash
+
+COPY pyproject.toml uv.lock ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system . && \
+    uv pip install --system \
+        pytest \
+        pytest-asyncio \
+        pytest-cov \
+        aiosqlite \
+        redis \
+        sqlmodel \
+        httpx \
+        werkzeug
+
+COPY . .
+
+ENV PYTHONPATH=/app:/app/src
+ENV PYTHONUNBUFFERED=1
+
+CMD ["pytest", "tests", "-v", "--log-cli-level=INFO"]

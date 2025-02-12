@@ -1,44 +1,47 @@
+# from functools import lru_cache #co to?
 from pathlib import Path
 from typing import Any
 
 from pydantic_settings import BaseSettings
 
-from resources.pydantic_schemas import RegisterSchema
-
 TEST_DIR = Path(__file__).parent
 DB_FILE = TEST_DIR / "test.db"
 
 class TestSettings(BaseSettings):
-    # SQLite settings
+    """Test settings configuration."""
+    
+    # Database
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DB_FILE}"
     ASYNC_DATABASE_URI: str = DATABASE_URL
-    
-    # Redis settings dla blacklisty JWT
+
+    # Redis
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6380
     REDIS_DB: int = 1
-    REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
-    JWT_BLACKLIST_PREFIX: str = "blacklist:"
-    JWT_EXPIRATION: int = 3600
+    REDIS_PREFIX: str = "token_blacklist:"
+    REDIS_BLACKLIST_VALUE: str = "blacklisted"
     
-    # JWT Settings
-    JWT_SECRET_KEY: str = "test_key"
+    # JWT
+    JWT_SECRET_KEY: str = "test_secret_key"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRES: int = 30
     
-    TEST_USER: RegisterSchema = RegisterSchema(
-        email="test@example.com",
-        username="testuser",
-        password="Test123!",
-        confirmation="Test123!"
-    )
+    # Test user
+    TEST_USER_EMAIL: str = "test@example.com"
+    TEST_USER_PASSWORD: str = "Test123!"
+    TEST_USER_NAME: str = "TestUser"
     
-    # Debug Settings
+    # Debug
     DEBUG: bool = True
-    
+
+    # Python path
+    PYTHONPATH: str = "."
+
     model_config = {
         "env_file": ".env.test",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
-        "extra": "ignore"
+        "extra": "allow"
     }
 
     def __init__(self, **kwargs: Any) -> None:
@@ -53,4 +56,7 @@ class TestSettings(BaseSettings):
         except Exception as e:
             print(f"Error during cleanup of the test database: {e}")
 
-test_settings = TestSettings() 
+#@lru_cache
+def get_test_settings() -> TestSettings:
+    """Get test settings."""
+    return TestSettings() 

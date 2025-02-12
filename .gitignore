@@ -163,3 +163,8 @@ dump.edb
 
 # Ignore Python type stub files
 *.pyi
+
+# Test artifacts
+.coverage
+htmlcov/
+.pytest_cache/

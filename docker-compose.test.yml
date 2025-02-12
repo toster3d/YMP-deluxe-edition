@@ -1,0 +1,23 @@
+services:
+  test-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - ASYNC_DATABASE_URI=sqlite+aiosqlite:///test.db
+    depends_on:
+      test-redis:
+        condition: service_healthy
+
+  test-redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3 

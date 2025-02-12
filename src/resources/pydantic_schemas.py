@@ -1,7 +1,14 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 
 from services.user_auth_manager import PasswordValidator
 
@@ -79,8 +86,7 @@ class UserPlanSchema(BaseModel):
     dinner: str | None = None
     dessert: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PlanSchema(BaseModel):
