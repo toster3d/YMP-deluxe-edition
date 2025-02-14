@@ -33,14 +33,12 @@ async def setup_test_environment() -> bool:
     docker_compose_path = Path(__file__).parents[2] / "docker-compose.test.yml"
     
     try:
-        # Start containers
         subprocess.run(
             ["docker-compose", "-f", str(docker_compose_path), "up", "-d"],
             check=True,
             capture_output=True
         )
         
-        # Wait for services
         logger.info("Waiting for services to be ready...")
         redis_ready = await wait_for_redis()
         
@@ -48,7 +46,6 @@ async def setup_test_environment() -> bool:
             logger.error("Redis failed to start")
             return False
             
-        # Initialize databases
         if not await init_test_databases():
             logger.error("Database initialization failed")
             return False

@@ -16,7 +16,7 @@ async def init_test_redis() -> bool:
             decode_responses=True
         )
         await redis.ping()
-        await redis.flushdb()  # Clear test database
+        await redis.flushdb()
         await redis.close()
         return True
     except Exception as e:

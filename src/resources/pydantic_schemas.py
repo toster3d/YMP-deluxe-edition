@@ -10,7 +10,10 @@ from pydantic import (
     field_validator,
 )
 
-from services.user_auth_manager import PasswordValidator
+from services.password_validator import PasswordValidator
+
+MealType = Literal["breakfast", "lunch", "dinner", "dessert"]
+VALID_MEAL_TYPES = ("breakfast", "lunch", "dinner", "dessert")
 
 
 class TokenResponse(BaseModel):
@@ -58,24 +61,54 @@ class RegisterSchema(BaseModel):
 
 
 class RecipeSchema(BaseModel):
-    meal_name: str = Field(..., description="Name of the meal")
-    meal_type: Literal["breakfast", "lunch", "dinner", "dessert"] = Field(
-        ..., description="Type of meal"
+    """Schema for recipe data validation."""
+    
+    model_config = ConfigDict(strict=True)
+
+    meal_name: str = Field(
+        ..., 
+        description="Name of the meal",
+        min_length=1,
+        max_length=200,
+    )
+    meal_type: MealType = Field(
+        ..., 
+        description="Type of meal",
+        examples=["breakfast", "lunch", "dinner", "dessert"],
     )
     ingredients: list[str] = Field(
-        default_factory=list, description="List of ingredients required for the meal"
+        default_factory=list,
+        description="List of ingredients required for the meal",
+        examples=[["flour", "sugar", "eggs"]],
     )
     instructions: list[str] = Field(
         default_factory=list,
         description="Step-by-step instructions to prepare the meal",
+        examples=[["Mix ingredients", "Bake for 30 minutes"]], 
     )
 
+    @field_validator("ingredients", "instructions")
+    @classmethod
+    def validate_list_items(cls, v: list[str]) -> list[str]:
+        """Validate that list items are non-empty strings."""
+        if any(not item.strip() for item in v):
+            raise ValueError("Input should be a valid string")
+        return v
 
 class RecipeUpdateSchema(BaseModel):
     meal_name: str | None = None
-    meal_type: str | None = None
+    meal_type: MealType | None = None
     ingredients: list[str] | None = None
     instructions: list[str] | None = None
+
+    @field_validator("ingredients", "instructions")
+    @classmethod
+    def validate_list_items(cls, v: list[str] | None) -> list[str] | None:
+        """Validate that list items are non-empty strings."""
+        if v is not None:
+            if any(not item.strip() for item in v):
+                raise ValueError("Input should be a valid string")
+        return v
 
 
 class UserPlanSchema(BaseModel):

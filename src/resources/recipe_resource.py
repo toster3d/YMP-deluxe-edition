@@ -16,7 +16,7 @@ class RecipeListResource:
         """Initialize resource with database session."""
         self.recipe_manager = RecipeManager(db)
 
-    async def get(self, user_id: int) -> dict[str, list[RecipeUpdateSchema]]:
+    async def get(self, user_id: int) -> dict[str, list[RecipeSchema]]:
         """
         Get all recipes for a user.
 
@@ -54,13 +54,7 @@ class RecipeListResource:
             HTTPException: If recipe creation fails
         """
         try:
-            recipe = await self.recipe_manager.add_recipe(
-                user_id=user_id,
-                meal_name=recipe_data.meal_name,
-                meal_type=recipe_data.meal_type,
-                ingredients=recipe_data.ingredients,
-                instructions=recipe_data.instructions,
-            )
+            recipe = await self.recipe_manager.add_recipe(recipe_data=recipe_data, user_id=user_id)
 
             return {
                 "message": "Recipe added successfully!",
@@ -82,24 +76,13 @@ class RecipeResource:
         """Initialize resource with database session."""
         self.recipe_manager = RecipeManager(db)
 
-    async def get(self, recipe_id: int, user_id: int) -> RecipeUpdateSchema:
-        """
-        Get a specific recipe.
-
-        Args:
-            recipe_id: ID of the recipe
-            user_id: ID of the user
-
-        Returns:
-            RecipeUpdateSchema: Recipe details
-
-        Raises:
-            HTTPException: If recipe not found
-        """
-        recipe = await self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
+    async def get(self, recipe_id: int, user_id: int) -> RecipeSchema:
+        """Get a specific recipe."""
+        recipe = await self.recipe_manager.get_recipe_details(recipe_id, user_id)
         if not recipe:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found"
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Recipe not found"
             )
         return recipe
 
@@ -111,15 +94,13 @@ class RecipeResource:
             updated_recipe = await self.recipe_manager.update_recipe(
                 recipe_id=recipe_id,
                 user_id=user_id,
-                meal_name=recipe_data.meal_name,
-                meal_type=recipe_data.meal_type,
-                ingredients=recipe_data.ingredients,
-                instructions=recipe_data.instructions,
+                recipe_data=recipe_data
             )
 
             if not updated_recipe:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found"
+                    status_code=status.HTTP_404_NOT_FOUND, 
+                    detail="Recipe not found"
                 )
 
             result = await self.recipe_manager.get_recipe_by_id(recipe_id, user_id)

@@ -1,9 +1,11 @@
 from datetime import date as date_type
 
-from sqlalchemy import CheckConstraint, ForeignKey, String, Text
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from extensions import Base
+from resources.pydantic_schemas import VALID_MEAL_TYPES, MealType
 
 
 class User(Base):
@@ -28,9 +30,15 @@ class Recipe(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     meal_name: Mapped[str] = mapped_column(nullable=False)
-    meal_type: Mapped[str] = mapped_column(
-        String(20), 
-        CheckConstraint("meal_type IN ('breakfast', 'lunch', 'dinner', 'dessert')")
+    meal_type: Mapped[MealType] = mapped_column(
+        SQLAlchemyEnum(
+            *VALID_MEAL_TYPES,
+            name="meal_type_enum",
+            create_type=True,
+            native_enum=True,
+            validate_strings=True
+        ),
+        nullable=False
     )
     ingredients: Mapped[str] = mapped_column(Text)
     instructions: Mapped[str] = mapped_column(Text)
