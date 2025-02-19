@@ -98,7 +98,7 @@ async def logout(
 async def get_recipes(
     recipe_list_resource: Annotated[RecipeListResource, Depends()],
     current_user: dict[str, Any] = Depends(verify_token)
-) -> dict[str, list[RecipeUpdateSchema]]:
+) -> dict[str, list[RecipeSchema]]:
     """Get all recipes for authenticated user."""
     return await recipe_list_resource.get(user_id=int(current_user["sub"]))
 
@@ -132,7 +132,7 @@ async def get_recipe(
     recipe_id: int,
     recipe_resource: Annotated[RecipeResource, Depends()],
     token: dict[str, Any] = Depends(verify_token)
-) -> RecipeUpdateSchema:
+) -> RecipeSchema:
     """Get recipe by ID."""
     user_id = int(token['sub'])
     return await recipe_resource.get(recipe_id, user_id)

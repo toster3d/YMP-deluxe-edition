@@ -1,17 +1,18 @@
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from pydantic_settings import BaseSettings
 
 TEST_DIR = Path(__file__).parent
-DB_FILE = TEST_DIR / "test.db"
-
+    
 class TestSettings(BaseSettings):
     """Test settings configuration."""
     
     # Database
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{DB_FILE}"
+    DATABASE_URL: str = "sqlite+aiosqlite:///:memory:"
     ASYNC_DATABASE_URI: str = DATABASE_URL
+    SQLITE_PRAGMA: str = "PRAGMA foreign_keys=ON"  # Dodajemy wsparcie dla foreign keys
 
     # Redis
     REDIS_HOST: str = "localhost"
@@ -39,23 +40,14 @@ class TestSettings(BaseSettings):
     model_config = {
         "env_file": ".env.test",
         "env_file_encoding": "utf-8",
-        "case_sensitive": True,
+        "case_sensitive": False,
         "extra": "allow"
     }
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        TEST_DIR.mkdir(parents=True, exist_ok=True)
         
-    async def cleanup(self) -> None:
-        """Cleanup after tests"""
-        try:
-            if DB_FILE.exists():
-                DB_FILE.unlink()
-        except Exception as e:
-            print(f"Error during cleanup of the test database: {e}")
-
-#@lru_cache
+@lru_cache
 def get_test_settings() -> TestSettings:
     """Get test settings."""
     return TestSettings() 

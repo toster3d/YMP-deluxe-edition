@@ -3,7 +3,7 @@ name = "moj-projekt"
 version = "0.1.0"
 description = "A comprehensive meal planning and shopping list application"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13.0"
 dependencies = [
     "requests>=2.32.3",
     "typing>=3.10.0.0",
@@ -23,7 +23,7 @@ dependencies = [
     "itsdangerous",
     "jinja2",
     "markupsafe",
-    "msgspec",
+    "msgspec==0.19.0",
     "mypy",
     "mypy-extensions",
     "packaging",
@@ -45,7 +45,7 @@ dependencies = [
     "hiredis>=3.1.0",
     "ruff>=0.8.4",
     "asyncpg==0.30.0",
-    "pytest-asyncio==0.23.5.post1",
+    "pytest-asyncio>=0.24.0",
     "pytest==8.3.4",
     "pluggy==1.5.0",
     "iniconfig==2.0.0",
@@ -60,7 +60,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest>=8.3.4",
-    "pytest-asyncio>=0.23.5.post1",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=4.1.0",
     "httpx>=0.28.1",
     "pytest-mock>=3.12.0",
@@ -71,7 +71,7 @@ test = [
 moj-projekt = { workspace = true }
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13.0"
 check_untyped_defs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

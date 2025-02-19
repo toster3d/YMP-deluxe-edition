@@ -26,3 +26,4 @@ async def init_test_redis() -> bool:
 async def init_test_databases() -> bool:
     """Initialize all test databases."""
     return await init_test_redis() 
+

@@ -8,6 +8,7 @@ services:
     environment:
       - PYTHONPATH=/app:/app/src
       - ASYNC_DATABASE_URI=sqlite+aiosqlite:///test.db
+      - TESTING=True
     depends_on:
       test-redis:
         condition: service_healthy
