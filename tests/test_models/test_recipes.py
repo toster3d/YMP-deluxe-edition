@@ -1,103 +1,102 @@
+import uuid
 from datetime import date
+from typing import AsyncGenerator
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import selectinload
 
 from resources.pydantic_schemas import VALID_MEAL_TYPES
 from test_models.models_db_test import TestRecipe, TestUser, TestUserPlan
 
+# Konfiguracja testowej bazy danych
+TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+engine = create_async_engine(TEST_DATABASE_URL, echo=True)
+SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
-@pytest.mark.asyncio
-async def test_create_recipe(db_session: AsyncSession) -> None:
+@pytest.fixture(scope="function")
+async def test_db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with SessionLocal() as session:
+        yield session
+        await session.rollback()
+
+@pytest.fixture
+async def unique_user(test_db_session: AsyncSession) -> TestUser:
+    """Fixture tworząca unikalnego użytkownika."""
+    user = TestUser(
+        user_name=f"TestUser-{uuid.uuid4()}",
+        hash="hashedpassword",
+        email=f"test{uuid.uuid4()}@example.com"
+    )
+    test_db_session.add(user)
+    await test_db_session.commit()
+    await test_db_session.refresh(user)
+    return user
+
+@pytest.mark.anyio
+async def test_create_recipe(test_db_session: AsyncSession, unique_user: TestUser) -> None:
     """Testuje dodanie przepisu i powiązanie z użytkownikiem."""
-    user = TestUser(user_name="TestUser", hash="hashedpassword", email="test@example.com")
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
     recipe = TestRecipe(
-        user_id=user.id,
+        user_id=unique_user.id,
         meal_name="Spaghetti Bolognese",
-        meal_type=VALID_MEAL_TYPES[2],  # Zakładając, że 'dinner' jest na pozycji 2
+        meal_type=VALID_MEAL_TYPES[2],
         ingredients="Makaron, mięso mielone, pomidory",
         instructions="Ugotować makaron, podsmażyć mięso, dodać pomidory"
     )
-    db_session.add(recipe)
-    await db_session.commit()
-    await db_session.refresh(recipe)
+    test_db_session.add(recipe)
+    await test_db_session.commit()
+    await test_db_session.refresh(recipe)
 
-    assert recipe.id is not None
-    assert recipe.meal_name == "Spaghetti Bolognese"
-    assert recipe.meal_type in VALID_MEAL_TYPES
-    assert recipe.user_id == user.id
-    assert recipe.user == user
+    recipe_from_db = await test_db_session.get(
+        TestRecipe, recipe.id, options=[selectinload(TestRecipe.user)]
+    )
 
+    # Rozszerzone asercje
+    assert recipe_from_db is not None, "Przepis nie został poprawnie zapisany w bazie danych"
+    assert recipe_from_db.id is not None, "ID przepisu nie może być None"
+    assert recipe_from_db.meal_name == "Spaghetti Bolognese", "Nazwa posiłku nie zgadza się"
+    assert recipe_from_db.meal_type == VALID_MEAL_TYPES[2], "Typ posiłku nie zgadza się"
+    assert recipe_from_db.ingredients == "Makaron, mięso mielone, pomidory", "Składniki nie zgadzają się"
+    assert recipe_from_db.instructions == "Ugotować makaron, podsmażyć mięso, dodać pomidory", "Instrukcje nie zgadzają się"
+    
+    # Sprawdzenie relacji użytkownika
+    assert recipe_from_db.user is not None, "Użytkownik nie został poprawnie powiązany z przepisem"
+    assert recipe_from_db.user.id == unique_user.id, "ID użytkownika nie zgadza się"
 
-@pytest.mark.asyncio
-async def test_create_user(db_session: AsyncSession) -> None:
+@pytest.mark.anyio
+async def test_create_user(test_db_session: AsyncSession, unique_user: TestUser) -> None:
     """Testuje tworzenie użytkownika w bazie."""
-    user = TestUser(user_name="TestUser", hash="hashedpassword", email="test@example.com")
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
+    assert unique_user.id is not None
+    assert "TestUser-" in unique_user.user_name
+    assert "test" in unique_user.email
 
-    assert user.id is not None
-    assert user.user_name == "TestUser"
-    assert user.email == "test@example.com"
-
-
-@pytest.mark.asyncio
-async def test_user_has_recipes(db_session: AsyncSession) -> None:
+def test_user_has_recipes() -> None:
     """Sprawdza, czy użytkownik ma przypisane przepisy."""
     user = TestUser(user_name="TestUser", hash="hashedpassword", email="test@example.com")
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
+    recipe1 = TestRecipe(user_id=user.id, meal_name="Pizza", meal_type="Dinner", ingredients="Ciasto, ser, sos", instructions="Upiec pizzę")
+    recipe2 = TestRecipe(user_id=user.id, meal_name="Tiramisu", meal_type="Dessert", ingredients="Mascarpone, kawa, biszkopty", instructions="Wymieszać składniki")
 
-    recipe1 = TestRecipe(
-        user_id=user.id, 
-        meal_name="Pizza", 
-        meal_type=VALID_MEAL_TYPES[2],  # 'dinner'
-        ingredients="Ciasto, ser, sos", 
-        instructions="Upiec pizzę"
-    )
-    recipe2 = TestRecipe(
-        user_id=user.id, 
-        meal_name="Tiramisu", 
-        meal_type=VALID_MEAL_TYPES[3],  # 'dessert'
-        ingredients="Mascarpone, kawa, biszkopty", 
-        instructions="Wymieszać składniki"
-    )
+    user.recipes = [recipe1, recipe2]
 
-    db_session.add_all([recipe1, recipe2])
-    await db_session.commit()
+    assert user is not None
+    assert len(user.recipes) == 2
+    assert {r.meal_name for r in user.recipes} == {"Pizza", "Tiramisu"}
 
-    user_from_db = await db_session.get(TestUser, user.id)
-    assert user_from_db is not None
-    assert len(user_from_db.recipes) == 2
-    assert user_from_db.recipes[0].meal_name == "Pizza"
-    assert user_from_db.recipes[1].meal_name == "Tiramisu"
-    
-@pytest.mark.asyncio
-async def test_create_user_plan(db_session: AsyncSession) -> None:
+@pytest.mark.anyio
+async def test_create_user_plan(test_db_session: AsyncSession, unique_user: TestUser) -> None:
     """Testuje dodanie planu użytkownika."""
-    user = TestUser(user_name="TestUser", hash="hashedpassword", email="test@example.com")
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
     user_plan = TestUserPlan(
-        user_id=user.id,
+        user_id=unique_user.id,
         date=date(2025, 2, 20),
         breakfast="Jajecznica",
         lunch="Kurczak z ryżem",
         dinner="Kanapka",
         dessert="Czekolada"
     )
-    db_session.add(user_plan)
-    await db_session.commit()
-    await db_session.refresh(user_plan)
+    test_db_session.add(user_plan)
+    await test_db_session.commit()
+    await test_db_session.refresh(user_plan)
 
     assert user_plan.id is not None
-    assert user_plan.user_id == user.id
+    assert user_plan.user_id == unique_user.id
     assert user_plan.breakfast == "Jajecznica"

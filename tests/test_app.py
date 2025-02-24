@@ -27,7 +27,7 @@ async def async_client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     ) as client:
         yield client
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_create_application() -> None:
     """Test application creation and configuration."""
     app = create_application()
@@ -43,7 +43,7 @@ async def test_create_application() -> None:
     ]
     assert len(middleware) == 1
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_initialize_database() -> None:
     """Test database initialization."""
     await initialize_database()
@@ -58,7 +58,7 @@ async def test_initialize_database() -> None:
         
         assert required_tables.issubset(existing_tables)
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_lifespan(app: FastAPI) -> None:
     """Test application lifespan events."""
     async with AsyncClient(
@@ -68,7 +68,7 @@ async def test_lifespan(app: FastAPI) -> None:
         response = await client.get("/")
         assert response.status_code in (404, 200)
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     "test_input,expected_status",
     [
@@ -88,7 +88,7 @@ async def test_default_endpoints(
         response = await client.get(test_input)
         assert response.status_code == expected_status
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_cors_headers(app: FastAPI) -> None:
     """Test CORS headers in response."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -104,7 +104,7 @@ async def test_cors_headers(app: FastAPI) -> None:
         assert "access-control-allow-origin" in response.headers
         assert "access-control-allow-methods" in response.headers
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_router_inclusion(app: FastAPI) -> None:
     """Test if main router is included in the application."""
     assert len(app.routes) > 0
@@ -115,7 +115,7 @@ async def test_router_inclusion(app: FastAPI) -> None:
     ]
     assert len(existing_routes) > 0
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_error_handling(app: FastAPI) -> None:
     """Test error handling for invalid requests."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -126,7 +126,7 @@ async def test_error_handling(app: FastAPI) -> None:
         assert "detail" in data
         assert isinstance(data["detail"], str)
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_debug_mode_settings(app: FastAPI) -> None:
     """Test debug mode configuration."""
     from src.config import get_settings
@@ -139,7 +139,6 @@ def test_app_import() -> None:
     """Test that app can be imported correctly."""
     from src.app import app
     assert isinstance(app, FastAPI)
-
 @pytest.fixture(autouse=True)
 def set_test_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TESTING", "True") 

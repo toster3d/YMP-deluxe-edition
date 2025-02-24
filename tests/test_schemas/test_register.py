@@ -100,7 +100,7 @@ class TestRegisterSchema:
                     "password": "Test123!#",
                     "confirmation": "DifferentPass!#"
                 },
-                "Passwords do not match"
+                "Passwords do not match. Please ensure both passwords are identical."
             ),
             (
                 {
@@ -109,7 +109,7 @@ class TestRegisterSchema:
                     "password": "weakpassword",
                     "confirmation": "weakpassword"
                 },
-                "Password does not meet complexity requirements"
+                "Password does not meet complexity requirements."
             ),
         ]
     )
