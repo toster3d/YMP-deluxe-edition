@@ -24,7 +24,7 @@ class AuthResource:
     """Resource handling user authentication."""
 
     def __init__(self, db: AsyncSession = Depends(get_async_db)):
-        """Initialize auth resource with database session."""
+        self.db = db
         self.user_auth = UserAuth(db)
 
     async def login_with_form(

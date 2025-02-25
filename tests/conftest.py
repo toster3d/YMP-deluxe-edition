@@ -1,21 +1,23 @@
 import logging
 import uuid
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from redis.asyncio import Redis
 from settings import get_test_settings
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    create_async_engine,
     async_sessionmaker,
+    create_async_engine,
 )
-from sqlmodel import SQLModel
-from test_models.models_db_test import TestUser, TestBase
 from sqlalchemy.pool import StaticPool
+from sqlmodel import SQLModel
+from test_models.models_db_test import TestBase, TestUser
 
 from src.app import create_application
 
@@ -103,3 +105,41 @@ async def clean_database(db_session: AsyncSession) -> None:
         await db_session.rollback()
         logging.error(f"Błąd czyszczenia bazy danych: {e}")
         raise
+
+@pytest.fixture
+async def mock_redis() -> AsyncMock:
+    """Fixture tworząca mock Redis."""
+    mock = AsyncMock(spec=Redis)
+    
+    async def async_true(*args: Any, **kwargs: Any) -> bool:
+        return True
+    
+    async def async_none(*args: Any, **kwargs: Any) -> None:
+        return None
+    
+    async def async_false(*args: Any, **kwargs: Any) -> bool:
+        return False
+    
+    # Konfiguracja asynchronicznych metod
+    mock.ping = AsyncMock(side_effect=async_true)
+    mock.setex = AsyncMock(side_effect=async_true)
+    mock.exists = AsyncMock(side_effect=async_false)
+    mock.get = AsyncMock(side_effect=async_none)
+    mock.delete = AsyncMock(side_effect=async_true)
+    mock.flushdb = AsyncMock(side_effect=async_true)
+    mock.close = AsyncMock(side_effect=async_none)
+    
+    # Konfiguracja kontekstu asynchronicznego
+    mock.__aenter__ = AsyncMock(return_value=mock)
+    mock.__aexit__ = AsyncMock(return_value=None)
+    
+    return mock
+
+@pytest.fixture
+async def mock_db_session() -> AsyncSession:
+    """Fixture tworząca mock sesji bazy danych."""
+    session = AsyncMock(spec=AsyncSession)
+    session.commit = AsyncMock()
+    session.rollback = AsyncMock()
+    session.close = AsyncMock()
+    return session
