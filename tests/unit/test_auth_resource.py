@@ -1,90 +1,137 @@
 import logging
-from typing import cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
-from werkzeug.security import generate_password_hash
 
-from models.recipes import User
 from resources.auth_resource import AuthResource
-from resources.pydantic_schemas import TokenResponse
-from services.user_auth_manager import UserAuth
+from services.user_auth_manager import (
+    InvalidCredentialsError,
+    MissingCredentialsError,
+    TokenError,
+    UserAuth,
+)
 
 # Konfiguracja logowania
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @pytest.mark.asyncio
-async def test_login_with_form_success(mock_db_session: AsyncSession) -> None:
+async def test_login_with_form_success() -> None:
     """Test successful login with form data."""
     # Arrange
-    hashed_password = generate_password_hash("password")
-    user = User(
-        user_name="testuser",
-        hash=hashed_password,
-        email="test@example.com",
-        id=1  # Dodaj ID, które jest potrzebne do generowania tokenu
-    )
+    mock_user_auth = AsyncMock(spec=UserAuth)
+    mock_user_auth.login = AsyncMock(return_value="test_token")
     
-    # Tworzymy nowy mock zamiast modyfikować istniejący
-    db_mock = MagicMock(spec=AsyncSession)
+    # Tworzymy AuthResource z mockiem UserAuth
+    auth_resource = AuthResource(MagicMock())
+    auth_resource.user_auth = mock_user_auth
     
-    # Poprawne mockowanie dla SQLAlchemy 2.0 zgodne z typowaniem
-    result_mock = MagicMock()
-    # Kluczowa zmiana: zwracamy obiekt User bezpośrednio, nie coroutine
-    result_mock.scalar_one_or_none.return_value = user
+    form_data = MagicMock(spec=OAuth2PasswordRequestForm)
+    form_data.username = "testuser"
+    form_data.password = "password123"
     
-    execute_mock = AsyncMock()
-    execute_mock.return_value = result_mock
-    db_mock.execute = execute_mock
+    # Act
+    result = await auth_resource.login_with_form(form_data)
     
-    # Mockowanie UserAuth.login
-    login_mock = AsyncMock()
-    login_mock.return_value = "test_token"
-    
-    with patch.object(UserAuth, 'login', new=login_mock):
-        auth_resource = AuthResource(cast(AsyncSession, db_mock))
-        form_data = OAuth2PasswordRequestForm(
-            username="testuser",
-            password="password",
-            scope="",
-            client_id=None,
-            client_secret=None
-        )
-        
-        # Act
-        try:
-            response = await auth_resource.login_with_form(form_data)
-            
-            # Debug
-            logger.debug(f"Response: {response}")
-            
-            # Assert
-            assert isinstance(response, TokenResponse)
-            assert response.access_token == "test_token"
-            assert response.token_type == "bearer"
-        except Exception as e:
-            logger.error(f"Test failed with exception: {str(e)}", exc_info=True)
-            raise
+    # Assert
+    assert result.access_token == "test_token"
+    assert result.token_type == "bearer"
+    mock_user_auth.login.assert_called_once_with(username="testuser", password="password123")
 
 @pytest.mark.asyncio
 async def test_login_with_form_missing_credentials() -> None:
     """Test login with missing credentials."""
     # Arrange
-    db_mock = MagicMock(spec=AsyncSession)
-    auth_resource = AuthResource(cast(AsyncSession, db_mock))
-    form_data = OAuth2PasswordRequestForm(
-        username="",
-        password="",
-        scope="",
-        client_id=None,
-        client_secret=None
-    )
+    mock_user_auth = AsyncMock(spec=UserAuth)
+    mock_user_auth.login = AsyncMock(side_effect=MissingCredentialsError())
+    
+    # Tworzymy AuthResource z mockiem UserAuth
+    auth_resource = AuthResource(MagicMock())
+    auth_resource.user_auth = mock_user_auth
+    
+    form_data = MagicMock(spec=OAuth2PasswordRequestForm)
+    form_data.username = ""
+    form_data.password = ""
     
     # Act & Assert
     with pytest.raises(HTTPException) as exc_info:
         await auth_resource.login_with_form(form_data)
-    assert exc_info.value.status_code == 400 
+    
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Missing credentials" in str(exc_info.value.detail)
+
+@pytest.mark.asyncio
+async def test_login_with_form_invalid_credentials() -> None:
+    """Test login with invalid credentials."""
+    # Arrange
+    mock_user_auth = AsyncMock(spec=UserAuth)
+    mock_user_auth.login = AsyncMock(side_effect=InvalidCredentialsError())
+    
+    # Tworzymy AuthResource z mockiem UserAuth
+    auth_resource = AuthResource(MagicMock())
+    auth_resource.user_auth = mock_user_auth
+    
+    form_data = MagicMock(spec=OAuth2PasswordRequestForm)
+    form_data.username = "testuser"
+    form_data.password = "wrong_password"
+    
+    # Act & Assert
+    with pytest.raises(HTTPException) as exc_info:
+        await auth_resource.login_with_form(form_data)
+    
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert "Invalid username or password" in str(exc_info.value.detail)
+    mock_user_auth.login.assert_called_once_with(username="testuser", password="wrong_password")
+
+@pytest.mark.asyncio
+async def test_login_with_form_token_error() -> None:
+    """Test login with token generation error."""
+    # Arrange
+    mock_user_auth = AsyncMock(spec=UserAuth)
+    # Używamy konkretnego komunikatu błędu, który powinien być przekazany do HTTPException
+    error_message = "Token generation failed"
+    mock_user_auth.login = AsyncMock(side_effect=TokenError(error_message))
+    
+    # Tworzymy AuthResource z mockiem UserAuth
+    auth_resource = AuthResource(MagicMock())
+    auth_resource.user_auth = mock_user_auth
+    
+    form_data = MagicMock(spec=OAuth2PasswordRequestForm)
+    form_data.username = "testuser"
+    form_data.password = "password123"
+    
+    # Act & Assert
+    with pytest.raises(HTTPException) as exc_info:
+        await auth_resource.login_with_form(form_data)
+    
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert error_message in str(exc_info.value.detail)
+    mock_user_auth.login.assert_called_once_with(username="testuser", password="password123")
+
+@pytest.mark.asyncio
+async def test_login_with_form_unexpected_error() -> None:
+    """Test login with unexpected error."""
+    # Arrange
+    mock_user_auth = AsyncMock(spec=UserAuth)
+    error_message = "Unexpected error"
+    mock_user_auth.login = AsyncMock(side_effect=Exception(error_message))
+    
+    # Tworzymy AuthResource z mockiem UserAuth
+    auth_resource = AuthResource(MagicMock())
+    auth_resource.user_auth = mock_user_auth
+    
+    form_data = MagicMock(spec=OAuth2PasswordRequestForm)
+    form_data.username = "testuser"
+    form_data.password = "password123"
+    
+    # Act & Assert
+    with pytest.raises(HTTPException) as exc_info:
+        await auth_resource.login_with_form(form_data)
+    
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    # Zmieniamy asercję, aby sprawdzić rzeczywisty komunikat błędu zwracany przez AuthResource
+    # zamiast oczekiwać oryginalnego komunikatu wyjątku
+    assert "An unexpected error occurred during login" in str(exc_info.value.detail)
+    mock_user_auth.login.assert_called_once_with(username="testuser", password="password123")

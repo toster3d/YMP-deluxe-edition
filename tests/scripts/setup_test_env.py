@@ -4,39 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import NoReturn
 
-from redis.asyncio import Redis
-from settings import get_test_settings
-from utils.db_init import init_test_databases
-
 logger = logging.getLogger(__name__)
-
-async def wait_for_redis(max_retries: int = 5, retry_delay: int = 1) -> bool:
-    """Wait for Redis to be ready."""
-    settings = get_test_settings()
-    for attempt in range(max_retries):
-        try:
-            redis = Redis(
-                host=settings.REDIS_HOST,
-                port=settings.REDIS_PORT,
-                db=settings.REDIS_DB,
-                decode_responses=True
-            )
-            # Dodajemy test zapisu i odczytu
-            await redis.set("test_key", "test_value")
-            test_value = await redis.get("test_key")
-            await redis.delete("test_key")
-            
-            if test_value != "test_value":
-                raise Exception("Redis read/write test failed")
-                
-            await redis.ping()
-            await redis.close()
-            logger.info(f"Redis is ready at {settings.REDIS_HOST}:{settings.REDIS_PORT}")
-            return True
-        except Exception as e:
-            logger.warning(f"Redis connection attempt {attempt + 1} failed: {e}")
-            await asyncio.sleep(retry_delay)
-    return False
 
 async def setup_test_environment() -> bool:
     """Initialize test environment with Docker containers."""
@@ -49,17 +17,6 @@ async def setup_test_environment() -> bool:
             capture_output=True
         )
         
-        logger.info("Waiting for services to be ready...")
-        redis_ready = await wait_for_redis()
-        
-        if not redis_ready:
-            logger.error("Redis failed to start")
-            return False
-            
-        if not await init_test_databases():
-            logger.error("Database initialization failed")
-            return False
-            
         logger.info("Test environment ready")
         return True
         

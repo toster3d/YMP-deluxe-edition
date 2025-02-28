@@ -38,7 +38,8 @@ async def get_redis() -> AsyncGenerator[Redis, None]: # type: ignore
             detail=f"Redis connection error: {str(e)}"
         )
     finally:
-        await redis_client.close()
+
+        await redis_client.aclose()  # type: ignore
 
 
 async def get_token_storage(

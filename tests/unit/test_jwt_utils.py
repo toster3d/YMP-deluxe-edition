@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from fastapi import HTTPException
 
-from jwt_utils import create_access_token, verify_jwt
+from src.jwt_utils import create_access_token, verify_jwt
 
 
 def test_create_and_verify_jwt() -> None:

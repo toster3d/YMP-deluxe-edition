@@ -1,24 +1,25 @@
 from typing import AsyncGenerator
 
 import pytest
+import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
-from routes import router
 from src.app import create_application, initialize_database
 from src.extensions import async_engine
+from src.routes import router
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def app() -> FastAPI:
     """Create test application instance."""
     app = create_application()
     app.include_router(router, prefix="/api")
     return app
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def async_client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     """Create async client for testing."""
     async with AsyncClient(
@@ -139,6 +140,7 @@ def test_app_import() -> None:
     """Test that app can be imported correctly."""
     from src.app import app
     assert isinstance(app, FastAPI)
+
 @pytest.fixture(autouse=True)
 def set_test_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TESTING", "True") 

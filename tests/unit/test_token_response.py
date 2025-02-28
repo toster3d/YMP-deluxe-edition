@@ -1,4 +1,3 @@
-
 from resources.pydantic_schemas import TokenResponse
 
 

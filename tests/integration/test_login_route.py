@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from werkzeug.security import generate_password_hash
 
-from models.recipes import User
 from routes import router
+from tests.test_models.models_db_test import TestUser
 
 # Konfiguracja logowania
 logging.basicConfig(level=logging.DEBUG)
@@ -26,7 +26,7 @@ async def test_login_success(app: FastAPI, db_session: AsyncSession) -> None:
     # Arrange
     try:
         # Sprawdź, czy użytkownik już istnieje
-        result = await db_session.execute(select(User).filter_by(user_name="testuser"))
+        result = await db_session.execute(select(TestUser).filter_by(user_name="testuser"))
         existing_user = result.scalar_one_or_none()
         
         if existing_user:
@@ -35,7 +35,7 @@ async def test_login_success(app: FastAPI, db_session: AsyncSession) -> None:
         else:
             # Utwórz nowego użytkownika
             hashed_password = generate_password_hash("password")
-            user = User(
+            user = TestUser(
                 user_name="testuser",
                 hash=hashed_password,
                 email="test@example.com"
@@ -75,13 +75,13 @@ async def test_login_invalid_credentials(app: FastAPI, db_session: AsyncSession)
     # Arrange
     try:
         # Sprawdź, czy użytkownik już istnieje
-        result = await db_session.execute(select(User).filter_by(user_name="testuser"))
+        result = await db_session.execute(select(TestUser).filter_by(user_name="testuser"))
         existing_user = result.scalar_one_or_none()
         
         if not existing_user:
             # Utwórz nowego użytkownika
             hashed_password = generate_password_hash("password")
-            user = User(
+            user = TestUser(
                 user_name="testuser",
                 hash=hashed_password,
                 email="test@example.com"

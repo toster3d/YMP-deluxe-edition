@@ -2,7 +2,7 @@ from datetime import date as date_type
 from typing import Annotated
 
 from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, MetaData, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from resources.pydantic_schemas import VALID_MEAL_TYPES, MealType
@@ -10,7 +10,13 @@ from resources.pydantic_schemas import VALID_MEAL_TYPES, MealType
 
 class TestBase(DeclarativeBase):
     """Bazowa klasa dla modeli testowych"""
-    pass
+    metadata = MetaData(naming_convention={
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+    })
 
 TestBaseModel = Annotated[TestBase, "TestBase"]
 

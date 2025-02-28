@@ -26,7 +26,7 @@ dependencies = [
     "msgspec==0.19.0",
     "mypy",
     "mypy-extensions",
-    "packaging",
+    "packaging==24.2",
     "pyjwt==2.10.1",
     "pytz",
     "six",
@@ -61,6 +61,7 @@ dependencies = [
     "structlog==25.1.0",
     "wrapt==1.17.2",
     "nox>=2025.2.9",
+    "pytest-cov==6.0.0",
 ]
 
 [project.optional-dependencies]

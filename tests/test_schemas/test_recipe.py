@@ -154,7 +154,8 @@ class TestRecipeSchema:
             ("Test", "dinner", ["Salt"], {"step1": "Do something"}),
         ],
     )
-    def test_invalid_types(self, meal_name: str, meal_type: Literal["breakfast", "lunch", "dinner", "dessert"], ingredients: list[str], instructions: list[str]) -> None:
+    def test_invalid_types(self, meal_name: Any, meal_type: Any, ingredients: Any, instructions: Any) -> None:
+        """Test validation errors for invalid types."""
         with pytest.raises(ValidationError):
             RecipeSchema(
                 meal_name=meal_name, meal_type=meal_type, ingredients=ingredients, instructions=instructions
@@ -169,6 +170,7 @@ class TestRecipeSchema:
         ],
     )
     def test_invalid_meal_type(self, meal_name: str, meal_type: Any, ingredients: list[str], instructions: list[str]) -> None:
+        """Test validation errors for invalid meal types."""
         with pytest.raises(ValidationError):
             RecipeSchema(
                 meal_name=meal_name, meal_type=meal_type, ingredients=ingredients, instructions=instructions
