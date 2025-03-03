@@ -8,13 +8,12 @@ from redis.asyncio import Redis
 from config import get_settings
 from src.token_storage import RedisTokenStorage
 
-# Konfiguracja logowania
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @pytest.mark.asyncio
 async def test_redis_connection(mock_redis: AsyncMock) -> None:
-    """Test podstawowego połączenia z Redis."""
+    """Test basic Redis connection."""
     mock_redis.ping = AsyncMock(return_value=True)
     result = await mock_redis.ping()
     assert result is True
@@ -25,10 +24,9 @@ async def test_store_and_check_token() -> None:
     # Arrange
     mock_redis = MagicMock()
     
-    # Konfiguracja mocka dla metod asynchronicznych
     mock_redis.setex = AsyncMock()
     mock_redis.exists = AsyncMock()
-    mock_redis.exists.return_value = 1  # Redis.exists zwraca int (1 = True)
+    mock_redis.exists.return_value = 1  # Redis.exists returns int (1 = True)
     
     token_storage = RedisTokenStorage(mock_redis)
     token = "test_token"
@@ -58,7 +56,7 @@ async def test_check_nonexistent_token() -> None:
     # Arrange
     mock_redis = MagicMock()
     mock_redis.exists = AsyncMock()
-    mock_redis.exists.return_value = 0  # Token nie istnieje
+    mock_redis.exists.return_value = 0  # Token does not exist
     
     token_storage = RedisTokenStorage(mock_redis)
     token = "nonexistent_token"
@@ -76,24 +74,21 @@ async def test_check_nonexistent_token() -> None:
 
 @pytest.mark.asyncio
 async def test_token_blacklist() -> None:
-    """Test dodawania tokenu do blacklisty."""
+    """Test adding token to blacklist."""
     # Arrange
     token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
     expiration = timedelta(minutes=60)
     
-    # Tworzymy własny mock Redis zamiast używać fixture
     mock_redis = MagicMock(spec=Redis)
     mock_redis.setex = AsyncMock()
-    mock_redis.exists = AsyncMock(return_value=1)  # Ważne: ustawiamy return_value=1
+    mock_redis.exists = AsyncMock(return_value=1)  # Important: set return_value=1
     
-    # Przygotuj token storage
     token_storage = RedisTokenStorage(mock_redis)
     
     # Act
     await token_storage.store(token, expiration)
     
     # Assert
-    # Sprawdź, czy token jest na blackliście
     is_blacklisted = await token_storage.exists(token)
     assert is_blacklisted is True
 
@@ -104,12 +99,10 @@ async def test_token_expiration() -> None:
     token: str = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
     expiration: timedelta = timedelta(seconds=1)
     
-    # Tworzymy własny mock Redis zamiast używać fixture
     mock_redis = MagicMock(spec=Redis)
     mock_redis.setex = AsyncMock()
-    mock_redis.exists = AsyncMock(return_value=0)  # Token nie istnieje (wygasł)
+    mock_redis.exists = AsyncMock(return_value=0)  # Token does not exist (expired)
     
-    # Przygotuj token storage
     token_storage = RedisTokenStorage(mock_redis)
     
     # Act
@@ -121,7 +114,7 @@ async def test_token_expiration() -> None:
 
 @pytest.mark.asyncio
 async def test_store_jti_token(mock_redis: AsyncMock) -> None:
-    """Test dodawania tokenu JTI do blacklisty."""
+    """Test adding JTI token to blacklist."""
     # Arrange
     token_storage = RedisTokenStorage(mock_redis)
     jti = "test-jti"
@@ -136,7 +129,6 @@ async def test_store_jti_token(mock_redis: AsyncMock) -> None:
     
     # Assert
     mock_redis.setex.assert_called_once()
-    # Sprawdzamy czy wywołanie zawiera odpowiednie argumenty
     args = mock_redis.setex.call_args[0]
     assert args[0] == f"{token_storage.settings.redis_prefix}{jti}"
     assert args[1] == int(expires_in.total_seconds())
@@ -144,12 +136,12 @@ async def test_store_jti_token(mock_redis: AsyncMock) -> None:
 
 @pytest.mark.asyncio
 async def test_check_jti_token_exists(mock_redis: AsyncMock) -> None:
-    """Test sprawdzania czy token JTI jest na blackliście."""
+    """Test checking if JTI token is in blacklist."""
     # Arrange
     token_storage = RedisTokenStorage(mock_redis)
     jti = "test-jti"
     
-    # Przypadek 1: Token jest na blackliście
+    # Case 1: Token is in blacklist
     mock_redis.exists = AsyncMock(return_value=1)
     
     # Act & Assert
@@ -157,7 +149,7 @@ async def test_check_jti_token_exists(mock_redis: AsyncMock) -> None:
     assert result is True
     mock_redis.exists.assert_called_with(f"{token_storage.settings.redis_prefix}{jti}")
     
-    # Przypadek 2: Token nie jest na blackliście
+    # Case 2: Token is not in blacklist
     mock_redis.exists = AsyncMock(return_value=0)
     
     # Act & Assert
@@ -167,11 +159,11 @@ async def test_check_jti_token_exists(mock_redis: AsyncMock) -> None:
 
 @pytest.mark.asyncio
 async def test_jwt_token_storage() -> None:
-    """Test dodawania i sprawdzania tokenu JWT w Redis."""
+    """Test adding and checking JWT token in Redis."""
     # Arrange
     mock_redis = MagicMock()
     mock_redis.setex = AsyncMock()
-    mock_redis.exists = AsyncMock(return_value=1)  # Symulujemy, że token istnieje
+    mock_redis.exists = AsyncMock(return_value=1)  # Simulate that token exists
     
     token_storage = RedisTokenStorage(mock_redis)
     token = "test_jwt_token"
