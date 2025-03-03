@@ -50,7 +50,6 @@ async def test_login_with_form_invalid_credentials(async_client: AsyncClient) ->
 @pytest.mark.asyncio
 async def test_login_with_form_token_error(async_client: AsyncClient, create_test_user: TestUser) -> None:
     """Test login with token error."""
-    # Modyfikujemy test, aby sprawdzić przypadek, gdy użytkownik istnieje, ale hasło jest niepoprawne
     response = await async_client.post(
         "/auth/login",
         data={"username": create_test_user.user_name, "password": "WrongPassword123!"}

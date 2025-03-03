@@ -29,7 +29,7 @@ class PostgresEnum(TypeDecorator[str]):
     """Custom type decorator for handling PostgreSQL enums in SQLite."""
     
     impl = String
-    cache_ok = True  # Wymagane dla nowszych wersji SQLAlchemy
+    cache_ok = True
 
     def __init__(self, enum_type: Any) -> None:
         super().__init__()
@@ -91,13 +91,11 @@ async def create_test_user(db_session: AsyncSession) -> AsyncGenerator[TestUser,
     password = "Test123!"
     hashed_password = generate_password_hash(password)
     
-    # Używamy tego samego ciągu znaków dla user_name i email
-    # dzięki czemu logowanie zadziała niezależnie od tego, które pole jest używane
     test_identifier = "test@example.com"
     
     user = TestUser(
-        user_name=test_identifier,  # Ten sam identyfikator
-        email=test_identifier,      # Ten sam identyfikator
+        user_name=test_identifier,
+        email=test_identifier,
         hash=hashed_password
     )
     
@@ -106,7 +104,6 @@ async def create_test_user(db_session: AsyncSession) -> AsyncGenerator[TestUser,
     await db_session.commit()
     await db_session.refresh(user)
     
-    # Sprawdź, czy użytkownik został poprawnie zapisany
     verification_query = await db_session.execute(
         text("SELECT * FROM users WHERE email = :email"),
         {"email": test_identifier}
@@ -124,12 +121,11 @@ async def create_test_user(db_session: AsyncSession) -> AsyncGenerator[TestUser,
 @pytest.fixture
 async def auth_token(async_client: AsyncClient, create_test_user: TestUser) -> str:
     """Get authentication token for testing."""
-    # Używamy oryginalnego hasła, a nie hasha
     response = await async_client.post(
         "/auth/login",
         data={
             "username": create_test_user.email,
-            "password": "Test123!"  # Używamy oryginalnego hasła, nie hasha
+            "password": "Test123!"
         }
     )
     
@@ -163,7 +159,6 @@ async def clean_database(db_session: AsyncSession) -> None:
 async def prepare_database(db_session: AsyncSession) -> None:
     """Prepare database for testing."""
     try:
-        # Wyczyść wszystkie tabele
         for table in reversed(TestBase.metadata.sorted_tables):
             await db_session.execute(text(f"DELETE FROM {table.name}"))
         
@@ -176,17 +171,15 @@ async def prepare_database(db_session: AsyncSession) -> None:
 
 @pytest.fixture
 async def mock_db_session() -> AsyncGenerator[AsyncMock, None]:
-    """Fixture dostarczająca mock dla sesji bazy danych."""
+    """Fixture providing a mock for the database session."""
     db_mock = AsyncMock(spec=AsyncSession)
     
-    # Możesz dodać więcej mockowania, jeśli to konieczne
     yield db_mock
 
 
 @pytest.fixture(scope="session", autouse=True)
 def patch_redis() -> Generator[None, None, None]:
-    """Mockuj Redis na poziomie modułu dla wszystkich testów."""
-    # Tworzymy mock Redis
+    """Mock Redis at the module level for all tests."""
     mock_redis = AsyncMock(spec=Redis)
     mock_redis.ping.return_value = True
     mock_redis.setex.return_value = True
@@ -195,12 +188,10 @@ def patch_redis() -> Generator[None, None, None]:
     mock_redis.__aexit__ = AsyncMock(return_value=None)
     mock_redis.aclose = AsyncMock(return_value=None)
     
-    # Mockujemy klasę Redis i jej metody
     with patch("redis.asyncio.Redis", return_value=mock_redis), \
          patch("redis.asyncio.Redis.from_url", return_value=mock_redis), \
          patch("src.dependencies.Redis", return_value=mock_redis):
         
-        # Mockujemy funkcję get_redis
         async def mock_get_redis() -> AsyncGenerator[Redis, None]:
             yield mock_redis
             
@@ -210,7 +201,7 @@ def patch_redis() -> Generator[None, None, None]:
 
 @pytest.fixture(scope="function")
 def mock_token_storage() -> AsyncMock:
-    """Fixture dostarczająca mock dla TokenStorage."""
+    """Fixture providing a mock for TokenStorage."""
     mock = AsyncMock(spec=TokenStorage)
     mock.store.return_value = None
     mock.exists.return_value = False
@@ -219,7 +210,7 @@ def mock_token_storage() -> AsyncMock:
 
 @pytest.fixture
 def mock_redis() -> AsyncMock:
-    """Fixture dostarczająca mock dla Redis."""
+    """Fixture providing a mock for Redis."""
     mock = AsyncMock(spec=Redis)
     mock.ping.return_value = True
     mock.setex.return_value = True

@@ -15,21 +15,21 @@ logger = logging.getLogger(__name__)
 
 
 class TestRegistration:
-    """Testy dla procesu rejestracji użytkownika."""
+    """Tests for the user registration process."""
 
     @pytest.fixture(autouse=True)
     async def setup(self, db_session: AsyncSession) -> AsyncGenerator[None, None]:
-        """Setup dla testów."""
+        """Setup for tests."""
         self.password_validator = PasswordValidator()
         self.registration_service = RegistrationService(db_session)
         yield
-        # Czyszczenie bazy po każdym teście
+        # Cleaning the database after each test
         await db_session.execute(text("DELETE FROM users"))
         await db_session.commit()
 
     @pytest.mark.asyncio
     async def test_valid_registration(self, async_client: AsyncClient) -> None:
-        """Test poprawnej rejestracji użytkownika."""
+        """Test for successful user registration."""
         registration_data = {
             "email": "newuser@example.com",
             "username": "newuser",
@@ -100,7 +100,7 @@ class TestRegistration:
         expected_error: str,
         expected_status: int
     ) -> None:
-        """Test rejestracji z niepoprawnymi danymi."""
+        """Test registration with invalid data."""
         response = await async_client.post(
             "/auth/register",
             json=invalid_data
@@ -109,7 +109,7 @@ class TestRegistration:
         assert response.status_code == expected_status
         response_json = response.json()
 
-        # Dodajemy debug print dla łatwiejszej diagnostyki
+        # Adding debug print for easier diagnostics
         print(f"Response JSON: {response_json}")
         print(f"Expected error: {expected_error}")
 
@@ -122,7 +122,7 @@ class TestRegistration:
         self,
         async_client: AsyncClient
     ) -> None:
-        """Test walidacji hasła podczas rejestracji."""
+        """Test password validation during registration."""
         registration_data = {
             "email": "newuser@example.com",
             "username": "newuser",
@@ -138,10 +138,10 @@ class TestRegistration:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         response_json = response.json()
         
-        # Dodajemy debug print dla łatwiejszej diagnostyki
+        # Adding debug print for easier diagnostics
         print(f"Response JSON: {response_json}")
         
-        # Sprawdzamy, czy błąd jest w detail lub w message
+        # Check if the error is in detail or in message
         if "detail" in response_json and isinstance(response_json["detail"], list):
             error_messages = [error["msg"] for error in response_json["detail"]]
             assert any(
@@ -153,5 +153,5 @@ class TestRegistration:
         elif "message" in response_json:
             assert "Password does not meet complexity requirements" in response_json["message"]
         else:
-            # Jeśli nie znaleziono oczekiwanego formatu, test nie przejdzie
+            # If the expected format is not found, the test will fail
             assert False, f"Unexpected response format: {response_json}"

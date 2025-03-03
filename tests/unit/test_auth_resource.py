@@ -13,7 +13,7 @@ from services.user_auth_manager import (
     UserAuth,
 )
 
-# Konfiguracja logowania
+# Logging configuration
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ async def test_login_with_form_success() -> None:
     mock_user_auth = AsyncMock(spec=UserAuth)
     mock_user_auth.login = AsyncMock(return_value="test_token")
     
-    # Tworzymy AuthResource z mockiem UserAuth
+    # Create AuthResource with mock UserAuth
     auth_resource = AuthResource(MagicMock())
     auth_resource.user_auth = mock_user_auth
     
@@ -47,7 +47,7 @@ async def test_login_with_form_missing_credentials() -> None:
     mock_user_auth = AsyncMock(spec=UserAuth)
     mock_user_auth.login = AsyncMock(side_effect=MissingCredentialsError())
     
-    # Tworzymy AuthResource z mockiem UserAuth
+    # Create AuthResource with mock UserAuth
     auth_resource = AuthResource(MagicMock())
     auth_resource.user_auth = mock_user_auth
     
@@ -69,7 +69,7 @@ async def test_login_with_form_invalid_credentials() -> None:
     mock_user_auth = AsyncMock(spec=UserAuth)
     mock_user_auth.login = AsyncMock(side_effect=InvalidCredentialsError())
     
-    # Tworzymy AuthResource z mockiem UserAuth
+    # Create AuthResource with mock UserAuth
     auth_resource = AuthResource(MagicMock())
     auth_resource.user_auth = mock_user_auth
     
@@ -90,11 +90,10 @@ async def test_login_with_form_token_error() -> None:
     """Test login with token generation error."""
     # Arrange
     mock_user_auth = AsyncMock(spec=UserAuth)
-    # Używamy konkretnego komunikatu błędu, który powinien być przekazany do HTTPException
     error_message = "Token generation failed"
     mock_user_auth.login = AsyncMock(side_effect=TokenError(error_message))
     
-    # Tworzymy AuthResource z mockiem UserAuth
+    # Create AuthResource with mock UserAuth
     auth_resource = AuthResource(MagicMock())
     auth_resource.user_auth = mock_user_auth
     
@@ -118,7 +117,7 @@ async def test_login_with_form_unexpected_error() -> None:
     error_message = "Unexpected error"
     mock_user_auth.login = AsyncMock(side_effect=Exception(error_message))
     
-    # Tworzymy AuthResource z mockiem UserAuth
+    # Create AuthResource with mock UserAuth
     auth_resource = AuthResource(MagicMock())
     auth_resource.user_auth = mock_user_auth
     
@@ -131,7 +130,5 @@ async def test_login_with_form_unexpected_error() -> None:
         await auth_resource.login_with_form(form_data)
     
     assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    # Zmieniamy asercję, aby sprawdzić rzeczywisty komunikat błędu zwracany przez AuthResource
-    # zamiast oczekiwać oryginalnego komunikatu wyjątku
     assert "An unexpected error occurred during login" in str(exc_info.value.detail)
     mock_user_auth.login.assert_called_once_with(username="testuser", password="password123")

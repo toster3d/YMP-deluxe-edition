@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from resources.pydantic_schemas import VALID_MEAL_TYPES
 from test_models.models_db_test import TestRecipe, TestUser, TestUserPlan
 
-# Konfiguracja testowej bazy danych
+# Test database configuration
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 engine = create_async_engine(TEST_DATABASE_URL, echo=True)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
@@ -22,7 +22,7 @@ async def test_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture
 async def unique_user(test_db_session: AsyncSession) -> TestUser:
-    """Fixture tworząca unikalnego użytkownika."""
+    """Fixture creating a unique user."""
     user = TestUser(
         user_name=f"TestUser-{uuid.uuid4()}",
         hash="hashedpassword",
@@ -35,13 +35,13 @@ async def unique_user(test_db_session: AsyncSession) -> TestUser:
 
 @pytest.mark.anyio
 async def test_create_recipe(test_db_session: AsyncSession, unique_user: TestUser) -> None:
-    """Testuje dodanie przepisu i powiązanie z użytkownikiem."""
+    """Tests adding a recipe and linking it to a user."""
     recipe = TestRecipe(
         user_id=unique_user.id,
         meal_name="Spaghetti Bolognese",
         meal_type=VALID_MEAL_TYPES[2],
-        ingredients="Makaron, mięso mielone, pomidory",
-        instructions="Ugotować makaron, podsmażyć mięso, dodać pomidory"
+        ingredients="Pasta, ground meat, tomatoes",
+        instructions="Cook pasta, sauté meat, add tomatoes"
     )
     test_db_session.add(recipe)
     await test_db_session.commit()
@@ -51,30 +51,30 @@ async def test_create_recipe(test_db_session: AsyncSession, unique_user: TestUse
         TestRecipe, recipe.id, options=[selectinload(TestRecipe.user)]
     )
 
-    # Rozszerzone asercje
-    assert recipe_from_db is not None, "Przepis nie został poprawnie zapisany w bazie danych"
-    assert recipe_from_db.id is not None, "ID przepisu nie może być None"
-    assert recipe_from_db.meal_name == "Spaghetti Bolognese", "Nazwa posiłku nie zgadza się"
-    assert recipe_from_db.meal_type == VALID_MEAL_TYPES[2], "Typ posiłku nie zgadza się"
-    assert recipe_from_db.ingredients == "Makaron, mięso mielone, pomidory", "Składniki nie zgadzają się"
-    assert recipe_from_db.instructions == "Ugotować makaron, podsmażyć mięso, dodać pomidory", "Instrukcje nie zgadzają się"
+    # Extended assertions
+    assert recipe_from_db is not None, "Recipe was not correctly saved in the database"
+    assert recipe_from_db.id is not None, "Recipe ID cannot be None"
+    assert recipe_from_db.meal_name == "Spaghetti Bolognese", "Meal name does not match"
+    assert recipe_from_db.meal_type == VALID_MEAL_TYPES[2], "Meal type does not match"
+    assert recipe_from_db.ingredients == "Pasta, ground meat, tomatoes", "Ingredients do not match"
+    assert recipe_from_db.instructions == "Cook pasta, sauté meat, add tomatoes", "Instructions do not match"
     
-    # Sprawdzenie relacji użytkownika
-    assert recipe_from_db.user is not None, "Użytkownik nie został poprawnie powiązany z przepisem"
-    assert recipe_from_db.user.id == unique_user.id, "ID użytkownika nie zgadza się"
+    # Check user relationship
+    assert recipe_from_db.user is not None, "User was not correctly linked to the recipe"
+    assert recipe_from_db.user.id == unique_user.id, "User ID does not match"
 
 @pytest.mark.anyio
 async def test_create_user(test_db_session: AsyncSession, unique_user: TestUser) -> None:
-    """Testuje tworzenie użytkownika w bazie."""
+    """Tests creating a user in the database."""
     assert unique_user.id is not None
     assert "TestUser-" in unique_user.user_name
     assert "test" in unique_user.email
 
 def test_user_has_recipes() -> None:
-    """Sprawdza, czy użytkownik ma przypisane przepisy."""
+    """Checks if the user has assigned recipes."""
     user = TestUser(user_name="TestUser", hash="hashedpassword", email="test@example.com")
-    recipe1 = TestRecipe(user_id=user.id, meal_name="Pizza", meal_type="Dinner", ingredients="Ciasto, ser, sos", instructions="Upiec pizzę")
-    recipe2 = TestRecipe(user_id=user.id, meal_name="Tiramisu", meal_type="Dessert", ingredients="Mascarpone, kawa, biszkopty", instructions="Wymieszać składniki")
+    recipe1 = TestRecipe(user_id=user.id, meal_name="Pizza", meal_type="Dinner", ingredients="Dough, cheese, sauce", instructions="Bake the pizza")
+    recipe2 = TestRecipe(user_id=user.id, meal_name="Tiramisu", meal_type="Dessert", ingredients="Mascarpone, coffee, ladyfingers", instructions="Mix the ingredients")
 
     user.recipes = [recipe1, recipe2]
 
@@ -84,14 +84,14 @@ def test_user_has_recipes() -> None:
 
 @pytest.mark.anyio
 async def test_create_user_plan(test_db_session: AsyncSession, unique_user: TestUser) -> None:
-    """Testuje dodanie planu użytkownika."""
+    """Tests adding a user plan."""
     user_plan = TestUserPlan(
         user_id=unique_user.id,
         date=date(2025, 2, 20),
-        breakfast="Jajecznica",
-        lunch="Kurczak z ryżem",
-        dinner="Kanapka",
-        dessert="Czekolada"
+        breakfast="Scrambled eggs",
+        lunch="Chicken with rice",
+        dinner="Sandwich",
+        dessert="Chocolate"
     )
     test_db_session.add(user_plan)
     await test_db_session.commit()
@@ -99,4 +99,4 @@ async def test_create_user_plan(test_db_session: AsyncSession, unique_user: Test
 
     assert user_plan.id is not None
     assert user_plan.user_id == unique_user.id
-    assert user_plan.breakfast == "Jajecznica"
+    assert user_plan.breakfast == "Scrambled eggs"

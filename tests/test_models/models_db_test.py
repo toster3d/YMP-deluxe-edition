@@ -9,7 +9,7 @@ from resources.pydantic_schemas import VALID_MEAL_TYPES, MealType
 
 
 class TestBase(DeclarativeBase):
-    """Bazowa klasa dla modeli testowych"""
+    """Base class for test models"""
     metadata = MetaData(naming_convention={
         "ix": "ix_%(column_0_label)s",
         "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -21,7 +21,7 @@ class TestBase(DeclarativeBase):
 TestBaseModel = Annotated[TestBase, "TestBase"]
 
 class TestUser(TestBase):
-    __test__ = False  # Zapobiega traktowaniu klasy jako test
+    __test__ = False
     __tablename__ = "users"
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

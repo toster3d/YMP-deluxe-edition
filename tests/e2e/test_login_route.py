@@ -10,7 +10,6 @@ from werkzeug.security import generate_password_hash
 from routes import router
 from tests.test_models.models_db_test import TestUser
 
-# Konfiguracja logowania
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -25,15 +24,13 @@ async def test_login_success(app: FastAPI, db_session: AsyncSession) -> None:
     """Test successful login."""
     # Arrange
     try:
-        # Sprawdź, czy użytkownik już istnieje
         result = await db_session.execute(select(TestUser).filter_by(user_name="testuser"))
         existing_user = result.scalar_one_or_none()
         
         if existing_user:
-            logger.debug(f"Użytkownik testuser już istnieje z ID: {existing_user.id}")
+            logger.debug(f"User testuser already exists with ID: {existing_user.id}")
             user = existing_user
         else:
-            # Utwórz nowego użytkownika
             hashed_password = generate_password_hash("password")
             user = TestUser(
                 user_name="testuser",
@@ -43,9 +40,8 @@ async def test_login_success(app: FastAPI, db_session: AsyncSession) -> None:
             db_session.add(user)
             await db_session.commit()
             await db_session.refresh(user)
-            logger.debug(f"Dodano użytkownika: {user.user_name} z ID: {user.id}")
+            logger.debug(f"Added user: {user.user_name} with ID: {user.id}")
         
-        # Upewnij się, że mamy commit przed testem
         await db_session.commit()
         
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -56,7 +52,6 @@ async def test_login_success(app: FastAPI, db_session: AsyncSession) -> None:
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
             
-            # Log response for debugging
             logger.debug(f"Response status: {response.status_code}")
             logger.debug(f"Response body: {response.text}")
             
@@ -74,12 +69,10 @@ async def test_login_invalid_credentials(app: FastAPI, db_session: AsyncSession)
     """Test login with invalid credentials."""
     # Arrange
     try:
-        # Sprawdź, czy użytkownik już istnieje
         result = await db_session.execute(select(TestUser).filter_by(user_name="testuser"))
         existing_user = result.scalar_one_or_none()
         
         if not existing_user:
-            # Utwórz nowego użytkownika
             hashed_password = generate_password_hash("password")
             user = TestUser(
                 user_name="testuser",
@@ -89,11 +82,10 @@ async def test_login_invalid_credentials(app: FastAPI, db_session: AsyncSession)
             db_session.add(user)
             await db_session.commit()
             await db_session.refresh(user)
-            logger.debug(f"Dodano użytkownika: {user.user_name} z ID: {user.id}")
+            logger.debug(f"Added user: {user.user_name} with ID: {user.id}")
         else:
-            logger.debug(f"Użytkownik testuser już istnieje z ID: {existing_user.id}")
+            logger.debug(f"User testuser already exists with ID: {existing_user.id}")
         
-        # Upewnij się, że mamy commit przed testem
         await db_session.commit()
         
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -104,7 +96,6 @@ async def test_login_invalid_credentials(app: FastAPI, db_session: AsyncSession)
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
             
-            # Log response for debugging
             logger.debug(f"Response status: {response.status_code}")
             logger.debug(f"Response body: {response.text}")
             

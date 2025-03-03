@@ -12,7 +12,7 @@ class TestSettings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///:memory:"
     ASYNC_DATABASE_URI: str = DATABASE_URL
-    SQLITE_PRAGMA: str = "PRAGMA foreign_keys=ON"  # Dodajemy wsparcie dla foreign keys
+    SQLITE_PRAGMA: str = "PRAGMA foreign_keys=ON"
 
     # Redis
     REDIS_HOST: str = "localhost"
