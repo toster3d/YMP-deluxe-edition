@@ -42,8 +42,6 @@ async def test_login_success(app: FastAPI, db_session: AsyncSession) -> None:
             await db_session.refresh(user)
             logger.debug(f"Added user: {user.user_name} with ID: {user.id}")
         
-        await db_session.commit()
-        
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             # Act
             response = await client.post(
@@ -85,8 +83,6 @@ async def test_login_invalid_credentials(app: FastAPI, db_session: AsyncSession)
             logger.debug(f"Added user: {user.user_name} with ID: {user.id}")
         else:
             logger.debug(f"User testuser already exists with ID: {existing_user.id}")
-        
-        await db_session.commit()
         
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             # Act

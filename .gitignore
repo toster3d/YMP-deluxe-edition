@@ -67,6 +67,7 @@ cover/
 *.log
 local_settings.py
 db.sqlite3
+test.db  # Added test database
 
 # Flask stuff:
 instance/

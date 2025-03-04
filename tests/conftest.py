@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, AsyncGenerator, Generator
 from unittest.mock import AsyncMock, patch
 
@@ -237,3 +238,12 @@ async def async_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
     await engine.dispose()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_db() -> Generator[None, None, None]:
+    """Delete the test database file after all tests are done."""
+    yield
+    if os.path.exists("test.db"):
+        os.remove("test.db")
+        logging.info("Test database file 'test.db' deleted.")

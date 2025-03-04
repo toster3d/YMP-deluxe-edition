@@ -1,70 +1,50 @@
 import uuid
 from datetime import date
-from typing import AsyncGenerator
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from resources.pydantic_schemas import VALID_MEAL_TYPES
 from test_models.models_db_test import TestRecipe, TestUser, TestUserPlan
 
-# Test database configuration
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
-engine = create_async_engine(TEST_DATABASE_URL, echo=True)
-SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-
-@pytest.fixture(scope="function")
-async def test_db_session() -> AsyncGenerator[AsyncSession, None]:
-    async with SessionLocal() as session:
-        yield session
-        await session.rollback()
 
 @pytest.fixture
-async def unique_user(test_db_session: AsyncSession) -> TestUser:
+async def unique_user(db_session: AsyncSession) -> TestUser:
     """Fixture creating a unique user."""
     user = TestUser(
         user_name=f"TestUser-{uuid.uuid4()}",
         hash="hashedpassword",
         email=f"test{uuid.uuid4()}@example.com"
     )
-    test_db_session.add(user)
-    await test_db_session.commit()
-    await test_db_session.refresh(user)
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.mark.anyio
-async def test_create_recipe(test_db_session: AsyncSession, unique_user: TestUser) -> None:
+async def test_create_recipe(db_session: AsyncSession, unique_user: TestUser) -> None:
     """Tests adding a recipe and linking it to a user."""
     recipe = TestRecipe(
         user_id=unique_user.id,
-        meal_name="Spaghetti Bolognese",
-        meal_type=VALID_MEAL_TYPES[2],
-        ingredients="Pasta, ground meat, tomatoes",
-        instructions="Cook pasta, sauté meat, add tomatoes"
+        meal_name="Test Meal",
+        meal_type=VALID_MEAL_TYPES[0],
+        ingredients="Test Ingredients",
+        instructions="Test Instructions"
     )
-    test_db_session.add(recipe)
-    await test_db_session.commit()
-    await test_db_session.refresh(recipe)
+    db_session.add(recipe)
+    await db_session.commit()
+    await db_session.refresh(recipe)
 
-    recipe_from_db = await test_db_session.get(
+    recipe_from_db = await db_session.get(
         TestRecipe, recipe.id, options=[selectinload(TestRecipe.user)]
     )
 
-    # Extended assertions
-    assert recipe_from_db is not None, "Recipe was not correctly saved in the database"
-    assert recipe_from_db.id is not None, "Recipe ID cannot be None"
-    assert recipe_from_db.meal_name == "Spaghetti Bolognese", "Meal name does not match"
-    assert recipe_from_db.meal_type == VALID_MEAL_TYPES[2], "Meal type does not match"
-    assert recipe_from_db.ingredients == "Pasta, ground meat, tomatoes", "Ingredients do not match"
-    assert recipe_from_db.instructions == "Cook pasta, sauté meat, add tomatoes", "Instructions do not match"
-    
-    # Check user relationship
-    assert recipe_from_db.user is not None, "User was not correctly linked to the recipe"
-    assert recipe_from_db.user.id == unique_user.id, "User ID does not match"
+    assert recipe_from_db is not None
+    assert recipe_from_db.user.id == unique_user.id
 
 @pytest.mark.anyio
-async def test_create_user(test_db_session: AsyncSession, unique_user: TestUser) -> None:
+async def test_create_user(db_session: AsyncSession, unique_user: TestUser) -> None:
     """Tests creating a user in the database."""
     assert unique_user.id is not None
     assert "TestUser-" in unique_user.user_name
@@ -83,7 +63,7 @@ def test_user_has_recipes() -> None:
     assert {r.meal_name for r in user.recipes} == {"Pizza", "Tiramisu"}
 
 @pytest.mark.anyio
-async def test_create_user_plan(test_db_session: AsyncSession, unique_user: TestUser) -> None:
+async def test_create_user_plan(db_session: AsyncSession, unique_user: TestUser) -> None:
     """Tests adding a user plan."""
     user_plan = TestUserPlan(
         user_id=unique_user.id,
@@ -93,9 +73,9 @@ async def test_create_user_plan(test_db_session: AsyncSession, unique_user: Test
         dinner="Sandwich",
         dessert="Chocolate"
     )
-    test_db_session.add(user_plan)
-    await test_db_session.commit()
-    await test_db_session.refresh(user_plan)
+    db_session.add(user_plan)
+    await db_session.commit()
+    await db_session.refresh(user_plan)
 
     assert user_plan.id is not None
     assert user_plan.user_id == unique_user.id

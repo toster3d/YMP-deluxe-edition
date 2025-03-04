@@ -10,13 +10,13 @@ class TestSettings(BaseSettings):
     """Test settings configuration."""
     
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///:memory:"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     ASYNC_DATABASE_URI: str = DATABASE_URL
     SQLITE_PRAGMA: str = "PRAGMA foreign_keys=ON"
 
     # Redis
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6380
+    REDIS_HOST: str = "test-redis"
+    REDIS_PORT: int = 6379
     REDIS_DB: int = 1
     REDIS_PREFIX: str = "token_blacklist:"
     REDIS_BLACKLIST_VALUE: str = "blacklisted"
