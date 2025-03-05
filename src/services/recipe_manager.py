@@ -173,6 +173,7 @@ class RecipeManager(AbstractRecipeManager):
             await self.db.commit()
             await self.db.refresh(recipe)
             return recipe
+
         return None
 
     async def delete_recipe(self, recipe_id: int, user_id: int) -> bool:

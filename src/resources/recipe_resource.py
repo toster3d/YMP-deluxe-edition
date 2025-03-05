@@ -92,17 +92,15 @@ class RecipeResource:
         """Update a specific recipe."""
         try:
             updated_recipe = await self.recipe_manager.update_recipe(
-                recipe_id=recipe_id,
-                user_id=user_id,
-                recipe_data=recipe_data
+                recipe_id=recipe_id, user_id=user_id, recipe_data=recipe_data
             )
-
             if not updated_recipe:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, 
+                    status_code=status.HTTP_404_NOT_FOUND,
                     detail="Recipe not found"
                 )
 
+            # Pobierz świeże dane bezpośrednio z bazy danych
             result = await self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
             if result is None:
                 raise HTTPException(

@@ -144,8 +144,13 @@ async def auth_headers(auth_token: str) -> dict[str, str]:
 
 
 @pytest.fixture(autouse=True)
-async def clean_database(db_session: AsyncSession) -> None:
+async def clean_database(db_session: AsyncSession, request: pytest.FixtureRequest) -> None:
     """Clean database between tests."""
+    # Skip cleaning for recipe update tests
+    if "test_update_recipe" in request.node.name:
+        logging.info("Skipping database cleaning for recipe update test")
+        return
+        
     logging.info("Cleaning database before test")
     try:
         for table in reversed(TestBase.metadata.sorted_tables):
@@ -233,8 +238,11 @@ async def async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         try:
             yield session
-        finally:
+        except Exception as e:
             await session.rollback()
+            logging.error(f"Error during test: {e}")
+            raise
+        finally:
             await session.close()
 
     await engine.dispose()

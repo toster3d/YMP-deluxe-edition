@@ -107,7 +107,7 @@ async def test_create_recipe_invalid_meal_type(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Sprawdzamy, czy błąd dotyczy pola meal_type
+    # Check if the error pertains to the meal_type field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "meal_type" for error in errors)
 
@@ -137,7 +137,7 @@ async def test_create_recipe_empty_meal_name(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Sprawdzamy, czy błąd dotyczy pola meal_name
+    # Check if the error pertains to the meal_name field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "meal_name" for error in errors)
 
@@ -167,7 +167,7 @@ async def test_create_recipe_empty_ingredient(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Sprawdzamy, czy błąd dotyczy pola ingredients
+    # Check if the error pertains to the ingredients field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "ingredients" for error in errors)
 
@@ -197,7 +197,7 @@ async def test_create_recipe_empty_instruction(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Sprawdzamy, czy błąd dotyczy pola instructions
+    # Check if the error pertains to the instructions field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "instructions" for error in errors)
 
@@ -226,7 +226,7 @@ async def test_create_recipe_missing_required_fields(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Sprawdzamy, czy błędy dotyczą brakujących pól
+    # Check if the errors pertain to the missing fields
     errors = response_data["detail"]
     missing_fields = [error["loc"][1] for error in errors]
     assert "meal_name" in missing_fields
@@ -258,7 +258,7 @@ async def test_create_recipe_too_long_meal_name(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Sprawdzamy, czy błąd dotyczy pola meal_name
+    # Check if the error pertains to the meal_name field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "meal_name" for error in errors)
 

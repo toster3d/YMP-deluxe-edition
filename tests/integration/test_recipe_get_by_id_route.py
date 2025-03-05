@@ -13,8 +13,8 @@ from tests.test_models.models_db_test import TestRecipe, TestUser
 @pytest.fixture
 async def test_recipe(db_session: AsyncSession, create_test_user: TestUser) -> TestRecipe:
     """Fixture creating a test recipe."""
-    ingredients = ["Składnik 1", "Składnik 2", "Składnik 3"]
-    instructions = ["Krok 1", "Krok 2", "Krok 3"]
+    ingredients = ["Ingredient 1", "Ingredient 2", "Ingredient 3"]
+    instructions = ["Step 1", "Step 2", "Step 3"]
     
     recipe = TestRecipe(
         user_id=create_test_user.id,
@@ -56,10 +56,10 @@ async def test_get_recipe_success(
     assert data["meal_type"] == VALID_MEAL_TYPES[0]
     assert isinstance(data["ingredients"], list)
     assert len(data["ingredients"]) == 3
-    assert "Składnik 1" in data["ingredients"]
+    assert "Ingredient 1" in data["ingredients"]
     assert isinstance(data["instructions"], list)
     assert len(data["instructions"]) == 3
-    assert "Krok 1" in data["instructions"]
+    assert "Step 1" in data["instructions"]
 
 
 @pytest.mark.asyncio
@@ -120,8 +120,8 @@ async def test_get_recipe_from_another_user(
     await db_session.refresh(another_user)
     
     # Create recipe for another user
-    ingredients = ["Składnik A", "Składnik B"]
-    instructions = ["Instrukcja A", "Instrukcja B"]
+    ingredients = ["Ingredient A", "Ingredient B"]
+    instructions = ["Instruction A", "Instruction B"]
     
     another_recipe = TestRecipe(
         user_id=another_user.id,
@@ -175,16 +175,16 @@ async def test_get_recipe_with_special_characters(
 ) -> None:
     """Test retrieving a recipe with special characters in its content."""
     # Arrange
-    ingredients = ["Mąka pszenna", "Cukier puder", "Masło 82%", "Jajka (świeże)"]
+    ingredients = ["Wheat flour", "Powdered sugar", "Butter 82%", "Fresh eggs"]
     instructions = [
-        "Wymieszaj składniki",
-        "Piecz w 180°C przez 30 minut",
-        "Posyp cukrem pudrem & udekoruj"
+        "Mix the ingredients",
+        "Bake at 180°C for 30 minutes",
+        "Dust with powdered sugar & decorate"
     ]
     
     recipe = TestRecipe(
         user_id=create_test_user.id,
-        meal_name="Ciasto z polewą czekoladową",
+        meal_name="Cake with chocolate glaze",
         meal_type=VALID_MEAL_TYPES[3],  # dessert
         ingredients=json.dumps(ingredients),
         instructions=json.dumps(instructions)
@@ -204,9 +204,9 @@ async def test_get_recipe_with_special_characters(
     assert response.status_code == status.HTTP_200_OK
     
     data = response.json()
-    assert data["meal_name"] == "Ciasto z polewą czekoladową"
+    assert data["meal_name"] == "Cake with chocolate glaze"
     assert data["meal_type"] == VALID_MEAL_TYPES[3]
-    assert "Mąka pszenna" in data["ingredients"]
-    assert "Masło 82%" in data["ingredients"]
-    assert "Piecz w 180°C przez 30 minut" in data["instructions"]
-    assert "Posyp cukrem pudrem & udekoruj" in data["instructions"]
+    assert "Wheat flour" in data["ingredients"]
+    assert "Butter 82%" in data["ingredients"]
+    assert "Bake at 180°C for 30 minutes" in data["instructions"]
+    assert "Dust with powdered sugar & decorate" in data["instructions"]
