@@ -25,7 +25,6 @@ async def setup_user_plan(db_session: AsyncSession, create_test_user: Any) -> As
     """Create a test user plan for today."""
     today = datetime.now(UTC).date()
     
-    # Create user plan for today
     user_plan = TestUserPlan(
         user_id=create_test_user.id,
         date=today,
@@ -41,7 +40,6 @@ async def setup_user_plan(db_session: AsyncSession, create_test_user: Any) -> As
     
     yield user_plan
     
-    # Cleanup
     await db_session.delete(user_plan)
     await db_session.commit()
 
@@ -51,7 +49,6 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
     """Create test recipes for the user."""
     recipes = []
     
-    # Create breakfast recipe
     breakfast = TestRecipe(
         user_id=create_test_user.id,
         meal_name="Test Breakfast",
@@ -60,7 +57,6 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
         instructions=json.dumps(["Cook eggs", "Toast bread", "Serve"])
     )
     
-    # Create lunch recipe
     lunch = TestRecipe(
         user_id=create_test_user.id,
         meal_name="Test Lunch",
@@ -69,7 +65,6 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
         instructions=json.dumps(["Cook chicken", "Prepare rice", "Mix with vegetables"])
     )
     
-    # Create dinner recipe
     dinner = TestRecipe(
         user_id=create_test_user.id,
         meal_name="Test Dinner",
@@ -78,7 +73,6 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
         instructions=json.dumps(["Boil pasta", "Heat sauce", "Mix and add cheese"])
     )
     
-    # Create dessert recipe
     dessert = TestRecipe(
         user_id=create_test_user.id,
         meal_name="Test Dessert",
@@ -87,7 +81,7 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
         instructions=json.dumps(["Mix ingredients", "Bake", "Serve"])
     )
     
-    recipes.extend([breakfast, lunch, dinner, dessert])
+    recipes = [breakfast, lunch, dinner, dessert]
     db_session.add_all(recipes)
     await db_session.commit()
     
@@ -96,7 +90,6 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
     
     yield recipes
     
-    # Cleanup
     for recipe in recipes:
         await db_session.delete(recipe)
     await db_session.commit()
@@ -110,20 +103,16 @@ async def test_get_shopping_list_today(
     setup_recipes: list[TestRecipe]
 ) -> None:
     """Test getting shopping list for today."""
-    # Act
     response = await async_client.get("/shopping_list", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    data = response.json()
+    data: dict[str, Any] = response.json()
     assert isinstance(data, dict)
     
-    # Validate response structure
-    shopping_list = ShoppingListResponse(**data)
+    shopping_list: ShoppingListResponse = ShoppingListResponse(**data)
     assert shopping_list.current_date == datetime.now(UTC).date().isoformat()
     
-    # Check ingredients
     expected_ingredients = {"eggs", "bread", "butter", "chicken", "rice",
                             "vegetables", "pasta", "tomato sauce", "cheese"}
     assert set(shopping_list.ingredients) == expected_ingredients
@@ -136,10 +125,8 @@ async def test_get_shopping_list_today_no_plan(
     db_session: AsyncSession
 ) -> None:
     """Test getting shopping list for today when no plan exists."""
-    # Act
     response = await async_client.get("/shopping_list", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "No meal plan for today" in response.json()["detail"]
 
@@ -154,28 +141,25 @@ async def test_get_shopping_list_date_range(
     create_test_user: Any
 ) -> None:
     """Test getting shopping list for date range."""
-    # Arrange
     today = datetime.now(UTC).date()
     tomorrow = today + timedelta(days=1)
     
-    # Create plan for tomorrow
     tomorrow_plan = TestUserPlan(
         user_id=create_test_user.id,
         date=tomorrow,
-        breakfast="Test Breakfast",  # Reuse same breakfast
+        breakfast="Test Breakfast",
         lunch=None,
-        dinner="Test Dinner",  # Reuse same dinner
-        dessert="New Dessert"  # New meal not in recipes
+        dinner="Test Dinner",
+        dessert="New Dessert"
     )
     
     db_session.add(tomorrow_plan)
     await db_session.commit()
     
-    # Create dessert recipe
     dessert = TestRecipe(
         user_id=create_test_user.id,
         meal_name="New Dessert",
-        meal_type=MealType.dessert,
+        meal_type=VALID_MEAL_TYPES[3],
         ingredients=json.dumps(["flour", "sugar", "chocolate"]),
         instructions=json.dumps(["Mix ingredients", "Bake", "Serve"])
     )
@@ -183,7 +167,6 @@ async def test_get_shopping_list_date_range(
     db_session.add(dessert)
     await db_session.commit()
     
-    # Act
     response = await async_client.post(
         "/shopping_list",
         json={
@@ -193,26 +176,22 @@ async def test_get_shopping_list_date_range(
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    data = response.json()
+    data: dict[str, Any] = response.json()
     assert isinstance(data, dict)
     
-    # Validate response structure
-    shopping_list = ShoppingListRangeResponse(**data)
+    shopping_list: ShoppingListRangeResponse = ShoppingListRangeResponse(**data)
     assert shopping_list.date_range == f"{today.isoformat()} to {tomorrow.isoformat()}"
     
-    # Check ingredients (should include all meals from both days)
     expected_ingredients = {
-        "eggs", "bread", "butter",  # breakfast
-        "chicken", "rice", "vegetables",  # lunch
-        "pasta", "tomato sauce", "cheese",  # dinner
-        "flour", "sugar", "chocolate"  # dessert
+        "eggs", "bread", "butter",
+        "chicken", "rice", "vegetables",
+        "pasta", "tomato sauce", "cheese",
+        "flour", "sugar", "chocolate"
     }
     assert set(shopping_list.ingredients) == expected_ingredients
     
-    # Cleanup
     await db_session.delete(tomorrow_plan)
     await db_session.delete(dessert)
     await db_session.commit()
@@ -224,11 +203,9 @@ async def test_get_shopping_list_date_range_no_plan(
     auth_headers: dict[str, str]
 ) -> None:
     """Test getting shopping list for date range when no plan exists."""
-    # Arrange
     today = datetime.now(UTC).date()
     next_week = today + timedelta(days=7)
     
-    # Act
     response = await async_client.post(
         "/shopping_list",
         json={
@@ -238,7 +215,6 @@ async def test_get_shopping_list_date_range_no_plan(
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "No meal plan for this date range" in response.json()["detail"]
 
@@ -249,11 +225,9 @@ async def test_get_shopping_list_date_range_invalid_dates(
     auth_headers: dict[str, str]
 ) -> None:
     """Test getting shopping list with end date before start date."""
-    # Arrange
     today = datetime.now(UTC).date()
     yesterday = today - timedelta(days=1)
     
-    # Act
     response = await async_client.post(
         "/shopping_list",
         json={
@@ -263,7 +237,6 @@ async def test_get_shopping_list_date_range_invalid_dates(
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "No meal plan for this date range" in response.json()["detail"]
 
@@ -274,10 +247,8 @@ async def test_get_shopping_list_date_range_missing_body(
     auth_headers: dict[str, str]
 ) -> None:
     """Test POST shopping list endpoint with missing body."""
-    # Act
     response = await async_client.post("/shopping_list", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "body" in response.json()["detail"][0]["loc"]
 
@@ -285,21 +256,17 @@ async def test_get_shopping_list_date_range_missing_body(
 @pytest.mark.asyncio
 async def test_get_shopping_list_unauthorized(async_client: AsyncClient) -> None:
     """Test accessing shopping list without authentication."""
-    # Act
     response = await async_client.get("/shopping_list")
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.asyncio
 async def test_get_shopping_list_date_range_unauthorized(async_client: AsyncClient) -> None:
     """Test accessing shopping list date range without authentication."""
-    # Arrange
     today = datetime.now(UTC).date()
     tomorrow = today + timedelta(days=1)
     
-    # Act
     response = await async_client.post(
         "/shopping_list",
         json={
@@ -308,7 +275,6 @@ async def test_get_shopping_list_date_range_unauthorized(async_client: AsyncClie
         }
     )
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -320,7 +286,6 @@ async def setup_test_data(
     today = datetime.now(UTC).date()
     tomorrow = today + timedelta(days=1)
     
-    # Create user plans
     plans = [
         TestUserPlan(
             user_id=create_test_user.id,
@@ -340,7 +305,6 @@ async def setup_test_data(
         )
     ]
     
-    # Create recipes
     recipes = [
         TestRecipe(
             user_id=create_test_user.id,
@@ -397,7 +361,6 @@ async def setup_test_data(
     
     yield plans, recipes
     
-    # Cleanup
     for plan in plans:
         await db_session.delete(plan)
     for recipe in recipes:
@@ -410,7 +373,6 @@ async def test_get_ingredients_for_date_range(
     db_session: AsyncSession, create_test_user: Any, setup_test_data: tuple[list[TestUserPlan], list[TestRecipe]]
 ) -> None:
     """Test getting ingredients for date range."""
-    # Arrange
     user_plan_manager = SqlAlchemyUserPlanManager(db_session)
     recipe_manager = RecipeManager(db_session)
     service = ShoppingListService(user_plan_manager, recipe_manager)
@@ -418,19 +380,17 @@ async def test_get_ingredients_for_date_range(
     today = datetime.now(UTC).date()
     tomorrow = today + timedelta(days=1)
     
-    # Act
     ingredients = await service.get_ingredients_for_date_range(
         create_test_user.id, (today, tomorrow)
     )
     
-    # Assert
     expected_ingredients = {
-        "oats", "milk", "honey",  # Oatmeal
-        "chicken", "lettuce", "tomatoes", "dressing",  # Chicken Salad
-        "pasta", "tomato sauce", "cheese",  # Pasta
-        "flour", "eggs", "sugar",  # Pancakes (milk is already included)
-        "beef steak", "salt", "pepper", "butter",  # Steak
-        "cocoa powder"  # Chocolate Cake (flour, sugar, eggs, butter already included)
+        "oats", "milk", "honey",
+        "chicken", "lettuce", "tomatoes", "dressing",
+        "pasta", "tomato sauce", "cheese",
+        "flour", "eggs", "sugar",
+        "beef steak", "salt", "pepper", "butter",
+        "cocoa powder"
     }
     
     assert ingredients == expected_ingredients
@@ -441,23 +401,20 @@ async def test_get_ingredients_for_single_date(
     db_session: AsyncSession, create_test_user: Any, setup_test_data: tuple[list[TestUserPlan], list[TestRecipe]]
 ) -> None:
     """Test getting ingredients for a single date."""
-    # Arrange
     user_plan_manager = SqlAlchemyUserPlanManager(db_session)
     recipe_manager = RecipeManager(db_session)
     service = ShoppingListService(user_plan_manager, recipe_manager)
     
     today = datetime.now(UTC).date()
     
-    # Act
     ingredients = await service.get_ingredients_for_date_range(
         create_test_user.id, (today, today)
     )
     
-    # Assert
     expected_ingredients = {
-        "oats", "milk", "honey",  # Oatmeal
-        "chicken", "lettuce", "tomatoes", "dressing",  # Chicken Salad
-        "pasta", "tomato sauce", "cheese",  # Pasta
+        "oats", "milk", "honey",
+        "chicken", "lettuce", "tomatoes", "dressing",
+        "pasta", "tomato sauce", "cheese",
     }
     
     assert ingredients == expected_ingredients
@@ -468,7 +425,6 @@ async def test_get_ingredients_no_plans(
     db_session: AsyncSession, create_test_user: Any
 ) -> None:
     """Test getting ingredients when no plans exist."""
-    # Arrange
     user_plan_manager = SqlAlchemyUserPlanManager(db_session)
     recipe_manager = RecipeManager(db_session)
     service = ShoppingListService(user_plan_manager, recipe_manager)
@@ -476,12 +432,10 @@ async def test_get_ingredients_no_plans(
     today = datetime.now(UTC).date()
     next_week = today + timedelta(days=7)
     
-    # Act
     ingredients = await service.get_ingredients_for_date_range(
         create_test_user.id, (next_week, next_week + timedelta(days=2))
     )
     
-    # Assert
     assert ingredients == set()
 
 
@@ -490,10 +444,8 @@ async def test_get_ingredients_no_recipes(
     db_session: AsyncSession, create_test_user: Any
 ) -> None:
     """Test getting ingredients when plans exist but no recipes."""
-    # Arrange
     today = datetime.now(UTC).date()
     
-    # Create plan without corresponding recipes
     plan = TestUserPlan(
         user_id=create_test_user.id,
         date=today,
@@ -510,15 +462,12 @@ async def test_get_ingredients_no_recipes(
     recipe_manager = RecipeManager(db_session)
     service = ShoppingListService(user_plan_manager, recipe_manager)
     
-    # Act
     ingredients = await service.get_ingredients_for_date_range(
         create_test_user.id, (today, today)
     )
     
-    # Assert
     assert ingredients == set()
     
-    # Cleanup
     await db_session.delete(plan)
     await db_session.commit()
 
@@ -526,10 +475,9 @@ async def test_get_ingredients_no_recipes(
 @pytest.mark.asyncio
 async def test_extract_meal_name() -> None:
     """Test the _extract_meal_name method."""
-    # Arrange
-    user_plan_manager = AsyncMock()
-    recipe_manager = AsyncMock()
-    service = ShoppingListService(user_plan_manager, recipe_manager)
+    user_plan_manager: AsyncMock = AsyncMock()
+    recipe_manager: AsyncMock = AsyncMock()
+    service: ShoppingListService = ShoppingListService(user_plan_manager, recipe_manager)
     
     test_cases = [
         ("Pasta (ID: 123)", "Pasta"),
@@ -538,22 +486,15 @@ async def test_extract_meal_name() -> None:
         ("", None),
         ("None", None),
         ("null", None),
-        (None, None)  # This will be converted to string in the actual method
+        (None, None)
     ]
     
-    # Act & Assert
     for input_value, expected_output in test_cases:
         if input_value is not None:
-            result = service._extract_meal_name(input_value)
-        else:
-            result = service._extract_meal_name("None")
-        assert result == expected_output
-
-
-@pytest.mark.asyncio
+            result: str | None = service.extract_meal_name(input_value or "None")
+            assert result == expected_output
 async def test_get_meal_names() -> None:
     """Test the _get_meal_names method."""
-    # Arrange
     user_plan_manager = AsyncMock()
     recipe_manager = AsyncMock()
     service = ShoppingListService(user_plan_manager, recipe_manager)
@@ -565,51 +506,41 @@ async def test_get_meal_names() -> None:
         "dessert": None
     }
     
-    # Act
-    meal_names = list(service._get_meal_names(user_plan))
+    meal_names = list(service.get_meal_names(user_plan))
     
-    # Assert
     assert meal_names == ["Oatmeal", "Chicken Salad", "Pasta"]
 
 
 @pytest.mark.asyncio
 async def test_safe_get_ingredients() -> None:
     """Test the _safe_get_ingredients method."""
-    # Arrange
     user_plan_manager = AsyncMock()
     recipe_manager = AsyncMock()
     recipe_manager.get_ingredients_by_meal_name.side_effect = [
-        ["ingredient1", "ingredient2"],  # Normal case
-        [],  # Empty ingredients
-        Exception("Recipe not found")  # Exception case
+        ["ingredient1", "ingredient2"],
+        [],
+        Exception("Recipe not found")
     ]
     
     service = ShoppingListService(user_plan_manager, recipe_manager)
     
-    # Act & Assert
-    # Normal case
-    result1 = await service._safe_get_ingredients(1, "Meal1")
+    result1 = await service.safe_get_ingredients(1, "Meal1")
     assert result1 == ["ingredient1", "ingredient2"]
     
-    # Empty ingredients
-    result2 = await service._safe_get_ingredients(1, "Meal2")
+    result2 = await service.safe_get_ingredients(1, "Meal2")
     assert result2 == []
     
-    # Exception case
-    result3 = await service._safe_get_ingredients(1, "Meal3")
+    result3 = await service.safe_get_ingredients(1, "Meal3")
     assert result3 == []
 
 
 def test_generate_date_list() -> None:
     """Test the generate_date_list helper function."""
-    # Arrange
     start_date = date(2023, 1, 1)
     end_date = date(2023, 1, 5)
     
-    # Act
     date_list = generate_date_list(start_date, end_date)
     
-    # Assert
     expected_dates = [
         date(2023, 1, 1),
         date(2023, 1, 2),
@@ -619,6 +550,5 @@ def test_generate_date_list() -> None:
     ]
     assert date_list == expected_dates
     
-    # Test single day
     single_day = generate_date_list(start_date, start_date)
     assert single_day == [start_date] 

@@ -47,7 +47,7 @@ class ShoppingListService:
             user_plan: dict[str, Any] | None = await self.user_plan_manager.get_plans(user_id=user_id, date=current_date)
             
             if user_plan:
-                meal_names: Generator[str, None, None] = self._get_meal_names(user_plan)
+                meal_names: Generator[str, None, None] = self.get_meal_names(user_plan)
                 if meal_names:
                     all_meal_names.extend(meal_names)
                     self.logger.debug(
@@ -64,7 +64,7 @@ class ShoppingListService:
         self.logger.info(f"Found {len(unique_meal_names)} unique meals to process")
         
         tasks = [
-            self._safe_get_ingredients(user_id, meal_name)
+            self.safe_get_ingredients(user_id, meal_name)
             for meal_name in unique_meal_names
         ]
         
@@ -77,7 +77,7 @@ class ShoppingListService:
         self.logger.info(f"Generated shopping list with {len(ingredients)} ingredients")
         return ingredients
     
-    async def _safe_get_ingredients(self, user_id: int, meal_name: str) -> list[str]:
+    async def safe_get_ingredients(self, user_id: int, meal_name: str) -> list[str]:
         """
         Safely get ingredients for a meal, handling exceptions.
         
@@ -100,7 +100,7 @@ class ShoppingListService:
             self.logger.warning(f"Error fetching ingredients for '{meal_name}': {e}")
             return []
     
-    def _get_meal_names(self, user_plan: dict[str, Any]) -> Generator[str, None, None]:
+    def get_meal_names(self, user_plan: dict[str, Any]) -> Generator[str, None, None]:
         """
         Extract meal names from user plan.
         
@@ -113,11 +113,11 @@ class ShoppingListService:
         for meal_type in ["breakfast", "lunch", "dinner", "dessert"]:
             meal_info: Any | None = user_plan.get(meal_type)
             if meal_info:
-                meal_name: str | None = self._extract_meal_name(str(meal_info))
+                meal_name: str | None = self.extract_meal_name(str(meal_info))
                 if meal_name:
                     yield meal_name
 
-    def _extract_meal_name(self, meal_info: str) -> str | None:
+    def extract_meal_name(self, meal_info: str) -> str | None:
         """
         Extract meal name from meal info string.
         

@@ -26,4 +26,4 @@ COPY . .
 ENV PYTHONPATH=/app:/app/src
 ENV PYTHONUNBUFFERED=1
 
-CMD ["pytest", "tests", "-v", "--log-cli-level=INFO"]
+CMD ["pytest", "tests", "-v", "--log-cli-level=INFO", "--cov=src", "--cov-report=term-missing", "--cov-report=term"]
