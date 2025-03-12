@@ -1,7 +1,8 @@
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock, patch
 
 import pytest
-import pytest_asyncio
+import uvicorn
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
@@ -19,7 +20,7 @@ def app() -> FastAPI:
     app.include_router(router, prefix="/api")
     return app
 
-@pytest_asyncio.fixture(scope="function")
+@pytest.fixture(scope="function")
 async def async_client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     """Create async client for testing."""
     async with AsyncClient(
@@ -27,6 +28,7 @@ async def async_client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
         base_url="http://test"
     ) as client:
         yield client
+
 
 @pytest.mark.anyio
 async def test_create_application() -> None:
@@ -60,14 +62,38 @@ async def test_initialize_database() -> None:
         assert required_tables.issubset(existing_tables)
 
 @pytest.mark.anyio
+async def test_initialize_database_error_handling() -> None:
+    """Test error handling during database initialization."""
+    with patch("src.app.async_engine") as mock_engine:
+        mock_conn = AsyncMock()
+        mock_engine.begin.return_value.__aenter__.return_value = mock_conn
+        mock_conn.run_sync.side_effect = Exception("Test exception")
+        
+        with pytest.raises(Exception, match="Test exception"):
+            await initialize_database()
+
+@pytest.mark.anyio
+async def test_initialize_database_tables_exist() -> None:
+    """Test database initialization when tables already exist."""
+    with patch("src.app.async_engine") as mock_engine:
+        mock_conn = AsyncMock()
+        mock_engine.begin.return_value.__aenter__.return_value = mock_conn
+        
+        mock_conn.run_sync.return_value = ["users", "recipes", "user_plan"]
+        
+        await initialize_database()
+        
+        assert mock_conn.run_sync.call_count == 1
+
+@pytest.mark.anyio
 async def test_lifespan(app: FastAPI) -> None:
     """Test application lifespan events."""
     async with AsyncClient(
-        transport=ASGITransport(app=app), 
+        transport=ASGITransport(app=app),
         base_url="http://test"
     ) as client:
-        response = await client.get("/")
-        assert response.status_code in (404, 200)
+        response = await client.get("/docs")
+        assert response.status_code == 200
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
@@ -144,3 +170,45 @@ def test_app_import() -> None:
 @pytest.fixture(autouse=True)
 def set_test_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TESTING", "True") 
+
+@pytest.mark.anyio
+async def test_lifespan_error_handling() -> None:
+    """Test error handling in lifespan context manager."""
+    from src.app import lifespan
+    
+    app = FastAPI()
+    
+    with patch("src.app.initialize_database", side_effect=Exception("Test exception")):
+        with pytest.raises(Exception, match="Test exception"):
+            async with lifespan(app):
+                pass
+
+@pytest.mark.anyio
+async def test_create_application_with_custom_settings() -> None:
+    """Test application creation with custom settings."""
+    
+    with patch("src.app.settings") as mock_settings:
+        mock_settings.cors_origins = ["http://custom-origin.com"]
+        mock_settings.debug = True
+
+        
+@pytest.mark.anyio
+async def test_main_block() -> None:
+    """Test main block execution."""
+    with patch("uvicorn.run") as mock_run:
+        def test_run_server() -> None:
+            from src.app import settings
+            
+            uvicorn.run(
+                "app:app",
+                host=settings.host,
+                port=settings.port,
+                reload=settings.debug,
+                proxy_headers=True,
+                forwarded_allow_ips="*",
+                log_level="debug" if settings.debug else "info"
+            )
+            
+        test_run_server()
+        
+        mock_run.assert_called_once() 
