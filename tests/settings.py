@@ -9,32 +9,26 @@ TEST_DIR = Path(__file__).parent
 class TestSettings(BaseSettings):
     """Test settings configuration."""
     
-    # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     ASYNC_DATABASE_URI: str = DATABASE_URL
     SQLITE_PRAGMA: str = "PRAGMA foreign_keys=ON"
 
-    # Redis
     REDIS_HOST: str = "test-redis"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 1
     REDIS_PREFIX: str = "token_blacklist:"
     REDIS_BLACKLIST_VALUE: str = "blacklisted"
     
-    # JWT
     JWT_SECRET_KEY: str = "test_secret_key"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRES: int = 30
     
-    # Test user
     TEST_USER_EMAIL: str = "test@example.com"
     TEST_USER_PASSWORD: str = "Test123!"
     TEST_USER_NAME: str = "TestUser"
     
-    # Debug
     DEBUG: bool = True
 
-    # Python path
     PYTHONPATH: str = "."
 
     model_config = {

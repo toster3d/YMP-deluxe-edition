@@ -12,13 +12,11 @@ from tests.test_models.models_db_test import TestRecipe, TestUser, TestUserPlan
 
 @pytest.fixture
 async def user_plan_manager(db_session: AsyncSession) -> SqlAlchemyUserPlanManager:
-    """Fixture providing a UserPlanManager instance with a test database session."""
     return SqlAlchemyUserPlanManager(db_session)
 
 
 @pytest.fixture
 async def test_user(db_session: AsyncSession) -> TestUser:
-    """Create a test user for user plan manager tests."""
     user = TestUser(
         user_name="plan_manager_test_user",
         email="plan_manager_test@example.com",
@@ -32,7 +30,6 @@ async def test_user(db_session: AsyncSession) -> TestUser:
 
 @pytest.fixture
 async def test_recipes(db_session: AsyncSession, test_user: TestUser) -> list[TestRecipe]:
-    """Create test recipes for the user."""
     recipes = [
         TestRecipe(
             user_id=test_user.id,
@@ -77,7 +74,6 @@ async def test_recipes(db_session: AsyncSession, test_user: TestUser) -> list[Te
 
 @pytest.fixture
 async def test_user_plan(db_session: AsyncSession, test_user: TestUser) -> TestUserPlan:
-    """Create a test user plan."""
     today = date.today()
     plan = TestUserPlan(
         user_id=test_user.id,
@@ -99,7 +95,6 @@ async def test_get_plans_existing(
     test_user: TestUser,
     test_user_plan: TestUserPlan
 ) -> None:
-    """Test retrieving existing user plans for a specific date."""
     today = date.today()
     result = await user_plan_manager.get_plans(test_user.id, today)
     
@@ -117,7 +112,6 @@ async def test_get_plans_nonexistent(
     user_plan_manager: SqlAlchemyUserPlanManager,
     test_user: TestUser
 ) -> None:
-    """Test retrieving nonexistent user plans for a specific date."""
     tomorrow = date.today() + timedelta(days=1)
     result = await user_plan_manager.get_plans(test_user.id, tomorrow)
     
@@ -137,7 +131,6 @@ async def test_create_plan(
     test_recipes: list[TestRecipe],
     db_session: AsyncSession
 ) -> None:
-    """Test creating a new meal plan."""
     tomorrow = date.today() + timedelta(days=1)
     breakfast_recipe = next(r for r in test_recipes if r.meal_type == "breakfast")
     
@@ -174,7 +167,6 @@ async def test_update_plan(
     test_user_plan: TestUserPlan,
     db_session: AsyncSession
 ) -> None:
-    """Test updating an existing meal plan."""
     today = date.today()
     dinner_recipe = next(r for r in test_recipes if r.meal_type == "dinner")
     
@@ -205,7 +197,6 @@ async def test_create_or_update_plan_nonexistent_recipe(
     test_user: TestUser,
     db_session: AsyncSession
 ) -> None:
-    """Test attempting to create a plan with a nonexistent recipe."""
     today = date.today()
     nonexistent_recipe_id = 99999
     
@@ -228,7 +219,6 @@ async def test_create_or_update_plan_invalid_meal_type(
     test_recipes: list[TestRecipe],
     db_session: AsyncSession
 ) -> None:
-    """Test attempting to create a plan with an invalid meal type."""
     today = date.today()
     recipe = test_recipes[0]
     invalid_meal_type = "invalid_type"
@@ -251,7 +241,6 @@ async def test_get_user_recipes(
     test_user: TestUser,
     test_recipes: list[TestRecipe]
 ) -> None:
-    """Test retrieving user recipes."""
     result = await user_plan_manager.get_user_recipes(test_user.id)
     
     assert isinstance(result, list)
@@ -273,7 +262,6 @@ async def test_get_user_recipes_no_recipes(
     user_plan_manager: SqlAlchemyUserPlanManager,
     db_session: AsyncSession
 ) -> None:
-    """Test retrieving recipes for a user with no recipes."""
     user = TestUser(
         user_name="user_without_recipes",
         email="no_recipes@example.com",

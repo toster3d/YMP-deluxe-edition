@@ -23,7 +23,6 @@ class TestRegistration:
         self.password_validator = PasswordValidator()
         self.registration_service = RegistrationService(db_session)
         yield
-        # Cleaning the database after each test
         await db_session.execute(text("DELETE FROM users"))
         await db_session.commit()
 
@@ -109,7 +108,6 @@ class TestRegistration:
         assert response.status_code == expected_status
         response_json = response.json()
 
-        # Adding debug print for easier diagnostics
         print(f"Response JSON: {response_json}")
         print(f"Expected error: {expected_error}")
 
@@ -138,10 +136,8 @@ class TestRegistration:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         response_json = response.json()
         
-        # Adding debug print for easier diagnostics
         print(f"Response JSON: {response_json}")
         
-        # Check if the error is in detail or in message
         if "detail" in response_json and isinstance(response_json["detail"], list):
             error_messages = [error["msg"] for error in response_json["detail"]]
             assert any(
@@ -153,5 +149,4 @@ class TestRegistration:
         elif "message" in response_json:
             assert "Password does not meet complexity requirements" in response_json["message"]
         else:
-            # If the expected format is not found, the test will fail
             assert False, f"Unexpected response format: {response_json}"

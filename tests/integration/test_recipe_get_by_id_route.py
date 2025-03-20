@@ -39,16 +39,13 @@ async def test_get_recipe_success(
     test_recipe: TestRecipe
 ) -> None:
     """Test successful recipe retrieval."""
-    # Arrange
     recipe_id = test_recipe.id
     
-    # Act
     response = await async_client.get(
         f"/recipe/{recipe_id}",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
     data = response.json()
@@ -68,16 +65,13 @@ async def test_get_recipe_not_found(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe retrieval with non-existent ID."""
-    # Arrange
     non_existent_id = 9999
     
-    # Act
     response = await async_client.get(
         f"/recipe/{non_existent_id}",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     data = response.json()
     assert "detail" in data
@@ -90,13 +84,10 @@ async def test_get_recipe_unauthorized(
     test_recipe: TestRecipe
 ) -> None:
     """Test recipe retrieval without authentication."""
-    # Arrange
     recipe_id = test_recipe.id
     
-    # Act
     response = await async_client.get(f"/recipe/{recipe_id}")
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     data = response.json()
     assert "detail" in data
@@ -109,7 +100,6 @@ async def test_get_recipe_from_another_user(
     db_session: AsyncSession
 ) -> None:
     """Test retrieving a recipe that belongs to another user."""
-    # Arrange - Create another user and their recipe
     another_user = TestUser(
         user_name="another_user",
         email="another@example.com",
@@ -119,7 +109,6 @@ async def test_get_recipe_from_another_user(
     await db_session.commit()
     await db_session.refresh(another_user)
     
-    # Create recipe for another user
     ingredients = ["Ingredient A", "Ingredient B"]
     instructions = ["Instruction A", "Instruction B"]
     
@@ -135,13 +124,11 @@ async def test_get_recipe_from_another_user(
     await db_session.commit()
     await db_session.refresh(another_recipe)
     
-    # Act - Try to access another user's recipe
     response = await async_client.get(
         f"/recipe/{another_recipe.id}",
         headers=auth_headers
     )
     
-    # Assert - Should return 404 Not Found (not 403 Forbidden to prevent user enumeration)
     assert response.status_code == status.HTTP_404_NOT_FOUND
     data = response.json()
     assert "detail" in data
@@ -154,13 +141,11 @@ async def test_get_recipe_invalid_id(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe retrieval with invalid ID format."""
-    # Act
     response = await async_client.get(
         "/recipe/invalid_id",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     data = response.json()
     assert "detail" in data
@@ -174,7 +159,6 @@ async def test_get_recipe_with_special_characters(
     create_test_user: TestUser
 ) -> None:
     """Test retrieving a recipe with special characters in its content."""
-    # Arrange
     ingredients = ["Wheat flour", "Powdered sugar", "Butter 82%", "Fresh eggs"]
     instructions = [
         "Mix the ingredients",
@@ -194,13 +178,11 @@ async def test_get_recipe_with_special_characters(
     await db_session.commit()
     await db_session.refresh(recipe)
     
-    # Act
     response = await async_client.get(
         f"/recipe/{recipe.id}",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
     data = response.json()
@@ -210,3 +192,22 @@ async def test_get_recipe_with_special_characters(
     assert "Butter 82%" in data["ingredients"]
     assert "Bake at 180°C for 30 minutes" in data["instructions"]
     assert "Dust with powdered sugar & decorate" in data["instructions"]
+
+
+@pytest.mark.asyncio
+async def test_get_recipe_nonexistent_id(
+    async_client: AsyncClient,
+    auth_headers: dict[str, str]
+) -> None:
+    """Test retrieving a recipe with an ID that doesn't exist."""
+    nonexistent_id = 99999
+    
+    response = await async_client.get(
+        f"/recipe/{nonexistent_id}",
+        headers=auth_headers
+    )
+    
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    response_data = response.json()
+    assert "detail" in response_data
+    assert "Recipe not found" in response_data["detail"]

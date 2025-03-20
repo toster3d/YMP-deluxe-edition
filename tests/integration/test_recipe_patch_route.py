@@ -46,7 +46,6 @@ async def test_recipe(
 @pytest.fixture
 async def other_user_recipe(db_session: AsyncSession) -> TestRecipe:
     """Fixture creating a recipe owned by another user."""
-    # Create another user
     other_user = TestUser(
         user_name="other_user",
         email="other@example.com",
@@ -56,7 +55,6 @@ async def other_user_recipe(db_session: AsyncSession) -> TestRecipe:
     await db_session.commit()
     await db_session.refresh(other_user)
     
-    # Create recipe for this user
     ingredients = ["Ingredient A", "Ingredient B"]
     instructions = ["Instruction A", "Instruction B"]
     
@@ -83,28 +81,23 @@ async def test_update_recipe_name(
     db_session: AsyncSession
 ) -> None:
     """Test updating recipe name."""
-    # Arrange
     recipe_id = test_recipe.id
     new_name = "Updated Recipe Name"
     update_data = {"meal_name": new_name}
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
     data = response.json()
     assert data["meal_name"] == new_name
     
-    # Get fresh data from the database
     await db_session.refresh(test_recipe)
     
-    # Check if the data has been updated in the database
     assert test_recipe.meal_name == new_name
 
 
@@ -116,27 +109,22 @@ async def test_update_recipe_meal_type_success(
     db_session: AsyncSession
 ) -> None:
     """Test updating the meal type in the recipe."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data = {
         "meal_type": "dinner"
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    # Verify API response
     data = response.json()
     assert data["meal_type"] == "dinner"
     
-    # Directly fetch data from the database
     await db_session.refresh(test_recipe)
     assert test_recipe.meal_type == "dinner"
 
@@ -149,28 +137,23 @@ async def test_update_recipe_ingredients_success(
     db_session: AsyncSession
 ) -> None:
     """Test updating the ingredients of the recipe."""
-    # Arrange
     recipe_id = test_recipe.id
     new_ingredients = ["New ingredient 1", "New ingredient 2", "New ingredient 3", "New ingredient 4"]
     update_data = {
         "ingredients": new_ingredients
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    # Verify API response
     data = response.json()
     assert data["ingredients"] == new_ingredients
     
-    # Refresh and verify data in the database
     await db_session.refresh(test_recipe)
     ingredients_from_db = json.loads(test_recipe.ingredients)
     assert ingredients_from_db == new_ingredients
@@ -184,28 +167,23 @@ async def test_update_recipe_instructions_success(
     db_session: AsyncSession
 ) -> None:
     """Test updating the instructions of the recipe."""
-    # Arrange
     recipe_id = test_recipe.id
     new_instructions = ["New instruction 1", "New instruction 2", "New instruction 3"]
     update_data = {
         "instructions": new_instructions
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    # Verify API response
     data = response.json()
     assert data["instructions"] == new_instructions
     
-    # Refresh and verify data in the database
     await db_session.refresh(test_recipe)
     instructions_from_db = json.loads(test_recipe.instructions)
     assert instructions_from_db == new_instructions
@@ -219,7 +197,6 @@ async def test_update_recipe_all_fields_success(
     db_session: AsyncSession
 ) -> None:
     """Test updating all fields of the recipe at once."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data = {
         "meal_name": "Completely Updated Recipe",
@@ -228,24 +205,20 @@ async def test_update_recipe_all_fields_success(
         "instructions": ["Instruction X", "Instruction Y", "Instruction Z"]
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    # Verify API response
     data = response.json()
     assert data["meal_name"] == update_data["meal_name"]
     assert data["meal_type"] == update_data["meal_type"]
     assert data["ingredients"] == update_data["ingredients"]
     assert data["instructions"] == update_data["instructions"]
     
-    # Refresh and verify data in the database
     await db_session.refresh(test_recipe)
     assert test_recipe.meal_name == update_data["meal_name"]
     assert test_recipe.meal_type == update_data["meal_type"]
@@ -261,7 +234,6 @@ async def test_update_recipe_with_special_characters(
     db_session: AsyncSession
 ) -> None:
     """Test updating a recipe using special characters."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data: dict[str, Any] = {
         "meal_name": "Cake with chocolate glaze & fruits",
@@ -273,23 +245,19 @@ async def test_update_recipe_with_special_characters(
         ]
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
-    # Verify API response
     data = response.json()
     assert data["meal_name"] == update_data["meal_name"]
     assert data["ingredients"] == update_data["ingredients"]
     assert data["instructions"] == update_data["instructions"]
     
-    # Refresh and verify data in the database
     await db_session.refresh(test_recipe)
     assert test_recipe.meal_name == update_data["meal_name"]
     assert json.loads(test_recipe.ingredients) == update_data["ingredients"]
@@ -302,20 +270,17 @@ async def test_update_recipe_not_found(
     auth_headers: dict[str, str]
 ) -> None:
     """Test updating a non-existent recipe."""
-    # Arrange
     nonexistent_recipe_id = 9999
     update_data = {
         "meal_name": "This will not be updated"
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{nonexistent_recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "detail" in response.json()
     assert "not found" in response.json()["detail"].lower()
@@ -327,19 +292,16 @@ async def test_update_recipe_unauthorized(
     test_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe without authorization."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data = {
         "meal_name": "Unauthorized Update"
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data
     )
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -350,20 +312,16 @@ async def test_update_recipe_empty_payload(
     test_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe with an empty payload."""
-    # Arrange
     recipe_id = test_recipe.id
     empty_data = {}
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=empty_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
-    # An empty payload should not introduce changes, so we check if the data remains unchanged
     data = response.json()
     assert data["meal_name"] == test_recipe.meal_name
     assert data["meal_type"] == test_recipe.meal_type
@@ -376,20 +334,17 @@ async def test_update_recipe_invalid_meal_type(
     test_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe with an invalid meal type."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data = {
         "meal_type": "invalid_type"  # Invalid meal type
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
@@ -404,20 +359,17 @@ async def test_update_recipe_empty_ingredient(
     test_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe with an empty ingredient."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data = {
         "ingredients": ["Valid ingredient", ""]  # Empty ingredient
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
@@ -432,20 +384,17 @@ async def test_update_other_users_recipe(
     other_user_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe owned by another user."""
-    # Arrange
     recipe_id = other_user_recipe.id
     update_data = {
         "meal_name": "Trying to Update Someone Else's Recipe"
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "Recipe not found" in response.json()["detail"]
 
@@ -457,20 +406,17 @@ async def test_update_recipe_empty_ingredients(
     test_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe with an empty ingredients list."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data: dict[str, list[str]] = {
         "ingredients": []  # type: ignore
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     
     data = response.json()
@@ -484,20 +430,53 @@ async def test_update_recipe_invalid_ingredients(
     test_recipe: TestRecipe
 ) -> None:
     """Test updating a recipe with invalid ingredients (empty string)."""
-    # Arrange
     recipe_id = test_recipe.id
     update_data = {
         "ingredients": ["Valid ingredient", ""]  # Empty string is invalid
     }
     
-    # Act
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
         json=update_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     data = response.json()
     assert "Input should be a valid string" in str(data["detail"])
+
+
+@pytest.mark.asyncio
+async def test_update_recipe_validation_error_handling(
+    async_client: AsyncClient,
+    auth_headers: dict[str, str],
+    test_recipe: TestRecipe
+) -> None:
+    """Test update validation error handling."""
+    recipe_id = test_recipe.id
+    
+    invalid_update_data = {
+        "meal_type": "invalid_meal_type"
+    }
+    
+    response = await async_client.patch(
+        f"/recipe/{recipe_id}",
+        json=invalid_update_data,
+        headers=auth_headers
+    )
+    
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    response_data = response.json()
+    assert "detail" in response_data
+    
+    invalid_ingredients_data = {
+        "ingredients": ["", None]
+    }
+    
+    response = await async_client.patch(
+        f"/recipe/{recipe_id}",
+        json=invalid_ingredients_data,
+        headers=auth_headers
+    )
+    
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

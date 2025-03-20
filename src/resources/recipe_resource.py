@@ -17,18 +17,7 @@ class RecipeListResource:
         self.recipe_manager = RecipeManager(db)
 
     async def get(self, user_id: int) -> dict[str, list[RecipeSchema]]:
-        """
-        Get all recipes for a user.
-
-        Args:
-            user_id: ID of the user
-
-        Returns:
-            dict: List of user's recipes
-
-        Raises:
-            HTTPException: If no recipes found
-        """
+        """Get all recipes for a user."""
         recipes = await self.recipe_manager.get_recipes(user_id)
 
         if not recipes:
@@ -40,19 +29,7 @@ class RecipeListResource:
         return {"recipes": recipes}
 
     async def post(self, recipe_data: RecipeSchema, user_id: int) -> dict[str, Any]:
-        """
-        Create a new recipe.
-
-        Args:
-            recipe_data: Recipe data
-            user_id: ID of the user
-
-        Returns:
-            dict: Created recipe details
-
-        Raises:
-            HTTPException: If recipe creation fails
-        """
+        """Create a new recipe."""
         try:
             recipe = await self.recipe_manager.add_recipe(recipe_data=recipe_data, user_id=user_id)
 
@@ -100,7 +77,6 @@ class RecipeResource:
                     detail="Recipe not found"
                 )
 
-            # Pobierz świeże dane bezpośrednio z bazy danych
             result = await self.recipe_manager.get_recipe_by_id(recipe_id, user_id)
             if result is None:
                 raise HTTPException(
@@ -117,16 +93,7 @@ class RecipeResource:
             )
 
     async def delete(self, recipe_id: int, user_id: int) -> None:
-        """
-        Delete a specific recipe.
-
-        Args:
-            recipe_id: ID of the recipe
-            user_id: ID of the user
-
-        Raises:
-            HTTPException: If recipe deletion fails
-        """
+        """Delete a specific recipe."""
         try:
             if not await self.recipe_manager.delete_recipe(recipe_id, user_id):
                 raise HTTPException(

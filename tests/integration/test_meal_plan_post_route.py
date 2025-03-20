@@ -37,7 +37,6 @@ async def test_create_meal_plan_success(
     db_session: AsyncSession,
 ) -> None:
     """Test successful creation of a new meal plan."""
-    # Arrange
     today = date.today()
     payload = {
         "selected_date": today.isoformat(),
@@ -45,17 +44,14 @@ async def test_create_meal_plan_success(
         "meal_type": "dinner"
     }
     
-    # Act
     response = await async_client.post(
         "/meal_plan",
         headers=auth_headers,
         json=payload
     )
     
-    # Assert
     assert response.status_code == status.HTTP_201_CREATED
     
-    # Check response content
     data = response.json()
     assert data["message"] == "Meal plan updated successfully!"
     assert data["meal_type"] == "dinner"
@@ -63,7 +59,6 @@ async def test_create_meal_plan_success(
     assert data["recipe_id"] == test_recipe.id
     assert data["date"] == today.isoformat()
     
-    # Check if the plan was actually created in the database
     result = await db_session.execute(
         select(TestUserPlan).filter(
             TestUserPlan.user_id == test_recipe.user_id,
@@ -86,10 +81,8 @@ async def test_update_existing_meal_plan(
     db_session: AsyncSession,
 ) -> None:
     """Test updating an existing meal plan."""
-    # Arrange
     today = date.today()
     
-    # First, create an existing plan
     existing_plan = TestUserPlan(
         user_id=test_recipe.user_id,
         date=today,
@@ -102,29 +95,24 @@ async def test_update_existing_meal_plan(
     await db_session.commit()
     await db_session.refresh(existing_plan)
     
-    # Data for update
     payload = {
         "selected_date": today.isoformat(),
         "recipe_id": test_recipe.id,
         "meal_type": "dinner"
     }
     
-    # Act
     response = await async_client.post(
         "/meal_plan",
         headers=auth_headers,
         json=payload
     )
     
-    # Assert
     assert response.status_code == status.HTTP_201_CREATED
     
-    # Check response content
     data = response.json()
     assert data["message"] == "Meal plan updated successfully!"
     assert data["meal_type"] == "dinner"
     
-    # Check if the plan was updated in the database
     await db_session.refresh(existing_plan)
     result = await db_session.execute(
         select(TestUserPlan).filter(
@@ -135,9 +123,9 @@ async def test_update_existing_meal_plan(
     plan = result.scalar_one_or_none()
     assert plan is not None
     assert plan.dinner == test_recipe.meal_name
-    assert plan.breakfast == "Oatmeal"  # Should remain unchanged
-    assert plan.lunch == "Tuna sandwich"  # Should remain unchanged
-    assert plan.dessert == "Pudding"  # Should remain unchanged
+    assert plan.breakfast == "Oatmeal"
+    assert plan.lunch == "Tuna sandwich"
+    assert plan.dessert == "Pudding"
 
 
 @pytest.mark.anyio
@@ -146,22 +134,19 @@ async def test_create_meal_plan_nonexistent_recipe(
     auth_headers: dict[str, str],
 ) -> None:
     """Test attempting to create a plan with a nonexistent recipe."""
-    # Arrange
     today = date.today()
     payload = {
         "selected_date": today.isoformat(),
-        "recipe_id": 999999,  # Nonexistent ID
+        "recipe_id": 999999,
         "meal_type": "breakfast"
     }
     
-    # Act
     response = await async_client.post(
         "/meal_plan",
         headers=auth_headers,
         json=payload
     )
     
-    # Assert
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     data = response.json()
     assert "Recipe with id 999999 not found" in data["detail"]
@@ -174,22 +159,19 @@ async def test_create_meal_plan_invalid_meal_type(
     test_recipe: TestRecipe,
 ) -> None:
     """Test attempting to create a plan with an invalid meal type."""
-    # Arrange
     today = date.today()
     payload = {
         "selected_date": today.isoformat(),
         "recipe_id": test_recipe.id,
-        "meal_type": "invalid_type"  # Invalid meal type
+        "meal_type": "invalid_type"
     }
     
-    # Act
     response = await async_client.post(
         "/meal_plan",
         headers=auth_headers,
         json=payload
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     data = response.json()
     assert "input should be" in data["detail"][0]["msg"].lower()
@@ -202,7 +184,6 @@ async def test_create_meal_plan_unauthorized(
     test_recipe: TestRecipe,
 ) -> None:
     """Test attempting to create a plan without authorization."""
-    # Arrange
     today = date.today()
     payload = {
         "selected_date": today.isoformat(),
@@ -210,13 +191,11 @@ async def test_create_meal_plan_unauthorized(
         "meal_type": "dinner"
     }
     
-    # Act
     response = await async_client.post(
         "/meal_plan",
         json=payload
     )
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -227,21 +206,18 @@ async def test_create_meal_plan_invalid_date_format(
     test_recipe: TestRecipe,
 ) -> None:
     """Test attempting to create a plan with an invalid date format."""
-    # Arrange
     payload = {
-        "selected_date": "05-03-2025",  # Invalid format (expected: YYYY-MM-DD)
+        "selected_date": "05-03-2025",
         "recipe_id": test_recipe.id,
         "meal_type": "dinner"
     }
     
-    # Act
     response = await async_client.post(
         "/meal_plan",
         headers=auth_headers,
         json=payload
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     data = response.json()
     assert len(data["detail"]) > 0
@@ -256,7 +232,6 @@ async def test_create_meal_plan_different_meal_types(
     db_session: AsyncSession,
 ) -> None:
     """Test creating a plan with different meal types."""
-    # Arrange
     today = date.today()
     meal_types = ["breakfast", "lunch", "dinner", "dessert"]
     
@@ -267,19 +242,16 @@ async def test_create_meal_plan_different_meal_types(
             "meal_type": meal_type
         }
         
-        # Act
         response = await async_client.post(
             "/meal_plan",
             headers=auth_headers,
             json=payload
         )
         
-        # Assert
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
         assert data["meal_type"] == meal_type
     
-    # Check if all meal types were saved in the database
     result = await db_session.execute(
         select(TestUserPlan).filter(
             TestUserPlan.user_id == test_recipe.user_id,
@@ -291,4 +263,4 @@ async def test_create_meal_plan_different_meal_types(
     assert plan.breakfast == test_recipe.meal_name
     assert plan.lunch == test_recipe.meal_name
     assert plan.dinner == test_recipe.meal_name
-    assert plan.dessert == test_recipe.meal_name 
+    assert plan.dessert == test_recipe.meal_name

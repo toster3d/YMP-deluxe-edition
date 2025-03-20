@@ -17,7 +17,6 @@ async def test_create_recipe_success(
     db_session: AsyncSession
 ) -> None:
     """Test successful recipe creation."""
-    # Arrange
     recipe_data = {
         "meal_name": "Test Recipe",
         "meal_type": "dinner",
@@ -25,14 +24,12 @@ async def test_create_recipe_success(
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_201_CREATED
     response_data = response.json()
     assert "message" in response_data
@@ -43,7 +40,6 @@ async def test_create_recipe_success(
     assert "meal_type" in response_data
     assert response_data["meal_type"] == "dinner"
     
-    # Verify recipe was actually saved in the database
     recipe_id = response_data["recipe_id"]
     query = select(TestRecipe).filter_by(id=recipe_id)
     result = await db_session.execute(query)
@@ -62,7 +58,6 @@ async def test_create_recipe_unauthorized(
     async_client: AsyncClient
 ) -> None:
     """Test recipe creation without authentication."""
-    # Arrange
     recipe_data = {
         "meal_name": "Test Recipe",
         "meal_type": "dinner",
@@ -70,13 +65,11 @@ async def test_create_recipe_unauthorized(
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data
     )
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     response_data = response.json()
     assert "detail" in response_data
@@ -88,26 +81,22 @@ async def test_create_recipe_invalid_meal_type(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe creation with invalid meal type."""
-    # Arrange
     recipe_data = {
         "meal_name": "Test Recipe",
-        "meal_type": "invalid_type",  # Invalid meal type
+        "meal_type": "invalid_type",
         "ingredients": ["Ingredient 1", "Ingredient 2"],
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Check if the error pertains to the meal_type field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "meal_type" for error in errors)
 
@@ -118,26 +107,22 @@ async def test_create_recipe_empty_meal_name(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe creation with empty meal name."""
-    # Arrange
     recipe_data = {
-        "meal_name": "",  # Empty meal name
+        "meal_name": "",
         "meal_type": "dinner",
         "ingredients": ["Ingredient 1", "Ingredient 2"],
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Check if the error pertains to the meal_name field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "meal_name" for error in errors)
 
@@ -148,26 +133,22 @@ async def test_create_recipe_empty_ingredient(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe creation with empty ingredient."""
-    # Arrange
     recipe_data = {
         "meal_name": "Test Recipe",
         "meal_type": "dinner",
-        "ingredients": ["Ingredient 1", ""],  # Empty ingredient
+        "ingredients": ["Ingredient 1", ""],
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Check if the error pertains to the ingredients field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "ingredients" for error in errors)
 
@@ -178,26 +159,22 @@ async def test_create_recipe_empty_instruction(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe creation with empty instruction."""
-    # Arrange
     recipe_data = {
         "meal_name": "Test Recipe",
         "meal_type": "dinner",
         "ingredients": ["Ingredient 1", "Ingredient 2"],
-        "instructions": ["Step 1", ""]  # Empty instruction
+        "instructions": ["Step 1", ""]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Check if the error pertains to the instructions field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "instructions" for error in errors)
 
@@ -208,25 +185,20 @@ async def test_create_recipe_missing_required_fields(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe creation with missing required fields."""
-    # Arrange
     recipe_data = {
-        # Missing meal_name and meal_type
         "ingredients": ["Ingredient 1", "Ingredient 2"],
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Check if the errors pertain to the missing fields
     errors = response_data["detail"]
     missing_fields = [error["loc"][1] for error in errors]
     assert "meal_name" in missing_fields
@@ -239,26 +211,22 @@ async def test_create_recipe_too_long_meal_name(
     auth_headers: dict[str, str]
 ) -> None:
     """Test recipe creation with too long meal name."""
-    # Arrange
     recipe_data = {
-        "meal_name": "A" * 201,  # 201 characters (max is 200)
+        "meal_name": "A" * 201,
         "meal_type": "dinner",
         "ingredients": ["Ingredient 1", "Ingredient 2"],
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Act
     response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response_data = response.json()
     assert "detail" in response_data
-    # Check if the error pertains to the meal_name field
     errors = response_data["detail"]
     assert any(error["loc"][1] == "meal_name" for error in errors)
 
@@ -271,7 +239,6 @@ async def test_create_duplicate_recipe(
     db_session: AsyncSession
 ) -> None:
     """Test creating a recipe with the same name as an existing one."""
-    # Arrange - Create first recipe
     recipe_data = {
         "meal_name": "Duplicate Recipe",
         "meal_type": "dinner",
@@ -279,7 +246,6 @@ async def test_create_duplicate_recipe(
         "instructions": ["Step 1", "Step 2"]
     }
     
-    # Add first recipe
     first_response = await async_client.post(
         "/recipe",
         json=recipe_data,
@@ -287,17 +253,14 @@ async def test_create_duplicate_recipe(
     )
     assert first_response.status_code == status.HTTP_201_CREATED
     
-    # Act - Try to add second recipe with same name
     second_response = await async_client.post(
         "/recipe",
         json=recipe_data,
         headers=auth_headers
     )
     
-    # Assert - This should still succeed as the API doesn't prevent duplicate recipe names
     assert second_response.status_code == status.HTTP_201_CREATED
     
-    # Verify that we now have two recipes with the same name
     query = select(TestRecipe).filter_by(
         user_id=create_test_user.id, 
         meal_name="Duplicate Recipe"
@@ -305,4 +268,42 @@ async def test_create_duplicate_recipe(
     result = await db_session.execute(query)
     recipes = result.scalars().all()
     
-    assert len(recipes) == 2 
+    assert len(recipes) == 2
+
+
+@pytest.mark.asyncio
+async def test_create_recipe_with_special_characters(
+    async_client: AsyncClient,
+    auth_headers: dict[str, str],
+    create_test_user: TestUser,
+    db_session: AsyncSession
+) -> None:
+    """Test recipe creation with special characters."""
+    recipe_data = {
+        "meal_name": "Spätzle & Käse",
+        "meal_type": "dinner",
+        "ingredients": ["400g flour", "4 eggs", "100ml water", "200g Emmentaler cheese", "Salt & pepper"],
+        "instructions": ["Mix flour, eggs & water", "Push through spätzle maker into boiling water", "Drain & mix with cheese"]
+    }
+    
+    response = await async_client.post(
+        "/recipe",
+        json=recipe_data,
+        headers=auth_headers
+    )
+    
+    assert response.status_code == status.HTTP_201_CREATED
+    
+    query = select(TestRecipe).filter_by(
+        user_id=create_test_user.id,
+        meal_name="Spätzle & Käse"
+    )
+    result = await db_session.execute(query)
+    recipe = result.scalar_one_or_none()
+    
+    assert recipe is not None
+    assert recipe.meal_name == "Spätzle & Käse"
+    assert recipe.meal_type == "dinner"
+    assert "400g flour" in json.loads(recipe.ingredients)
+    assert "Salt & pepper" in json.loads(recipe.ingredients)
+    assert any("spätzle maker" in instr for instr in json.loads(recipe.instructions)) 

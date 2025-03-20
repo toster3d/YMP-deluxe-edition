@@ -61,7 +61,6 @@ async def test_recipes(db_session: AsyncSession, test_user: TestUser) -> list[Te
     
     await db_session.commit()
     
-    # Refresh to get IDs
     for recipe in recipes:
         await db_session.refresh(recipe)
     
@@ -71,10 +70,8 @@ async def test_recipes(db_session: AsyncSession, test_user: TestUser) -> list[Te
 @pytest.mark.asyncio
 async def test_get_recipes_empty(recipe_manager: RecipeManager, test_user: TestUser) -> None:
     """Test getting recipes when user has no recipes."""
-    # Act
     recipes = await recipe_manager.get_recipes(test_user.id)
     
-    # Assert
     assert isinstance(recipes, list)
     assert len(recipes) == 0
 
@@ -86,20 +83,16 @@ async def test_get_recipes_multiple(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test getting multiple recipes for a user."""
-    # Act
     recipes = await recipe_manager.get_recipes(test_user.id)
     
-    # Assert
     assert isinstance(recipes, list)
     assert len(recipes) == 3
     
-    # Verify recipe data
     meal_names = [recipe.meal_name for recipe in recipes]
     assert "Test Breakfast" in meal_names
     assert "Test Lunch" in meal_names
     assert "Test Dinner" in meal_names
     
-    # Check that ingredients and instructions are properly deserialized
     for recipe in recipes:
         if recipe.meal_name == "Test Breakfast":
             assert recipe.meal_type == "breakfast"
@@ -116,13 +109,10 @@ async def test_get_recipe_by_id_exists(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test getting a recipe by ID when it exists."""
-    # Arrange
     recipe_id = test_recipes[0].id
     
-    # Act
     recipe = await recipe_manager.get_recipe_by_id(recipe_id, test_user.id)
     
-    # Assert
     assert recipe is not None
     assert hasattr(recipe, "meal_name")
     assert hasattr(recipe, "meal_type")
@@ -136,10 +126,8 @@ async def test_get_recipe_by_id_not_exists(
     test_user: TestUser
 ) -> None:
     """Test getting a recipe by ID when it doesn't exist."""
-    # Act
     recipe = await recipe_manager.get_recipe_by_id(999, test_user.id)
     
-    # Assert
     assert recipe is None
 
 
@@ -151,10 +139,8 @@ async def test_get_recipe_by_id_wrong_user(
     db_session: AsyncSession
 ) -> None:
     """Test getting a recipe by ID with wrong user ID."""
-    # Arrange
     recipe_id = test_recipes[0].id
     
-    # Create another user
     other_user = TestUser(
         user_name="other_user",
         email="other@example.com",
@@ -164,10 +150,8 @@ async def test_get_recipe_by_id_wrong_user(
     await db_session.commit()
     await db_session.refresh(other_user)
     
-    # Act
     recipe = await recipe_manager.get_recipe_by_id(recipe_id, other_user.id)
     
-    # Assert
     assert recipe is None
 
 
@@ -178,13 +162,10 @@ async def test_get_recipe_details(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test getting complete recipe details."""
-    # Arrange
     recipe_id = test_recipes[0].id
     
-    # Act
     recipe = await recipe_manager.get_recipe_details(recipe_id, test_user.id)
     
-    # Assert
     assert recipe is not None
     assert hasattr(recipe, "meal_name")
     assert hasattr(recipe, "meal_type")
@@ -199,10 +180,8 @@ async def test_get_recipe_by_name(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test finding a recipe by name."""
-    # Act
     recipe = await recipe_manager.get_recipe_by_name(test_user.id, "Test Lunch")
     
-    # Assert
     assert recipe is not None
     assert recipe.meal_name == "Test Lunch"
     assert recipe.meal_type == "lunch"
@@ -216,10 +195,8 @@ async def test_get_recipe_by_name_not_exists(
     test_user: TestUser
 ) -> None:
     """Test finding a recipe by name that doesn't exist."""
-    # Act
     recipe = await recipe_manager.get_recipe_by_name(test_user.id, "Nonexistent Recipe")
     
-    # Assert
     assert recipe is None
 
 
@@ -230,7 +207,6 @@ async def test_add_recipe(
     db_session: AsyncSession
 ) -> None:
     """Test adding a new recipe."""
-    # Arrange
     recipe_data = RecipeSchema(
         meal_name="New Test Recipe",
         meal_type="dessert",
@@ -238,15 +214,12 @@ async def test_add_recipe(
         instructions=["mix ingredients", "bake", "serve"]
     )
     
-    # Act
     recipe = await recipe_manager.add_recipe(test_user.id, recipe_data)
     
-    # Assert
     assert recipe is not None
     assert recipe.meal_name == "New Test Recipe"
     assert recipe.meal_type == "dessert"
     
-    # Verify in database
     query = select(TestRecipe).filter_by(id=recipe.id)
     result = await db_session.execute(query)
     db_recipe = result.scalar_one_or_none()
@@ -266,7 +239,6 @@ async def test_update_recipe(
     db_session: AsyncSession
 ) -> None:
     """Test updating an existing recipe."""
-    # Arrange
     recipe_id = test_recipes[0].id
     update_data = RecipeUpdateSchema(
         meal_name="Updated Recipe Name",
@@ -275,15 +247,12 @@ async def test_update_recipe(
         instructions=["updated step 1", "updated step 2"]
     )
     
-    # Act
     updated_recipe = await recipe_manager.update_recipe(recipe_id, test_user.id, update_data)
     
-    # Assert
     assert updated_recipe is not None
     assert updated_recipe.meal_name == "Updated Recipe Name"
     assert updated_recipe.meal_type == "dinner"
     
-    # Verify in database
     await db_session.refresh(updated_recipe)
     assert updated_recipe.meal_name == "Updated Recipe Name"
     assert updated_recipe.meal_type == "dinner"
@@ -299,13 +268,11 @@ async def test_update_recipe_partial(
     db_session: AsyncSession
 ) -> None:
     """Test partial update of a recipe (only some fields)."""
-    # Arrange
     recipe_id = test_recipes[1].id
     original_meal_type = test_recipes[1].meal_type
     original_ingredients = json.loads(test_recipes[1].ingredients)
     original_instructions = json.loads(test_recipes[1].instructions)
     
-    # Only update the name
     update_data = RecipeUpdateSchema(
         meal_name="Partially Updated Recipe",
         meal_type=None,
@@ -313,15 +280,12 @@ async def test_update_recipe_partial(
         instructions=None
     )
     
-    # Act
     updated_recipe = await recipe_manager.update_recipe(recipe_id, test_user.id, update_data)
     
-    # Assert
     assert updated_recipe is not None
     assert updated_recipe.meal_name == "Partially Updated Recipe"
     assert updated_recipe.meal_type == original_meal_type
     
-    # Verify in database
     await db_session.refresh(updated_recipe)
     assert updated_recipe.meal_name == "Partially Updated Recipe"
     assert updated_recipe.meal_type == original_meal_type
@@ -335,7 +299,6 @@ async def test_update_recipe_not_exists(
     test_user: TestUser
 ) -> None:
     """Test updating a recipe that doesn't exist."""
-    # Arrange
     update_data = RecipeUpdateSchema(
         meal_name="This Won't Update",
         meal_type="dinner",
@@ -343,10 +306,8 @@ async def test_update_recipe_not_exists(
         instructions=["instruction"]
     )
     
-    # Act
     result = await recipe_manager.update_recipe(999, test_user.id, update_data)
     
-    # Assert
     assert result is None
 
 
@@ -358,19 +319,14 @@ async def test_delete_recipe(
     db_session: AsyncSession
 ) -> None:
     """Test deleting a recipe."""
-    # Arrange
     recipe_id = test_recipes[0].id
     
-    # Act
-    result = await recipe_manager.delete_recipe(recipe_id, test_user.id)
+    delete_result = await recipe_manager.delete_recipe(recipe_id, test_user.id)
+    assert delete_result is True
     
-    # Assert
-    assert result is True
-    
-    # Verify in database
     query = select(TestRecipe).filter_by(id=recipe_id)
-    result = await db_session.execute(query)
-    recipe = result.scalar_one_or_none()
+    db_result = await db_session.execute(query)
+    recipe = db_result.scalar_one_or_none()
     assert recipe is None
 
 
@@ -380,10 +336,8 @@ async def test_delete_recipe_not_exists(
     test_user: TestUser
 ) -> None:
     """Test deleting a recipe that doesn't exist."""
-    # Act
     result = await recipe_manager.delete_recipe(999, test_user.id)
     
-    # Assert
     assert result is False
 
 
@@ -395,10 +349,8 @@ async def test_delete_recipe_wrong_user(
     db_session: AsyncSession
 ) -> None:
     """Test deleting a recipe with wrong user ID."""
-    # Arrange
     recipe_id = test_recipes[0].id
     
-    # Create another user
     other_user = TestUser(
         user_name="other_user",
         email="other@example.com",
@@ -408,13 +360,10 @@ async def test_delete_recipe_wrong_user(
     await db_session.commit()
     await db_session.refresh(other_user)
     
-    # Act
     result = await recipe_manager.delete_recipe(recipe_id, other_user.id)
     
-    # Assert
     assert result is False
     
-    # Verify recipe still exists
     query = select(TestRecipe).filter_by(id=recipe_id)
     db_result = await db_session.execute(query)
     recipe = db_result.scalar_one_or_none()
@@ -428,10 +377,8 @@ async def test_get_ingredients_by_meal_name(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test retrieving ingredients for a recipe by meal name."""
-    # Act
     ingredients = await recipe_manager.get_ingredients_by_meal_name(test_user.id, "Test Breakfast")
     
-    # Assert
     assert ingredients is not None
     assert isinstance(ingredients, list)
     assert "eggs" in ingredients
@@ -445,8 +392,6 @@ async def test_get_ingredients_by_meal_name_not_exists(
     test_user: TestUser
 ) -> None:
     """Test retrieving ingredients for a nonexistent recipe."""
-    # Act
     ingredients = await recipe_manager.get_ingredients_by_meal_name(test_user.id, "Nonexistent Recipe")
     
-    # Assert
     assert ingredients is None

@@ -243,10 +243,10 @@ class TestDateRangeSchema:
     @pytest.mark.parametrize(
         "start_date,end_date",
         [
-            (date(2024, 2, 14), date(2024, 2, 21)),  # Week
-            (date(2024, 2, 14), date(2024, 2, 14)),  # Same day
-            (date(2024, 1, 1), date(2024, 12, 31)),  # Whole year
-            (date(2024, 2, 14), date(2025, 2, 14)),  # Year ahead
+            (date(2024, 2, 14), date(2024, 2, 21)),
+            (date(2024, 2, 14), date(2024, 2, 14)),
+            (date(2024, 1, 1), date(2024, 12, 31)),
+            (date(2024, 2, 14), date(2025, 2, 14)),
         ]
     )
     def test_valid_ranges(self, start_date: date, end_date: date) -> None:
@@ -263,11 +263,11 @@ class TestDateRangeSchema:
         "invalid_data,expected_error",
         [
             (
-                {"end_date": date(2024, 2, 21)},  # Missing start_date
+                {"end_date": date(2024, 2, 21)},
                 "Field required"
             ),
             (
-                {"start_date": date(2024, 2, 14)},  # Missing end_date
+                {"start_date": date(2024, 2, 14)},
                 "Field required"
             ),
             (

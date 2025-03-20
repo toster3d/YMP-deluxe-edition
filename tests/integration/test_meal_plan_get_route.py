@@ -52,7 +52,6 @@ async def test_recipes(
     
     await db_session.commit()
     
-    # Refresh objects to get assigned IDs
     for recipe in recipes:
         await db_session.refresh(recipe)
     
@@ -66,27 +65,23 @@ async def test_get_meal_plan_options_success(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test successful retrieval of meal plan options."""
-    # Act
     response = await async_client.get(
         "/meal_plan",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     
     assert "recipes" in response_data
     recipes: list[dict[str, Any]] = response_data["recipes"]
     assert isinstance(recipes, list)
-    assert len(recipes) == 4  # We have 4 test recipes
+    assert len(recipes) == 4
     
-    # Check if all expected recipes are present
     recipe_names = [recipe["name"] for recipe in recipes]
     expected_names = ["Oatmeal", "Tuna Salad", "Spaghetti Bolognese", "Cheesecake"]
     assert set(recipe_names) == set(expected_names)
     
-    # Check the structure of recipe data
     for recipe in recipes:
         assert "id" in recipe
         assert "name" in recipe
@@ -101,34 +96,29 @@ async def test_get_meal_plan_options_no_recipes(
     db_session: AsyncSession
 ) -> None:
     """Test retrieval of meal plan options when user has no recipes."""
-    # Delete all recipes (if they exist)
     await db_session.execute(delete(TestRecipe))
     await db_session.commit()
     
-    # Act
     response = await async_client.get(
         "/meal_plan",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     
     assert "recipes" in response_data
     recipes: list[dict[str, Any]] = response_data["recipes"]
     assert isinstance(recipes, list)
-    assert len(recipes) == 0  # Empty list of recipes
+    assert len(recipes) == 0
 
 @pytest.mark.asyncio
 async def test_get_meal_plan_options_unauthorized(
     async_client: AsyncClient
 ) -> None:
     """Test attempts to retrieve meal plan options without authorization."""
-    # Act
     response = await async_client.get("/meal_plan")
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert "detail" in response.json()
 
@@ -138,14 +128,12 @@ async def test_get_meal_plan_options_with_invalid_token(
     async_client: AsyncClient
 ) -> None:
     """Test attempts to retrieve meal plan options with an invalid token."""
-    # Act
     invalid_headers = {"Authorization": "Bearer invalid.token.here"}
     response = await async_client.get(
         "/meal_plan",
         headers=invalid_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert "detail" in response.json()
 
@@ -157,29 +145,24 @@ async def test_get_meal_plan_options_check_recipe_structure(
     test_recipes: list[TestRecipe]
 ) -> None:
     """Test checking the exact structure of returned recipe data."""
-    # Act
     response = await async_client.get(
         "/meal_plan",
         headers=auth_headers
     )
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     
     recipes = response_data["recipes"]
     assert len(recipes) > 0
     
-    # Check the first recipe
     first_recipe = recipes[0]
     assert isinstance(first_recipe["id"], int)
     assert isinstance(first_recipe["name"], str)
     assert isinstance(first_recipe["meal_type"], str)
     
-    # Find the recipe in the original list
     original_recipe = next((r for r in test_recipes if r.id == first_recipe["id"]), None)
     assert original_recipe is not None
     
-    # Compare data
     assert first_recipe["name"] == original_recipe.meal_name
-    assert first_recipe["meal_type"] == original_recipe.meal_type 
+    assert first_recipe["meal_type"] == original_recipe.meal_type

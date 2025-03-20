@@ -176,5 +176,3 @@ class RegistrationService:
         except Exception as error:
             await self.db.rollback()
             raise RegistrationError(f"Registration failed: {str(error)}")
-
-

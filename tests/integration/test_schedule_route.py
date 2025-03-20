@@ -10,9 +10,7 @@ from tests.test_models.models_db_test import TestUser, TestUserPlan
 
 @pytest.fixture
 async def user_with_meal_plan(db_session: AsyncSession, create_test_user: TestUser) -> tuple[TestUser, date, TestUserPlan]:
-    """
-    Fixture creating a user with meal plans for today and tomorrow.
-    """
+    """Fixture creating a user with meal plans for today and tomorrow."""
     today = date.today()
     tomorrow = today + timedelta(days=1)
     
@@ -182,4 +180,21 @@ async def test_get_schedule_other_user_data(
     assert data["user_plans"]["breakfast"] != "Cereal with milk"
     assert data["user_plans"]["lunch"] != "Dumplings"
     assert data["user_plans"]["dinner"] != "Potato pancakes"
-    assert data["user_plans"]["dessert"] != "Cheesecake" 
+    assert data["user_plans"]["dessert"] != "Cheesecake"
+
+
+@pytest.mark.anyio
+async def test_get_schedule_with_invalid_date_string(
+    async_client: AsyncClient,
+    auth_headers: dict[str, str]
+) -> None:
+    """Test handling of invalid date format in URL path."""
+    response = await async_client.get(
+        "/schedule?date=invalid-date",
+        headers=auth_headers
+    )
+    
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    data = response.json()
+    assert "detail" in data
+    assert "Invalid date format" in data["detail"] 

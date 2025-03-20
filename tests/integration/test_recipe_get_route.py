@@ -16,10 +16,8 @@ async def test_get_recipes_empty(
     create_test_user: TestUser
 ) -> None:
     """Test GET /recipe when user has no recipes."""
-    # Act
     response = await async_client.get("/recipe", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_404_NOT_FOUND
     response_data = response.json()
     assert "detail" in response_data
@@ -34,7 +32,6 @@ async def test_get_recipes_success(
     db_session: AsyncSession
 ) -> None:
     """Test GET /recipe when user has recipes."""
-    # Arrange - Create test recipes
     test_recipes = [
         TestRecipe(
             user_id=create_test_user.id,
@@ -57,22 +54,18 @@ async def test_get_recipes_success(
     
     await db_session.commit()
     
-    # Act
     response = await async_client.get("/recipe", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     assert "recipes" in response_data
     assert len(response_data["recipes"]) == 2
     
-    # Verify recipe data
     recipes = response_data["recipes"]
     recipe_names = [r["meal_name"] for r in recipes]
     assert "Test Recipe 1" in recipe_names
     assert "Test Recipe 2" in recipe_names
     
-    # Check specific recipe details
     for recipe in recipes:
         if recipe["meal_name"] == "Test Recipe 1":
             assert recipe["meal_type"] == "dinner"
@@ -87,10 +80,8 @@ async def test_get_recipes_success(
 @pytest.mark.asyncio
 async def test_get_recipes_unauthorized(async_client: AsyncClient) -> None:
     """Test accessing recipes without authentication."""
-    # Act
     response = await async_client.get("/recipe")
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     response_data = response.json()
     assert "detail" in response_data
@@ -105,7 +96,6 @@ async def test_get_recipes_other_user(
     db_session: AsyncSession
 ) -> None:
     """Test that a user cannot see recipes from another user."""
-    # Arrange - Create another user with recipes
     other_user = TestUser(
         user_name="other_user",
         email="other@example.com",
@@ -115,7 +105,6 @@ async def test_get_recipes_other_user(
     await db_session.commit()
     await db_session.refresh(other_user)
     
-    # Add recipe for other user
     other_recipe = TestRecipe(
         user_id=other_user.id,
         meal_name="Other User Recipe",
@@ -126,13 +115,10 @@ async def test_get_recipes_other_user(
     db_session.add(other_recipe)
     await db_session.commit()
     
-    # Act - Get recipes with authenticated user
     response = await async_client.get("/recipe", headers=auth_headers)
     
-    # Assert - Should return 404 as the authenticated user has no recipes
     assert response.status_code == status.HTTP_404_NOT_FOUND
     
-    # Clean up
     await db_session.delete(other_user)
     await db_session.commit()
 
@@ -143,10 +129,8 @@ async def test_recipe_manager_get_recipes(
     create_test_user: TestUser
 ) -> None:
     """Test RecipeManager.get_recipes method directly."""
-    # Arrange
     recipe_manager = RecipeManager(db_session)
     
-    # Create test recipes
     test_recipe = TestRecipe(
         user_id=create_test_user.id,
         meal_name="Manager Test Recipe",
@@ -157,10 +141,8 @@ async def test_recipe_manager_get_recipes(
     db_session.add(test_recipe)
     await db_session.commit()
     
-    # Act
     recipes = await recipe_manager.get_recipes(create_test_user.id)
     
-    # Assert
     assert len(recipes) == 1
     assert recipes[0].meal_name == "Manager Test Recipe"
     assert recipes[0].meal_type == "dessert"
@@ -176,7 +158,6 @@ async def test_recipe_list_resource_get(
     db_session: AsyncSession
 ) -> None:
     """Test RecipeListResource.get method through the API."""
-    # Arrange - Create test recipe
     test_recipe = TestRecipe(
         user_id=create_test_user.id,
         meal_name="Resource Test Recipe",
@@ -187,10 +168,8 @@ async def test_recipe_list_resource_get(
     db_session.add(test_recipe)
     await db_session.commit()
     
-    # Act
     response = await async_client.get("/recipe", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     assert "recipes" in response_data
@@ -211,7 +190,6 @@ async def test_get_recipes_with_multiple_users(
     db_session: AsyncSession
 ) -> None:
     """Test that each user only sees their own recipes."""
-    # Arrange - Create another user
     other_user = TestUser(
         user_name="multi_user",
         email="multi@example.com",
@@ -221,9 +199,7 @@ async def test_get_recipes_with_multiple_users(
     await db_session.commit()
     await db_session.refresh(other_user)
     
-    # Add recipes for both users
     test_recipes = [
-        # Current user's recipe
         TestRecipe(
             user_id=create_test_user.id,
             meal_name="Current User Recipe",
@@ -231,7 +207,6 @@ async def test_get_recipes_with_multiple_users(
             ingredients=json.dumps(["current ingredient"]),
             instructions=json.dumps(["current step"])
         ),
-        # Other user's recipe
         TestRecipe(
             user_id=other_user.id,
             meal_name="Other User Recipe",
@@ -246,32 +221,26 @@ async def test_get_recipes_with_multiple_users(
     
     await db_session.commit()
     
-    # Act - Get recipes with authenticated user
     response = await async_client.get("/recipe", headers=auth_headers)
     
-    # Assert
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     assert "recipes" in response_data
     
-    # Should only see current user's recipe
     assert len(response_data["recipes"]) == 1
     assert response_data["recipes"][0]["meal_name"] == "Current User Recipe"
     
-    # Clean up
     await db_session.delete(other_user)
     await db_session.commit()
     
 @pytest.mark.asyncio
 async def test_get_recipes_malformed_token(async_client: AsyncClient) -> None:
     """Test behavior with malformed JWT token."""
-    # Act
     response = await async_client.get(
         "/recipe", 
         headers={"Authorization": "Bearer invalid.token.format"}
     )
     
-    # Assert
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     response_data = response.json()
     assert "detail" in response_data

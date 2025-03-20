@@ -1,5 +1,5 @@
 [project]
-name = "moj-projekt"
+name = "Your Meal Planner"
 version = "0.1.0"
 description = "A comprehensive meal planning and shopping list application"
 readme = "README.md"
@@ -62,6 +62,7 @@ dependencies = [
     "wrapt==1.17.2",
     "nox>=2025.2.9",
     "pytest-cov==6.0.0",
+    "pytest-mock>=3.14.0",
 ]
 
 [project.optional-dependencies]

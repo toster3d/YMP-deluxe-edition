@@ -212,3 +212,33 @@ async def test_main_block() -> None:
         test_run_server()
         
         mock_run.assert_called_once() 
+
+@pytest.mark.anyio
+async def test_initialize_database_partial_tables() -> None:
+    """Test database initialization when some but not all tables exist."""
+    with patch("src.app.async_engine") as mock_engine:
+        mock_conn = AsyncMock()
+        mock_engine.begin.return_value.__aenter__.return_value = mock_conn
+        
+        mock_conn.run_sync.return_value = ["users", "recipes"]  # missing "user_plan"
+        
+        with patch("builtins.print") as mock_print:
+            await initialize_database()
+            
+            assert mock_conn.run_sync.call_count == 2
+            assert "Creating missing tables..." in [call.args[0] for call in mock_print.call_args_list]
+            assert "Tables created successfully" in [call.args[0] for call in mock_print.call_args_list]
+
+@pytest.mark.anyio
+async def test_app_lifespan_setup() -> None:
+    """Test that lifespan is correctly set in FastAPI constructor."""
+    from src.app import lifespan
+    
+    with patch("src.app.FastAPI") as mock_fastapi:
+        from src.app import create_application
+        
+        create_application()
+        
+        _, kwargs = mock_fastapi.call_args
+        assert "lifespan" in kwargs
+        assert kwargs["lifespan"] == lifespan

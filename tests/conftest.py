@@ -146,7 +146,6 @@ async def auth_headers(auth_token: str) -> dict[str, str]:
 @pytest.fixture(autouse=True)
 async def clean_database(db_session: AsyncSession, request: pytest.FixtureRequest) -> None:
     """Clean database between tests."""
-    # Skip cleaning for recipe update tests
     if "test_update_recipe" in request.node.name:
         logging.info("Skipping database cleaning for recipe update test")
         return
