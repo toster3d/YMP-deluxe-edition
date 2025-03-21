@@ -5,7 +5,13 @@ services:
       dockerfile: Dockerfile.test
     volumes:
       - .:/app
+      - uv-cache:/root/.cache/uv
     environment:
       - PYTHONPATH=/app:/app/src
       - ASYNC_DATABASE_URI=sqlite+aiosqlite:///test.db
       - TESTING=True
+      - NOX_SESSION=${NOX_SESSION:-tests}
+    command: nox --session ${NOX_SESSION:-tests}
+
+volumes:
+  uv-cache:

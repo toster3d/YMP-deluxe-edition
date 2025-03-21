@@ -14,6 +14,15 @@ wheels = [
 ]
 
 [[package]]
+name = "alabaster"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/f8/d9c74d0daf3f742840fd818d69cfae176fa332022fd44e3469487d5a9420/alabaster-1.0.0.tar.gz", hash = "sha256:c00dca57bca26fa62a6d7d0a9fcce65f3e026e9bfe33e9c538fd3fbb2144fd9e", size = 24210 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/b3/6b4067be973ae96ba0d615946e314c5ae35f9f993eca561b356540bb0c2b/alabaster-1.0.0-py3-none-any.whl", hash = "sha256:fc6786402dc3fcb2de3cabd5fe455a2db534b371124f1f21de8731783dec828b", size = 13929 },
+]
+
+[[package]]
 name = "alembic"
 version = "1.14.1"
 source = { registry = "https://pypi.org/simple" }
@@ -99,6 +108,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/49/7c/fdf464bcc51d23881d110abd74b512a42b3d5d376a55a831b44c603ae17f/attrs-25.1.0.tar.gz", hash = "sha256:1c97078a80c814273a76b2a298a932eb681c87415c11dee0a6921de7f1b02c3e", size = 810562 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fc/30/d4986a882011f9df997a55e6becd864812ccfcd821d64aac8570ee39f719/attrs-25.1.0-py3-none-any.whl", hash = "sha256:c75a69e28a550a7e93789579c22aa26b0f5b83b75dc4e08fe092980051e1090a", size = 63152 },
+]
+
+[[package]]
+name = "babel"
+version = "2.17.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/6b/d52e42361e1aa00709585ecc30b3f9684b3ab62530771402248b1b1d6240/babel-2.17.0.tar.gz", hash = "sha256:0c54cffb19f690cdcc52a3b50bcbf71e07a808d1c80d549f2459b9d2cf0afb9d", size = 9951852 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl", hash = "sha256:4d0b53093fdfb4b21c92b5213dba5a1b23885afa8383709427046b21c366e5f2", size = 10182537 },
 ]
 
 [[package]]
@@ -303,6 +321,15 @@ wheels = [
 ]
 
 [[package]]
+name = "docutils"
+version = "0.21.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/ed/aefcc8cd0ba62a0560c3c18c33925362d46c6075480bfa4df87b28e169a9/docutils-0.21.2.tar.gz", hash = "sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f", size = 2204444 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/d7/9322c609343d929e75e7e5e6255e614fcc67572cfd083959cdef3b7aad79/docutils-0.21.2-py3-none-any.whl", hash = "sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2", size = 587408 },
+]
+
+[[package]]
 name = "email-validator"
 version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -448,6 +475,15 @@ wheels = [
 ]
 
 [[package]]
+name = "imagesize"
+version = "1.4.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/84/62473fb57d61e31fef6e36d64a179c8781605429fd927b5dd608c997be31/imagesize-1.4.1.tar.gz", hash = "sha256:69150444affb9cb0d5cc5a92b3676f0b2fb7cd9ae39e947a5e11a36b4497cd4a", size = 1280026 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ff/62/85c4c919272577931d407be5ba5d71c20f0b616d31a0befe0ae45bb79abd/imagesize-1.4.1-py2.py3-none-any.whl", hash = "sha256:0d8d18d08f840c19d0ee7ca1fd82490fdc3729b7ac93f49870406ddde8ef8d8b", size = 8769 },
+]
+
+[[package]]
 name = "iniconfig"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -518,163 +554,6 @@ wheels = [
 ]
 
 [[package]]
-name = "moj-projekt"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "aiosqlite" },
-    { name = "alembic" },
-    { name = "aniso8601" },
-    { name = "asyncio" },
-    { name = "asyncpg" },
-    { name = "cachelib" },
-    { name = "certifi" },
-    { name = "charset-normalizer" },
-    { name = "click" },
-    { name = "coverage" },
-    { name = "deprecated" },
-    { name = "fastapi" },
-    { name = "fastapi-sqla" },
-    { name = "greenlet" },
-    { name = "hiredis" },
-    { name = "httpcore" },
-    { name = "httpx" },
-    { name = "idna" },
-    { name = "iniconfig" },
-    { name = "itsdangerous" },
-    { name = "jinja2" },
-    { name = "mako" },
-    { name = "markupsafe" },
-    { name = "msgspec" },
-    { name = "mypy" },
-    { name = "mypy-extensions" },
-    { name = "nox" },
-    { name = "packaging" },
-    { name = "pluggy" },
-    { name = "pydantic", extra = ["email"] },
-    { name = "pydantic-settings" },
-    { name = "pyjwt" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "python-dotenv" },
-    { name = "python-multipart" },
-    { name = "pytz" },
-    { name = "redis" },
-    { name = "requests" },
-    { name = "ruff" },
-    { name = "six" },
-    { name = "sqlalchemy" },
-    { name = "sqlmodel" },
-    { name = "sqlparse" },
-    { name = "structlog" },
-    { name = "termcolor" },
-    { name = "types-cryptography" },
-    { name = "types-jwt" },
-    { name = "types-redis" },
-    { name = "typing" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
-    { name = "uvicorn" },
-    { name = "werkzeug" },
-    { name = "wheel" },
-    { name = "wrapt" },
-]
-
-[package.optional-dependencies]
-test = [
-    { name = "coverage" },
-    { name = "httpx" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-]
-
-[package.dependency-groups]
-dev = [
-    { name = "mypy" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiosqlite", specifier = "==0.21.0" },
-    { name = "alembic", specifier = "==1.14.1" },
-    { name = "aniso8601" },
-    { name = "asyncio", specifier = ">=3.4.3" },
-    { name = "asyncpg", specifier = "==0.30.0" },
-    { name = "cachelib" },
-    { name = "certifi" },
-    { name = "charset-normalizer" },
-    { name = "click" },
-    { name = "coverage", specifier = ">=7.6.10" },
-    { name = "coverage", marker = "extra == 'test'", specifier = ">=7.4.1" },
-    { name = "deprecated", specifier = "==1.2.18" },
-    { name = "fastapi", specifier = ">=0.115.6" },
-    { name = "fastapi-sqla", specifier = "==3.4.8" },
-    { name = "greenlet", specifier = ">=3.1.1" },
-    { name = "hiredis", specifier = ">=3.1.0" },
-    { name = "httpcore", specifier = "==1.0.7" },
-    { name = "httpx", specifier = "==0.28.1" },
-    { name = "httpx", marker = "extra == 'test'", specifier = ">=0.28.1" },
-    { name = "idna" },
-    { name = "iniconfig", specifier = "==2.0.0" },
-    { name = "itsdangerous" },
-    { name = "jinja2" },
-    { name = "mako", specifier = "==1.3.8" },
-    { name = "markupsafe" },
-    { name = "msgspec", specifier = "==0.19.0" },
-    { name = "mypy" },
-    { name = "mypy-extensions" },
-    { name = "nox", specifier = ">=2025.2.9" },
-    { name = "packaging", specifier = "==24.2" },
-    { name = "pluggy", specifier = "==1.5.0" },
-    { name = "pydantic", extras = ["email"], specifier = ">=2.9.2" },
-    { name = "pydantic-settings", specifier = ">=2.7.0" },
-    { name = "pyjwt", specifier = "==2.10.1" },
-    { name = "pytest", specifier = "==8.3.4" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", specifier = "==6.0.0" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "pytest-mock", marker = "extra == 'test'", specifier = ">=3.12.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "python-multipart", specifier = ">=0.0.20" },
-    { name = "pytz" },
-    { name = "redis", specifier = "==5.2.1" },
-    { name = "requests", specifier = ">=2.32.3" },
-    { name = "ruff", specifier = ">=0.8.4" },
-    { name = "six" },
-    { name = "sqlalchemy", specifier = ">=2.0.35" },
-    { name = "sqlmodel", specifier = "==0.0.22" },
-    { name = "sqlparse", specifier = ">=0.5.1" },
-    { name = "structlog", specifier = "==25.1.0" },
-    { name = "termcolor", specifier = ">=2.4.0" },
-    { name = "types-cryptography", specifier = "==3.3.23.2" },
-    { name = "types-jwt", specifier = "==0.1.3" },
-    { name = "types-redis", specifier = ">=4.6.0.20241004" },
-    { name = "typing", specifier = ">=3.10.0.0" },
-    { name = "typing-extensions", specifier = ">=4.12.2" },
-    { name = "urllib3" },
-    { name = "uvicorn", specifier = ">=0.32.1" },
-    { name = "werkzeug", specifier = ">=3.1.3" },
-    { name = "wheel", specifier = ">=0.44.0" },
-    { name = "wrapt", specifier = "==1.17.2" },
-]
-
-[package.metadata.dependency-groups]
-dev = [
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pytest-asyncio", specifier = ">=0.25.3" },
-    { name = "ruff", specifier = ">=0.8.4" },
-]
-
-[[package]]
 name = "msgspec"
 version = "0.19.0"
 source = { registry = "https://pypi.org/simple" }
@@ -732,6 +611,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0d/22/84a2d3442cb33e6fb1af18172a15deb1eea3f970417f1f4c5fa1600143e8/nox-2025.2.9.tar.gz", hash = "sha256:d50cd4ca568bd7621c2e6cbbc4845b3b7f7697f25d5fb0190ce8f4600be79768", size = 4021103 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/57/ca/64e634c056cba463cac743735660a772ab78eb26ec9759e88de735f2cd27/nox-2025.2.9-py3-none-any.whl", hash = "sha256:7d1e92d1918c6980d70aee9cf1c1d19d16faa71c4afe338fffd39e8a460e2067", size = 71315 },
+]
+
+[[package]]
+name = "outcome"
+version = "1.3.0.post0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/df/77698abfac98571e65ffeb0c1fba8ffd692ab8458d617a0eed7d9a8d38f2/outcome-1.3.0.post0.tar.gz", hash = "sha256:9dcf02e65f2971b80047b377468e72a268e15c0af3cf1238e6ff14f7f91143b8", size = 21060 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/8b/5ab7257531a5d830fc8000c476e63c935488d74609b50f9384a643ec0a62/outcome-1.3.0.post0-py2.py3-none-any.whl", hash = "sha256:e771c5ce06d1415e356078d3bdd68523f284b4ce5419828922b6871e65eda82b", size = 10692 },
 ]
 
 [[package]]
@@ -828,12 +719,30 @@ wheels = [
 ]
 
 [[package]]
+name = "pygments"
+version = "2.19.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7c/2d/c3338d48ea6cc0feb8446d8e6937e1408088a72a39937982cc6111d17f84/pygments-2.19.1.tar.gz", hash = "sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f", size = 4968581 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl", hash = "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c", size = 1225293 },
+]
+
+[[package]]
 name = "pyjwt"
 version = "2.10.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997 },
+]
+
+[[package]]
+name = "pysocks"
+version = "1.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/11/293dd436aea955d45fc4e8a35b6ae7270f5b8e00b53cf6c024c83b657a11/PySocks-1.7.1.tar.gz", hash = "sha256:3f8804571ebe159c380ac6de37643bb4685970655d3bba243530d6558b799aa0", size = 284429 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8d/59/b4572118e098ac8e46e399a1dd0f2d85403ce8bbaad9ec79373ed6badaf9/PySocks-1.7.1-py3-none-any.whl", hash = "sha256:2725bd0a9925919b9b51739eea5f9e2bae91e83288108a9ad338b2e3a4435ee5", size = 16725 },
 ]
 
 [[package]]
@@ -940,6 +849,15 @@ wheels = [
 ]
 
 [[package]]
+name = "roman-numerals-py"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/30/76/48fd56d17c5bdbdf65609abbc67288728a98ed4c02919428d4f52d23b24b/roman_numerals_py-3.1.0.tar.gz", hash = "sha256:be4bf804f083a4ce001b5eb7e3c0862479d10f94c936f6c4e5f250aa5ff5bd2d", size = 9017 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/53/97/d2cbbaa10c9b826af0e10fdf836e1bf344d9f0abb873ebc34d1f49642d3f/roman_numerals_py-3.1.0-py3-none-any.whl", hash = "sha256:9da2ad2fb670bcf24e81070ceb3be72f6c11c440d73bd579fbeca1e9f330954c", size = 7742 },
+]
+
+[[package]]
 name = "ruff"
 version = "0.9.7"
 source = { registry = "https://pypi.org/simple" }
@@ -965,6 +883,23 @@ wheels = [
 ]
 
 [[package]]
+name = "selenium"
+version = "4.29.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "trio" },
+    { name = "trio-websocket" },
+    { name = "typing-extensions" },
+    { name = "urllib3", extra = ["socks"] },
+    { name = "websocket-client" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1c/ab/09de87ef66a10a7d40417d4e93449eb892154d2dc6385187aa9298a2c09d/selenium-4.29.0.tar.gz", hash = "sha256:3a62f7ec33e669364a6c0562a701deb69745b569c50d55f1a912bf8eb33358ba", size = 985717 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2f/a6/fc66ea71ec0769f72abdf15cb9ec9269517abe68a160839383ddff7478f1/selenium-4.29.0-py3-none-any.whl", hash = "sha256:ce5d26f1ddc1111641113653af33694c13947dd36c2df09cdd33f554351d372e", size = 9536642 },
+]
+
+[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -980,6 +915,132 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/87/a6771e1546d97e7e041b6ae58d80074f81b7d5121207425c964ddf5cfdbd/sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc", size = 20372 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2", size = 10235 },
+]
+
+[[package]]
+name = "snowballstemmer"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/7b/af302bebf22c749c56c9c3e8ae13190b5b5db37a33d9068652e8f73b7089/snowballstemmer-2.2.0.tar.gz", hash = "sha256:09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1", size = 86699 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ed/dc/c02e01294f7265e63a7315fe086dd1df7dacb9f840a804da846b96d01b96/snowballstemmer-2.2.0-py2.py3-none-any.whl", hash = "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a", size = 93002 },
+]
+
+[[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88", size = 30594 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575 },
+]
+
+[[package]]
+name = "sphinx"
+version = "8.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alabaster" },
+    { name = "babel" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "docutils" },
+    { name = "imagesize" },
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "pygments" },
+    { name = "requests" },
+    { name = "roman-numerals-py" },
+    { name = "snowballstemmer" },
+    { name = "sphinxcontrib-applehelp" },
+    { name = "sphinxcontrib-devhelp" },
+    { name = "sphinxcontrib-htmlhelp" },
+    { name = "sphinxcontrib-jsmath" },
+    { name = "sphinxcontrib-qthelp" },
+    { name = "sphinxcontrib-serializinghtml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/ad/4360e50ed56cb483667b8e6dadf2d3fda62359593faabbe749a27c4eaca6/sphinx-8.2.3.tar.gz", hash = "sha256:398ad29dee7f63a75888314e9424d40f52ce5a6a87ae88e7071e80af296ec348", size = 8321876 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/31/53/136e9eca6e0b9dc0e1962e2c908fbea2e5ac000c2a2fbd9a35797958c48b/sphinx-8.2.3-py3-none-any.whl", hash = "sha256:4405915165f13521d875a8c29c8970800a0141c14cc5416a38feca4ea5d9b9c3", size = 3589741 },
+]
+
+[[package]]
+name = "sphinx-rtd-theme"
+version = "3.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "docutils" },
+    { name = "sphinx" },
+    { name = "sphinxcontrib-jquery" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/44/c97faec644d29a5ceddd3020ae2edffa69e7d00054a8c7a6021e82f20335/sphinx_rtd_theme-3.0.2.tar.gz", hash = "sha256:b7457bc25dda723b20b086a670b9953c859eab60a2a03ee8eb2bb23e176e5f85", size = 7620463 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/77/46e3bac77b82b4df5bb5b61f2de98637724f246b4966cfc34bc5895d852a/sphinx_rtd_theme-3.0.2-py2.py3-none-any.whl", hash = "sha256:422ccc750c3a3a311de4ae327e82affdaf59eb695ba4936538552f3b00f4ee13", size = 7655561 },
+]
+
+[[package]]
+name = "sphinxcontrib-applehelp"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/6e/b837e84a1a704953c62ef8776d45c3e8d759876b4a84fe14eba2859106fe/sphinxcontrib_applehelp-2.0.0.tar.gz", hash = "sha256:2f29ef331735ce958efa4734873f084941970894c6090408b079c61b2e1c06d1", size = 20053 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl", hash = "sha256:4cd3f0ec4ac5dd9c17ec65e9ab272c9b867ea77425228e68ecf08d6b28ddbdb5", size = 119300 },
+]
+
+[[package]]
+name = "sphinxcontrib-devhelp"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/d2/5beee64d3e4e747f316bae86b55943f51e82bb86ecd325883ef65741e7da/sphinxcontrib_devhelp-2.0.0.tar.gz", hash = "sha256:411f5d96d445d1d73bb5d52133377b4248ec79db5c793ce7dbe59e074b4dd1ad", size = 12967 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl", hash = "sha256:aefb8b83854e4b0998877524d1029fd3e6879210422ee3780459e28a1f03a8a2", size = 82530 },
+]
+
+[[package]]
+name = "sphinxcontrib-htmlhelp"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/93/983afd9aa001e5201eab16b5a444ed5b9b0a7a010541e0ddfbbfd0b2470c/sphinxcontrib_htmlhelp-2.1.0.tar.gz", hash = "sha256:c9e2916ace8aad64cc13a0d233ee22317f2b9025b9cf3295249fa985cc7082e9", size = 22617 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl", hash = "sha256:166759820b47002d22914d64a075ce08f4c46818e17cfc9470a9786b759b19f8", size = 98705 },
+]
+
+[[package]]
+name = "sphinxcontrib-jquery"
+version = "4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sphinx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/de/f3/aa67467e051df70a6330fe7770894b3e4f09436dea6881ae0b4f3d87cad8/sphinxcontrib-jquery-4.1.tar.gz", hash = "sha256:1620739f04e36a2c779f1a131a2dfd49b2fd07351bf1968ced074365933abc7a", size = 122331 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl", hash = "sha256:f936030d7d0147dd026a4f2b5a57343d233f1fc7b363f68b3d4f1cb0993878ae", size = 121104 },
+]
+
+[[package]]
+name = "sphinxcontrib-jsmath"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b2/e8/9ed3830aeed71f17c026a07a5097edcf44b692850ef215b161b8ad875729/sphinxcontrib-jsmath-1.0.1.tar.gz", hash = "sha256:a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8", size = 5787 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl", hash = "sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178", size = 5071 },
+]
+
+[[package]]
+name = "sphinxcontrib-qthelp"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/68/bc/9104308fc285eb3e0b31b67688235db556cd5b0ef31d96f30e45f2e51cae/sphinxcontrib_qthelp-2.0.0.tar.gz", hash = "sha256:4fe7d0ac8fc171045be623aba3e2a8f613f8682731f9153bb2e40ece16b9bbab", size = 17165 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl", hash = "sha256:b18a828cdba941ccd6ee8445dbe72ffa3ef8cbe7505d8cd1fa0d42d3f2d5f3eb", size = 88743 },
+]
+
+[[package]]
+name = "sphinxcontrib-serializinghtml"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/44/6716b257b0aa6bfd51a1b31665d1c205fb12cb5ad56de752dfa15657de2f/sphinxcontrib_serializinghtml-2.0.0.tar.gz", hash = "sha256:e9d912827f872c029017a53f0ef2180b327c3f7fd23c87229f7a8e8b70031d4d", size = 16080 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl", hash = "sha256:6e2cb0eef194e10c27ec0023bfeb25badbbb5868244cf5bc5bdc04e4464bf331", size = 92072 },
 ]
 
 [[package]]
@@ -1056,6 +1117,37 @@ wheels = [
 ]
 
 [[package]]
+name = "trio"
+version = "0.29.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "cffi", marker = "implementation_name != 'pypy' and os_name == 'nt'" },
+    { name = "idna" },
+    { name = "outcome" },
+    { name = "sniffio" },
+    { name = "sortedcontainers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a1/47/f62e62a1a6f37909aed0bf8f5d5411e06fa03846cfcb64540cd1180ccc9f/trio-0.29.0.tar.gz", hash = "sha256:ea0d3967159fc130acb6939a0be0e558e364fee26b5deeecc893a6b08c361bdf", size = 588952 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c9/55/c4d9bea8b3d7937901958f65124123512419ab0eb73695e5f382521abbfb/trio-0.29.0-py3-none-any.whl", hash = "sha256:d8c463f1a9cc776ff63e331aba44c125f423a5a13c684307e828d930e625ba66", size = 492920 },
+]
+
+[[package]]
+name = "trio-websocket"
+version = "0.12.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "outcome" },
+    { name = "trio" },
+    { name = "wsproto" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/3c/8b4358e81f2f2cfe71b66a267f023a91db20a817b9425dd964873796980a/trio_websocket-0.12.2.tar.gz", hash = "sha256:22c72c436f3d1e264d0910a3951934798dcc5b00ae56fc4ee079d46c7cf20fae", size = 33549 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/19/eb640a397bba49ba49ef9dbe2e7e5c04202ba045b6ce2ec36e9cadc51e04/trio_websocket-0.12.2-py3-none-any.whl", hash = "sha256:df605665f1db533f4a386c94525870851096a223adcb97f72a07e8b4beba45b6", size = 21221 },
+]
+
+[[package]]
 name = "types-cffi"
 version = "1.16.0.20241221"
 source = { registry = "https://pypi.org/simple" }
@@ -1123,15 +1215,6 @@ wheels = [
 ]
 
 [[package]]
-name = "typing"
-version = "3.10.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b0/1b/835d4431805939d2996f8772aca1d2313a57e8860fec0e48e8e7dfe3a477/typing-3.10.0.0.tar.gz", hash = "sha256:13b4ad211f54ddbf93e5901a9967b1e07720c1d1b78d596ac6a439641aa1b130", size = 78962 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/5d/865e17349564eb1772688d8afc5e3081a5964c640d64d1d2880ebaed002d/typing-3.10.0.0-py3-none-any.whl", hash = "sha256:12fbdfbe7d6cca1a42e485229afcb0b0c8259258cfb919b8a5e2a5c953742f89", size = 26320 },
-]
-
-[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1147,6 +1230,11 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/aa/63/e53da845320b757bf29ef6a9062f5c669fe997973f966045cb019c3f4b66/urllib3-2.3.0.tar.gz", hash = "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d", size = 307268 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/19/4ec628951a74043532ca2cf5d97b7b14863931476d117c471e8e2b1eb39f/urllib3-2.3.0-py3-none-any.whl", hash = "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df", size = 128369 },
+]
+
+[package.optional-dependencies]
+socks = [
+    { name = "pysocks" },
 ]
 
 [[package]]
@@ -1174,6 +1262,29 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f1/88/dacc875dd54a8acadb4bcbfd4e3e86df8be75527116c91d8f9784f5e9cab/virtualenv-20.29.2.tar.gz", hash = "sha256:fdaabebf6d03b5ba83ae0a02cfe96f48a716f4fae556461d180825866f75b728", size = 4320272 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/93/fa/849483d56773ae29740ae70043ad88e068f98a6401aa819b5d6bee604683/virtualenv-20.29.2-py3-none-any.whl", hash = "sha256:febddfc3d1ea571bdb1dc0f98d7b45d24def7428214d4fb73cc486c9568cce6a", size = 4301478 },
+]
+
+[[package]]
+name = "webdriver-manager"
+version = "4.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/24/4f/6e44478908c5133f680378d687f14ecaa99feed2c535344fcf68d8d21500/webdriver_manager-4.0.2.tar.gz", hash = "sha256:efedf428f92fd6d5c924a0d054e6d1322dd77aab790e834ee767af392b35590f", size = 25940 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/b5/3bd0b038d80950ec13e6a2c8d03ed8354867dc60064b172f2f4ffac8afbe/webdriver_manager-4.0.2-py2.py3-none-any.whl", hash = "sha256:75908d92ecc45ff2b9953614459c633db8f9aa1ff30181cefe8696e312908129", size = 27778 },
+]
+
+[[package]]
+name = "websocket-client"
+version = "1.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/30/fba0d96b4b5fbf5948ed3f4681f7da2f9f64512e1d303f94b4cc174c24a5/websocket_client-1.8.0.tar.gz", hash = "sha256:3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da", size = 54648 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526", size = 58826 },
 ]
 
 [[package]]
@@ -1226,4 +1337,391 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/e1/0122853035b40b3f333bbb25f1939fc1045e21dd518f7f0922b60c156f7c/wrapt-1.17.2-cp313-cp313t-win32.whl", hash = "sha256:13e6afb7fe71fe7485a4550a8844cc9ffbe263c0f1a1eea569bc7091d4898555", size = 37986 },
     { url = "https://files.pythonhosted.org/packages/09/5e/1655cf481e079c1f22d0cabdd4e51733679932718dc23bf2db175f329b76/wrapt-1.17.2-cp313-cp313t-win_amd64.whl", hash = "sha256:eaf675418ed6b3b31c7a989fd007fa7c3be66ce14e5c3b27336383604c9da85c", size = 40750 },
     { url = "https://files.pythonhosted.org/packages/2d/82/f56956041adef78f849db6b289b282e72b55ab8045a75abad81898c28d19/wrapt-1.17.2-py3-none-any.whl", hash = "sha256:b18f2d1533a71f069c7f82d524a52599053d4c7166e9dd374ae2136b7f40f7c8", size = 23594 },
+]
+
+[[package]]
+name = "wsproto"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "h11" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c9/4a/44d3c295350d776427904d73c189e10aeae66d7f555bb2feee16d1e4ba5a/wsproto-1.2.0.tar.gz", hash = "sha256:ad565f26ecb92588a3e43bc3d96164de84cd9902482b130d0ddbaa9664a85065", size = 53425 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/78/58/e860788190eba3bcce367f74d29c4675466ce8dddfba85f7827588416f01/wsproto-1.2.0-py3-none-any.whl", hash = "sha256:b9acddd652b585d75b20477888c56642fdade28bdfd3579aa24a4d2c037dd736", size = 24226 },
+]
+
+[[package]]
+name = "yourmealplanner"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "aiosqlite" },
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "fastapi" },
+    { name = "fastapi-sqla" },
+    { name = "greenlet" },
+    { name = "hiredis" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-settings" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "redis" },
+    { name = "requests" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "structlog" },
+    { name = "termcolor" },
+    { name = "typing-extensions" },
+    { name = "uvicorn" },
+]
+
+[package.optional-dependencies]
+test = [
+    { name = "coverage" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+]
+
+[package.dependency-groups]
+app-core = [
+    { name = "aiosqlite" },
+    { name = "asyncpg" },
+    { name = "email-validator" },
+    { name = "fastapi" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "redis" },
+    { name = "requests" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "structlog" },
+    { name = "typing-extensions" },
+    { name = "uvicorn" },
+    { name = "werkzeug" },
+]
+auth = [
+    { name = "aniso8601" },
+    { name = "pyjwt" },
+    { name = "pytz" },
+]
+db = [
+    { name = "aiosqlite" },
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "sqlparse" },
+]
+dev = [
+    { name = "aiosqlite" },
+    { name = "asyncio" },
+    { name = "asyncpg" },
+    { name = "coverage" },
+    { name = "deprecated" },
+    { name = "email-validator" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "nox" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "redis" },
+    { name = "requests" },
+    { name = "ruff" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "structlog" },
+    { name = "types-cryptography" },
+    { name = "types-jwt" },
+    { name = "types-redis" },
+    { name = "typing-extensions" },
+    { name = "uvicorn" },
+    { name = "werkzeug" },
+    { name = "wheel" },
+    { name = "wrapt" },
+]
+docs = [
+    { name = "mako" },
+    { name = "sphinx" },
+    { name = "sphinx-rtd-theme" },
+]
+e2e = [
+    { name = "aiosqlite" },
+    { name = "asyncio" },
+    { name = "asyncpg" },
+    { name = "coverage" },
+    { name = "email-validator" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "redis" },
+    { name = "requests" },
+    { name = "selenium" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "structlog" },
+    { name = "typing-extensions" },
+    { name = "uvicorn" },
+    { name = "webdriver-manager" },
+    { name = "werkzeug" },
+]
+lint = [
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "ruff" },
+    { name = "types-cryptography" },
+    { name = "types-jwt" },
+    { name = "types-redis" },
+]
+serialization = [
+    { name = "cachelib" },
+    { name = "certifi" },
+    { name = "charset-normalizer" },
+    { name = "click" },
+    { name = "idna" },
+    { name = "itsdangerous" },
+    { name = "jinja2" },
+    { name = "markupsafe" },
+    { name = "msgspec" },
+    { name = "packaging" },
+    { name = "six" },
+    { name = "urllib3" },
+]
+test = [
+    { name = "aiosqlite" },
+    { name = "asyncio" },
+    { name = "asyncpg" },
+    { name = "coverage" },
+    { name = "email-validator" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "redis" },
+    { name = "requests" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "structlog" },
+    { name = "typing-extensions" },
+    { name = "uvicorn" },
+    { name = "werkzeug" },
+]
+utils = [
+    { name = "termcolor" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiosqlite", specifier = "==0.21.0" },
+    { name = "alembic", specifier = "==1.14.1" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "coverage", marker = "extra == 'test'", specifier = ">=7.4.1" },
+    { name = "fastapi", specifier = ">=0.115.6" },
+    { name = "fastapi-sqla", specifier = "==3.4.8" },
+    { name = "greenlet", specifier = ">=3.1.1" },
+    { name = "hiredis", specifier = ">=3.1.0" },
+    { name = "httpx", marker = "extra == 'test'", specifier = ">=0.28.1" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.9.2" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
+    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.24.0" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
+    { name = "pytest-mock", marker = "extra == 'test'", specifier = ">=3.12.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "redis", specifier = "==5.2.1" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "sqlmodel", specifier = "==0.0.22" },
+    { name = "structlog", specifier = "==25.1.0" },
+    { name = "termcolor", specifier = ">=2.4.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "uvicorn", specifier = ">=0.32.1" },
+]
+
+[package.metadata.dependency-groups]
+app-core = [
+    { name = "aiosqlite", specifier = "==0.21.0" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "email-validator", specifier = ">=2.1.0" },
+    { name = "fastapi", specifier = ">=0.115.6" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.9.2" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pyjwt", specifier = "==2.10.1" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "redis", specifier = "==5.2.1" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "sqlmodel", specifier = "==0.0.22" },
+    { name = "structlog", specifier = "==25.1.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "uvicorn", specifier = ">=0.32.1" },
+    { name = "werkzeug", specifier = ">=3.1.3" },
+]
+auth = [
+    { name = "aniso8601" },
+    { name = "pyjwt", specifier = "==2.10.1" },
+    { name = "pytz" },
+]
+db = [
+    { name = "aiosqlite", specifier = "==0.21.0" },
+    { name = "alembic", specifier = "==1.14.1" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "sqlmodel", specifier = "==0.0.22" },
+    { name = "sqlparse", specifier = ">=0.5.1" },
+]
+dev = [
+    { name = "aiosqlite", specifier = "==0.21.0" },
+    { name = "asyncio", specifier = ">=3.4.3" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "coverage", specifier = ">=7.6.10" },
+    { name = "deprecated", specifier = "==1.2.18" },
+    { name = "email-validator", specifier = ">=2.1.0" },
+    { name = "fastapi", specifier = ">=0.115.6" },
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "nox", specifier = ">=2025.2.9" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.9.2" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pyjwt", specifier = "==2.10.1" },
+    { name = "pytest", specifier = "==8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-cov", specifier = "==6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "redis", specifier = "==5.2.1" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "ruff", specifier = ">=0.8.4" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "sqlmodel", specifier = "==0.0.22" },
+    { name = "structlog", specifier = "==25.1.0" },
+    { name = "types-cryptography", specifier = "==3.3.23.2" },
+    { name = "types-jwt", specifier = "==0.1.3" },
+    { name = "types-redis", specifier = ">=4.6.0.20241004" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "uvicorn", specifier = ">=0.32.1" },
+    { name = "werkzeug", specifier = ">=3.1.3" },
+    { name = "wheel", specifier = ">=0.44.0" },
+    { name = "wrapt", specifier = "==1.17.2" },
+]
+docs = [
+    { name = "mako", specifier = "==1.3.8" },
+    { name = "sphinx" },
+    { name = "sphinx-rtd-theme" },
+]
+e2e = [
+    { name = "aiosqlite", specifier = "==0.21.0" },
+    { name = "asyncio", specifier = ">=3.4.3" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "coverage", specifier = ">=7.6.10" },
+    { name = "email-validator", specifier = ">=2.1.0" },
+    { name = "fastapi", specifier = ">=0.115.6" },
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.9.2" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pyjwt", specifier = "==2.10.1" },
+    { name = "pytest", specifier = "==8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-cov", specifier = "==6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "redis", specifier = "==5.2.1" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "selenium" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "sqlmodel", specifier = "==0.0.22" },
+    { name = "structlog", specifier = "==25.1.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "uvicorn", specifier = ">=0.32.1" },
+    { name = "webdriver-manager" },
+    { name = "werkzeug", specifier = ">=3.1.3" },
+]
+lint = [
+    { name = "mypy" },
+    { name = "mypy-extensions" },
+    { name = "ruff", specifier = ">=0.8.4" },
+    { name = "types-cryptography", specifier = "==3.3.23.2" },
+    { name = "types-jwt", specifier = "==0.1.3" },
+    { name = "types-redis", specifier = ">=4.6.0.20241004" },
+]
+serialization = [
+    { name = "cachelib" },
+    { name = "certifi" },
+    { name = "charset-normalizer" },
+    { name = "click" },
+    { name = "idna" },
+    { name = "itsdangerous" },
+    { name = "jinja2" },
+    { name = "markupsafe" },
+    { name = "msgspec", specifier = "==0.19.0" },
+    { name = "packaging", specifier = "==24.2" },
+    { name = "six" },
+    { name = "urllib3" },
+]
+test = [
+    { name = "aiosqlite", specifier = "==0.21.0" },
+    { name = "asyncio", specifier = ">=3.4.3" },
+    { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "coverage", specifier = ">=7.6.10" },
+    { name = "email-validator", specifier = ">=2.1.0" },
+    { name = "fastapi", specifier = ">=0.115.6" },
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.9.2" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pyjwt", specifier = "==2.10.1" },
+    { name = "pytest", specifier = "==8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-cov", specifier = "==6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "redis", specifier = "==5.2.1" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+    { name = "sqlmodel", specifier = "==0.0.22" },
+    { name = "structlog", specifier = "==25.1.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "uvicorn", specifier = ">=0.32.1" },
+    { name = "werkzeug", specifier = ">=3.1.3" },
+]
+utils = [
+    { name = "termcolor", specifier = ">=2.4.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
 ]
