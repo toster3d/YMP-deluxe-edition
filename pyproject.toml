@@ -24,6 +24,7 @@ dependencies = [
     "alembic==1.14.1",
     "structlog==25.1.0",
     "fastapi-sqla==3.4.8",
+    "fakeredis>=2.27.0",
 ]
 
 [dependency-groups]
@@ -94,8 +95,8 @@ docs = [
 
 auth = [
     "pyjwt==2.10.1",
-    "aniso8601",
-    "pytz",
+    "aniso8601>=0.8.0",
+    "pytz>=2021.1",
 ]
 
 serialization = [

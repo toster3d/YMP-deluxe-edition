@@ -343,6 +343,19 @@ wheels = [
 ]
 
 [[package]]
+name = "fakeredis"
+version = "2.27.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "redis" },
+    { name = "sortedcontainers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/67/9e/d8fa38cb86a2ec07312fc9fa713f2a6b2e8fa3db37aa3a6fd3d31b5fc641/fakeredis-2.27.0.tar.gz", hash = "sha256:7b7584ec104392592297f46864a82cb7339a23e254ee885bf5ae07cfc64fbce7", size = 157510 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/98/4cecb38cb9345f8dcfd5c274f43e47f1070a5c2328d48dc57611b927fc47/fakeredis-2.27.0-py3-none-any.whl", hash = "sha256:f4b6e0fa4193acbf00d81dac71ff5cc34fe7d7c12f1560b036f98578a103d5c3", size = 112257 },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.115.8"
 source = { registry = "https://pypi.org/simple" }
@@ -1359,6 +1372,7 @@ dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
     { name = "asyncpg" },
+    { name = "fakeredis" },
     { name = "fastapi" },
     { name = "fastapi-sqla" },
     { name = "greenlet" },
@@ -1548,6 +1562,7 @@ requires-dist = [
     { name = "alembic", specifier = "==1.14.1" },
     { name = "asyncpg", specifier = "==0.30.0" },
     { name = "coverage", marker = "extra == 'test'", specifier = ">=7.4.1" },
+    { name = "fakeredis", specifier = ">=2.27.0" },
     { name = "fastapi", specifier = ">=0.115.6" },
     { name = "fastapi-sqla", specifier = "==3.4.8" },
     { name = "greenlet", specifier = ">=3.1.1" },
@@ -1592,9 +1607,9 @@ app-core = [
     { name = "werkzeug", specifier = ">=3.1.3" },
 ]
 auth = [
-    { name = "aniso8601" },
+    { name = "aniso8601", specifier = ">=0.8.0" },
     { name = "pyjwt", specifier = "==2.10.1" },
-    { name = "pytz" },
+    { name = "pytz", specifier = ">=2021.1" },
 ]
 db = [
     { name = "aiosqlite", specifier = "==0.21.0" },

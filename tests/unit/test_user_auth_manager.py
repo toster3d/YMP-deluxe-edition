@@ -1,7 +1,9 @@
+from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from werkzeug.security import generate_password_hash
 
 from src.services.user_auth_manager import (
@@ -16,8 +18,12 @@ from src.services.user_auth_manager import (
 from tests.test_models.models_db_test import TestUser
 
 
+@pytest.fixture(scope="function")
+async def mock_db_session() -> AsyncGenerator[AsyncMock, None]:
+    db_mock = AsyncMock(spec=AsyncSession)
+    yield db_mock   
+
 class TestUserAuth:
-    """Tests for the main UserAuth class."""
     
     @pytest.fixture
     def mock_login_service(self) -> AsyncMock:
@@ -51,7 +57,6 @@ class TestUserAuth:
     
     @pytest.mark.asyncio
     async def test_login_calls_login_service(self, user_auth: UserAuth) -> None:
-        """Test if the login method calls login_service.login with correct arguments."""
         result = await user_auth.login("testuser", "password123")
         
         user_auth.login_service.login.assert_awaited_once_with("testuser", "password123")
@@ -59,24 +64,21 @@ class TestUserAuth:
     
     @pytest.mark.asyncio
     async def test_register_calls_registration_service(self, user_auth: UserAuth) -> None:
-        """Test if the register method calls registration_service.register with correct arguments."""
         result = await user_auth.register("testuser", "test@example.com", "password123", "password123")
         
-        user_auth.registration_service.register.assert_awaited_once_with(  # type: ignore
+        user_auth.registration_service.register.assert_awaited_once_with(
             "testuser", "test@example.com", "password123", "password123"
         )
         assert result == "Registration successful."
     
     def test_validate_password_calls_validator(self, user_auth: UserAuth) -> None:
-        """Test if the validate_password method calls password_validator.validate."""
         result = user_auth.validate_password("StrongPassword123!")
         
-        user_auth.password_validator.validate.assert_called_once_with("StrongPassword123!") # type: ignore
+        user_auth.password_validator.validate.assert_called_once_with("StrongPassword123!")
         assert result is True
 
 
 class TestLoginService:
-    """Tests for the LoginService class."""
     
     @pytest.fixture
     def login_service(self, mock_db_session: AsyncMock) -> LoginService:
@@ -85,7 +87,6 @@ class TestLoginService:
     
     @pytest.mark.asyncio
     async def test_login_with_missing_credentials(self, login_service: LoginService) -> None:
-        """Test if login properly handles missing credentials."""
         missing_username_cases = [
             ("", "password"),
         ]
@@ -101,7 +102,6 @@ class TestLoginService:
     @pytest.mark.asyncio
     async def test_login_with_nonexistent_user(self, login_service: LoginService, 
                                               mock_db_session: AsyncMock) -> None:
-        """Test if login properly handles a nonexistent user."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
@@ -114,7 +114,6 @@ class TestLoginService:
     @pytest.mark.asyncio
     async def test_login_with_invalid_password(self, login_service: LoginService, 
                                              mock_db_session: AsyncMock) -> None:
-        """Test if login properly handles an invalid password."""
         mock_user = MagicMock(spec=TestUser)
         mock_user.id = 1
         mock_user.user_name = "testuser"
@@ -139,7 +138,6 @@ class TestLoginService:
 
 
 class TestRegistrationService:
-    """Tests for the RegistrationService class."""
     
     @pytest.fixture
     def registration_service(self, mock_db_session: AsyncMock) -> RegistrationService:
@@ -148,7 +146,6 @@ class TestRegistrationService:
     
     @pytest.mark.asyncio
     async def test_register_with_mismatched_passwords(self, registration_service: RegistrationService) -> None:
-        """Test if register properly handles mismatched passwords."""
         with pytest.raises(PasswordMismatchError):
             await registration_service.register(
                 "testuser", "test@example.com", "password123", "differentpassword"
@@ -157,7 +154,6 @@ class TestRegistrationService:
     @pytest.mark.asyncio
     async def test_register_with_existing_username(self, registration_service: RegistrationService, 
                                                  mock_db_session: AsyncMock) -> None:
-        """Test if register properly handles an existing username."""
         mock_user = MagicMock(spec=TestUser)
         
         mock_result = MagicMock()
@@ -175,7 +171,6 @@ class TestRegistrationService:
     @pytest.mark.asyncio
     async def test_register_success(self, registration_service: RegistrationService, 
                                   mock_db_session: AsyncMock) -> None:
-        """Test if register correctly registers a new user."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
@@ -195,7 +190,6 @@ class TestRegistrationService:
     @pytest.mark.asyncio
     async def test_register_database_error(self, registration_service: RegistrationService, 
                                          mock_db_session: AsyncMock) -> None:
-        """Test if register properly handles database errors."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
