@@ -61,7 +61,7 @@ class RegisterSchema(BaseModel):
     def validate_username_content(cls, value: str) -> str:
         """Validate username content."""
         if not value.strip():
-            raise ValueError("username cannot consist solely of whitespace")
+            raise ValueError("Username cannot consist solely of whitespace")
         return value
 
     @field_validator("confirmation")
@@ -91,6 +91,7 @@ class RecipeSchema(BaseModel):
         description="Name of the meal",
         min_length=1,
         max_length=200,
+        pattern=r"^[a-zA-Z0-9\s\-']+$"
     )
     meal_type: MealType = Field(
         ..., 
@@ -99,22 +100,30 @@ class RecipeSchema(BaseModel):
     )
     ingredients: list[str] = Field(
         default_factory=list,
-        description="List of ingredients required for the meal",
+        description="List of ingredients required for the meal. Optional.",
         examples=[["flour", "sugar", "eggs"]],
     )
     instructions: list[str] = Field(
         default_factory=list,
-        description="Step-by-step instructions to prepare the meal",
-        examples=[["Mix ingredients", "Bake for 30 minutes"]], 
+        description="List of instructions to prepare the meal. Optional.",
+        examples=[["Mix ingredients", "Bake for 30 minutes"]],
     )
 
     @field_validator("ingredients", "instructions")
     @classmethod
     def validate_list_items(cls, v: list[str]) -> list[str]:
-        """Validate that list items are non-empty strings."""
-        if any(not item.strip() for item in v):
-            raise ValueError("Input should be a valid string")
+        """Validate that list items are non-empty strings if list is not empty."""
+        if v and any(not item.strip() for item in v):
+            raise ValueError("Each item must be a non-empty string")
         return v
+
+    @field_validator("meal_name")
+    @classmethod
+    def validate_meal_name(cls, v: str) -> str:
+        """Validate meal name format."""
+        if not v.strip():
+            raise ValueError("Meal name cannot be empty or whitespace")
+        return v.strip()
 
 class RecipeUpdateSchema(BaseModel):
     meal_name: str | None = None

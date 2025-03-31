@@ -1,13 +1,216 @@
+"""Unit tests for RecipeSchema and RecipeUpdateSchema."""
+
 import json
 from typing import Any, Literal
 
 import pytest
 from pydantic import ValidationError
 
-from src.resources.pydantic_schemas import RecipeSchema, RecipeUpdateSchema
+from src.resources.pydantic_schemas import MealType, RecipeSchema, RecipeUpdateSchema
 
 
+@pytest.fixture
+def valid_recipe_data() -> dict[str, Any]:
+    """Fixture providing valid recipe data."""
+    return {
+        "meal_name": "Test Recipe",
+        "meal_type": "breakfast",
+        "ingredients": ["ingredient1", "ingredient2"],
+        "instructions": ["step1", "step2"]
+    }
+
+
+@pytest.mark.schema
 class TestRecipeSchema:
+    """Test suite for RecipeSchema validation and functionality."""
+    
+    class TestMealNameValidation:
+        """Tests for meal_name validation."""
+
+        @pytest.mark.parametrize(
+            "meal_name",
+            [
+                "Simple Recipe",
+                "Recipe-123",
+                "My's Recipe",
+                "Recipe 123",
+                "A" * 200,  # Max length
+            ]
+        )
+        def test_valid_meal_names(self, meal_name: str, valid_recipe_data: dict[str, Any]) -> None:
+            """Test valid meal names."""
+            valid_recipe_data["meal_name"] = meal_name
+            recipe = RecipeSchema(**valid_recipe_data)
+            assert recipe.meal_name == meal_name
+
+        @pytest.mark.parametrize(
+            "invalid_meal_name,expected_error",
+            [
+                ("", "String should have at least 1 character"),
+                (" " * 5, "Meal name cannot be empty or whitespace"),
+                ("A" * 201, "String should have at most 200 characters"),
+                ("Recipe@123", "String should match pattern"),
+                ("Recipe#1", "String should match pattern"),
+            ]
+        )
+        def test_invalid_meal_names(
+            self, invalid_meal_name: str, expected_error: str, valid_recipe_data: dict[str, Any]
+        ) -> None:
+            """Test invalid meal names."""
+            valid_recipe_data["meal_name"] = invalid_meal_name
+            with pytest.raises(ValidationError) as exc_info:
+                RecipeSchema(**valid_recipe_data)
+            assert expected_error in str(exc_info.value)
+
+    class TestMealTypeValidation:
+        """Tests for meal_type validation."""
+
+        @pytest.mark.parametrize("meal_type", ["breakfast", "lunch", "dinner", "dessert"])
+        def test_valid_meal_types(self, meal_type: MealType, valid_recipe_data: dict[str, Any]) -> None:
+            """Test valid meal types."""
+            valid_recipe_data["meal_type"] = meal_type
+            recipe = RecipeSchema(**valid_recipe_data)
+            assert recipe.meal_type == meal_type
+
+        @pytest.mark.parametrize(
+            "invalid_meal_type",
+            [
+                "brunch",
+                "snack",
+                "",
+                "BREAKFAST",
+                "Lunch",
+                123,
+                None,
+            ]
+        )
+        def test_invalid_meal_types(self, invalid_meal_type: Any, valid_recipe_data: dict[str, Any]) -> None:
+            """Test invalid meal types."""
+            valid_recipe_data["meal_type"] = invalid_meal_type
+            with pytest.raises(ValidationError) as exc_info:
+                RecipeSchema(**valid_recipe_data)
+            assert "Input should be 'breakfast', 'lunch', 'dinner' or 'dessert'" in str(exc_info.value)
+
+    class TestIngredientsValidation:
+        """Tests for ingredients validation."""
+
+        @pytest.mark.parametrize(
+            "ingredients",
+            [
+                [],  # Empty list is allowed
+                ["flour"],  # Single ingredient
+                ["flour", "sugar", "eggs"],  # Multiple ingredients
+                ["ingredient" * 10],  # Long ingredient name
+                ["a"],  # Minimal length
+            ]
+        )
+        def test_valid_ingredients(self, ingredients: list[str], valid_recipe_data: dict[str, Any]) -> None:
+            """Test valid ingredients lists."""
+            valid_recipe_data["ingredients"] = ingredients
+            recipe = RecipeSchema(**valid_recipe_data)
+            assert recipe.ingredients == ingredients
+
+        @pytest.mark.parametrize(
+            "invalid_ingredients,expected_error",
+            [
+                ([""], "Each item must be a non-empty string"),
+                ([" "], "Each item must be a non-empty string"),
+                (["valid", ""], "Each item must be a non-empty string"),
+                (["valid", None], "Input should be a valid string"),
+                (None, "Input should be a valid list"),
+                ("not a list", "Input should be a valid list"),
+            ]
+        )
+        def test_invalid_ingredients(
+            self, invalid_ingredients: Any, expected_error: str, valid_recipe_data: dict[str, Any]
+        ) -> None:
+            """Test invalid ingredients lists."""
+            valid_recipe_data["ingredients"] = invalid_ingredients
+            with pytest.raises(ValidationError) as exc_info:
+                RecipeSchema(**valid_recipe_data)
+            assert expected_error in str(exc_info.value)
+
+    class TestInstructionsValidation:
+        """Tests for instructions validation."""
+
+        @pytest.mark.parametrize(
+            "instructions",
+            [
+                [],  # Empty list is allowed
+                ["Mix well"],  # Single instruction
+                ["Prepare", "Mix", "Bake"],  # Multiple instructions
+                ["Step " * 10],  # Long instruction
+                ["1"],  # Minimal length
+            ]
+        )
+        def test_valid_instructions(self, instructions: list[str], valid_recipe_data: dict[str, Any]) -> None:
+            """Test valid instructions lists."""
+            valid_recipe_data["instructions"] = instructions
+            recipe = RecipeSchema(**valid_recipe_data)
+            assert recipe.instructions == instructions
+
+        @pytest.mark.parametrize(
+            "invalid_instructions,expected_error",
+            [
+                ([""], "Each item must be a non-empty string"),
+                ([" "], "Each item must be a non-empty string"),
+                (["valid", ""], "Each item must be a non-empty string"),
+                (["valid", None], "Input should be a valid string"),
+                (None, "Input should be a valid list"),
+                ("not a list", "Input should be a valid list"),
+            ]
+        )
+        def test_invalid_instructions(
+            self, invalid_instructions: Any, expected_error: str, valid_recipe_data: dict[str, Any]
+        ) -> None:
+            """Test invalid instructions lists."""
+            valid_recipe_data["instructions"] = invalid_instructions
+            with pytest.raises(ValidationError) as exc_info:
+                RecipeSchema(**valid_recipe_data)
+            assert expected_error in str(exc_info.value)
+
+    class TestSchemaConfiguration:
+        """Tests for schema configuration and serialization."""
+
+        def test_model_config(self) -> None:
+            """Test RecipeSchema model configuration."""
+            schema = RecipeSchema.model_json_schema()
+            
+            # Test required fields
+            required = schema.get("required", [])
+            assert "meal_name" in required
+            assert "meal_type" in required
+            
+            # Test field properties
+            properties = schema["properties"]
+            
+            assert properties["meal_name"]["type"] == "string"
+            assert properties["meal_name"]["minLength"] == 1
+            assert properties["meal_name"]["maxLength"] == 200
+            
+            assert properties["meal_type"]["type"] == "string"
+            assert "enum" in properties["meal_type"]
+            
+            assert properties["ingredients"]["type"] == "array"
+            assert properties["ingredients"]["items"]["type"] == "string"
+            
+            assert properties["instructions"]["type"] == "array"
+            assert properties["instructions"]["items"]["type"] == "string"
+
+        def test_json_serialization(self, valid_recipe_data: dict[str, Any]) -> None:
+            """Test JSON serialization and deserialization."""
+            recipe = RecipeSchema(**valid_recipe_data)
+            json_str = recipe.model_dump_json()
+            assert isinstance(json_str, str)
+            
+            data = json.loads(json_str)
+            for field, value in valid_recipe_data.items():
+                assert data[field] == value
+
+            # Test round trip
+            recipe_2 = RecipeSchema(**data)
+            assert recipe_2.model_dump() == valid_recipe_data
+
     @pytest.mark.parametrize(
         "meal_name, meal_type, ingredients, instructions",
         [
@@ -254,43 +457,17 @@ class TestRecipeSchema:
 
     def test_update_type_conversion(self) -> None:
         """Test that RecipeUpdateSchema properly handles input data."""
-        update_data = {
-            "meal_name": "Recipe Name",
-            "meal_type": "breakfast",
-            "ingredients": ["ingredient1", "ingredient2"],
-            "instructions": ["step1", "step2"]
-        }
-        
-        recipe = RecipeUpdateSchema(**update_data)
+        recipe = RecipeUpdateSchema(
+            meal_name="Recipe Name",
+            meal_type="breakfast",
+            ingredients=["ingredient1", "ingredient2"],
+            instructions=["step1", "step2"]
+        )
         
         assert recipe.meal_name == "Recipe Name"
         assert recipe.meal_type == "breakfast"
         assert recipe.ingredients == ["ingredient1", "ingredient2"]
         assert recipe.instructions == ["step1", "step2"]
-
-    @pytest.mark.parametrize(
-        "valid_meal_type",
-        ["breakfast", "lunch", "dinner", "dessert"]
-    )
-    def test_update_valid_meal_types(self, valid_meal_type: str) -> None:
-        """Test that RecipeUpdateSchema accepts all valid meal types."""
-        recipe = RecipeUpdateSchema(meal_type=valid_meal_type)
-        assert recipe.meal_type == valid_meal_type
-
-    def test_update_model_config(self) -> None:
-        """Test RecipeUpdateSchema model configuration."""
-        schema = RecipeUpdateSchema.model_json_schema()
-        
-        # Check if schema contains appropriate fields
-        properties = schema["properties"]
-        assert "meal_name" in properties
-        assert "meal_type" in properties
-        assert "ingredients" in properties
-        assert "instructions" in properties
-        
-        # Check if fields are optional
-        assert all(field not in schema.get("required", []) 
-                  for field in ["meal_name", "meal_type", "ingredients", "instructions"])
 
     @pytest.mark.parametrize(
         "invalid_items",
@@ -308,7 +485,7 @@ class TestRecipeSchema:
                 meal_type="breakfast",
                 ingredients=invalid_items
             )
-        assert "Input should be a valid string" in str(exc_info.value)
+        assert "Each item must be a non-empty string" in str(exc_info.value)
 
         with pytest.raises(ValidationError) as exc_info:
             RecipeSchema(
@@ -316,7 +493,7 @@ class TestRecipeSchema:
                 meal_type="breakfast",
                 instructions=invalid_items
             )
-        assert "Input should be a valid string" in str(exc_info.value)
+        assert "Each item must be a non-empty string" in str(exc_info.value)
 
     @pytest.mark.parametrize(
         "invalid_items",
