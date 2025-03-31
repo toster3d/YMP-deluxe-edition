@@ -43,6 +43,14 @@ class TestTokenResponse:
                 },
                 "Input should be a valid string"
             ),
+            (
+                {"access_token": ""},
+                "String should have at least 1 character"
+            ),
+            (
+                {"access_token": "   "},
+                "access_token cannot consist solely of whitespace"
+            ),
         ]
     )
     def test_invalid(self, invalid_data: dict[str, Any], expected_error: str) -> None:

@@ -25,6 +25,14 @@ class TokenResponse(BaseModel):
         description="JWT access token"
     )
     token_type: str = Field("bearer", description="Token type")
+    
+    @field_validator("access_token")
+    @classmethod
+    def validate_access_token_content(cls, value: str) -> str:
+        """Check if the token contains at least one non-whitespace character."""
+        if not value.strip():
+            raise ValueError("access_token cannot consist solely of whitespace")
+        return value
 
 
 class RegisterSchema(BaseModel):
@@ -34,18 +42,27 @@ class RegisterSchema(BaseModel):
     username: str = Field(
         min_length=3,
         max_length=30,
-        description="Username must be between 3 and 30 characters long",
+        pattern="^[a-zA-Z0-9_-]+$",
+        description="Username must be between 3 and 30 characters long and contain only letters, numbers, underscores and hyphens",
     )
     password: str = Field(
         min_length=8,
-        max_length=50,
-        description="Password must be at least 8 characters long and meet complexity requirements",
+        max_length=64,
+        description="Password must be between 8 and 64 characters long and meet complexity requirements (uppercase, lowercase, digit, and special character)",
     )
     confirmation: str = Field(
         min_length=8,
-        max_length=50,
+        max_length=64,
         description="Password confirmation must match password",
     )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username_content(cls, value: str) -> str:
+        """Validate username content."""
+        if not value.strip():
+            raise ValueError("username cannot consist solely of whitespace")
+        return value
 
     @field_validator("confirmation")
     def passwords_match(cls, value: str, info: ValidationInfo) -> str:
