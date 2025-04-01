@@ -44,7 +44,7 @@ def create_access_token(user_id: int, username: str) -> str:
             settings.jwt_secret_key.get_secret_value(),
             algorithm=settings.jwt_algorithm,
         )
-        return token if isinstance(token, str) else token.decode("utf-8")
+        return str(token)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
