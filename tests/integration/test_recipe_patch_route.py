@@ -313,7 +313,7 @@ async def test_update_recipe_empty_payload(
 ) -> None:
     """Test updating a recipe with an empty payload."""
     recipe_id = test_recipe.id
-    empty_data = {}
+    empty_data: dict[str, object] = {}
     
     response = await async_client.patch(
         f"/recipe/{recipe_id}",
@@ -408,7 +408,7 @@ async def test_update_recipe_empty_ingredients(
     """Test updating a recipe with an empty ingredients list."""
     recipe_id = test_recipe.id
     update_data: dict[str, list[str]] = {
-        "ingredients": []  # type: ignore
+        "ingredients": []
     }
     
     response = await async_client.patch(

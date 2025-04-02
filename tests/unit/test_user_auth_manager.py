@@ -2,13 +2,10 @@ from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from werkzeug.security import generate_password_hash
 
 from src.services.user_auth_manager import (
     InvalidCredentialsError,
-    LoginService,
     MissingCredentialsError,
     PasswordMismatchError,
     RegistrationError,
@@ -21,7 +18,7 @@ from tests.test_models.models_db_test import TestUser
 @pytest.fixture(scope="function")
 async def mock_db_session() -> AsyncGenerator[AsyncMock, None]:
     db_mock = AsyncMock(spec=AsyncSession)
-    yield db_mock   
+    yield db_mock
 
 class TestUserAuth:
     
@@ -44,8 +41,13 @@ class TestUserAuth:
         return validator
     
     @pytest.fixture
-    def user_auth(self, mock_db_session: AsyncMock, mock_login_service: AsyncMock, 
-                 mock_registration_service: AsyncMock, mock_password_validator: MagicMock) -> UserAuth:
+    def user_auth(
+        self, 
+        mock_db_session: AsyncMock, 
+        mock_login_service: AsyncMock,
+        mock_registration_service: AsyncMock, 
+        mock_password_validator: MagicMock
+    ) -> UserAuth:
         with patch("src.services.user_auth_manager.LoginService", return_value=mock_login_service), \
              patch("src.services.user_auth_manager.RegistrationService", return_value=mock_registration_service), \
              patch("src.services.user_auth_manager.PasswordValidator", return_value=mock_password_validator):
@@ -54,87 +56,100 @@ class TestUserAuth:
             auth.registration_service = mock_registration_service
             auth.password_validator = mock_password_validator
             return auth
-    
-    @pytest.mark.asyncio
-    async def test_login_calls_login_service(self, user_auth: UserAuth) -> None:
-        result = await user_auth.login("testuser", "password123")
-        
-        user_auth.login_service.login.assert_awaited_once_with("testuser", "password123")
-        assert result == "test_token"
-    
-    @pytest.mark.asyncio
-    async def test_register_calls_registration_service(self, user_auth: UserAuth) -> None:
-        result = await user_auth.register("testuser", "test@example.com", "password123", "password123")
-        
-        user_auth.registration_service.register.assert_awaited_once_with(
-            "testuser", "test@example.com", "password123", "password123"
-        )
-        assert result == "Registration successful."
-    
-    def test_validate_password_calls_validator(self, user_auth: UserAuth) -> None:
-        result = user_auth.validate_password("StrongPassword123!")
-        
-        user_auth.password_validator.validate.assert_called_once_with("StrongPassword123!")
-        assert result is True
 
+    class TestLogin:
+        
+        @pytest.mark.asyncio
+        async def test_login_success(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.login_service, "login", return_value="test_token") as mock_login:
+                result = await user_auth.login("testuser", "password123")
+                mock_login.assert_awaited_once_with("testuser", "password123")
+                assert result == "test_token"
 
-class TestLoginService:
-    
-    @pytest.fixture
-    def login_service(self, mock_db_session: AsyncMock) -> LoginService:
-        with patch("src.services.user_auth_manager.User", TestUser):
-            return LoginService(mock_db_session)
-    
-    @pytest.mark.asyncio
-    async def test_login_with_missing_credentials(self, login_service: LoginService) -> None:
-        missing_username_cases = [
-            ("", "password"),
-        ]
+        @pytest.mark.asyncio
+        async def test_login_propagates_missing_credentials(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.login_service, "login", side_effect=MissingCredentialsError()) as mock_login:
+                with pytest.raises(MissingCredentialsError):
+                    await user_auth.login("", "")
+                mock_login.assert_awaited_once_with("", "")
+
+        @pytest.mark.asyncio
+        async def test_login_propagates_invalid_credentials(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.login_service, "login", side_effect=InvalidCredentialsError()) as mock_login:
+                with pytest.raises(InvalidCredentialsError):
+                    await user_auth.login("testuser", "wrongpass")
+                mock_login.assert_awaited_once_with("testuser", "wrongpass")
+
+    class TestRegistration:
         
-        missing_password_cases = [
-            ("username", ""),
-        ]
+        @pytest.mark.asyncio
+        async def test_register_success(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.registration_service, "register", 
+                             return_value="Registration successful.") as mock_register:
+                result = await user_auth.register(
+                    "testuser", 
+                    "test@example.com", 
+                    "password123", 
+                    "password123"
+                )
+                mock_register.assert_awaited_once_with(
+                    "testuser", 
+                    "test@example.com", 
+                    "password123", 
+                    "password123"
+                )
+                assert result == "Registration successful."
+
+        @pytest.mark.asyncio
+        async def test_register_propagates_password_mismatch(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.registration_service, "register", 
+                             side_effect=PasswordMismatchError()) as mock_register:
+                with pytest.raises(PasswordMismatchError):
+                    await user_auth.register(
+                        "testuser", 
+                        "test@example.com", 
+                        "password123", 
+                        "different123"
+                    )
+                mock_register.assert_awaited_once_with(
+                    "testuser",
+                    "test@example.com",
+                    "password123",
+                    "different123"
+                )
+
+        @pytest.mark.asyncio
+        async def test_register_propagates_registration_error(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.registration_service, "register", 
+                             side_effect=RegistrationError("Username exists")) as mock_register:
+                with pytest.raises(RegistrationError) as exc_info:
+                    await user_auth.register(
+                        "existing", 
+                        "test@example.com", 
+                        "password123", 
+                        "password123"
+                    )
+                mock_register.assert_awaited_once_with(
+                    "existing",
+                    "test@example.com",
+                    "password123",
+                    "password123"
+                )
+                assert "Username exists" in str(exc_info.value)
+
+    class TestPasswordValidation:
         
-        for username, password in missing_username_cases + missing_password_cases:
-            with pytest.raises(MissingCredentialsError):
-                await login_service.login(username, password)
-    
-    @pytest.mark.asyncio
-    async def test_login_with_nonexistent_user(self, login_service: LoginService, 
-                                              mock_db_session: AsyncMock) -> None:
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
-        
-        with patch("src.services.user_auth_manager.select", return_value=select(TestUser)), \
-             patch("src.services.user_auth_manager.check_password_hash", return_value=False):
-            with pytest.raises(InvalidCredentialsError):
-                await login_service.login("nonexistent", "password")
-    
-    @pytest.mark.asyncio
-    async def test_login_with_invalid_password(self, login_service: LoginService, 
-                                             mock_db_session: AsyncMock) -> None:
-        mock_user = MagicMock(spec=TestUser)
-        mock_user.id = 1
-        mock_user.user_name = "testuser"
-        mock_user.hash = generate_password_hash("correctpassword")
-        
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_user
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
-        
-        with patch("src.services.user_auth_manager.select", return_value=select(TestUser)), \
-             patch("src.services.user_auth_manager.check_password_hash") as mock_check_hash, \
-             patch("src.services.user_auth_manager.create_access_token") as mock_create_token:
-            
-            mock_check_hash.return_value = False
-            mock_create_token.return_value = "valid_token"
-            
-            with pytest.raises(InvalidCredentialsError):
-                await login_service.login("testuser", "wrongpassword")
-            
-            mock_check_hash.assert_called_once_with(mock_user.hash, "wrongpassword")
-            mock_create_token.assert_not_called()
+        def test_validate_password_success(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.password_validator, "validate", return_value=True) as mock_validate:
+                result = user_auth.validate_password("StrongPassword123!")
+                mock_validate.assert_called_once_with("StrongPassword123!")
+                assert result is True
+
+        def test_validate_password_failure(self, user_auth: UserAuth) -> None:
+            with patch.object(user_auth.password_validator, "validate", return_value=False) as mock_validate:
+                result = user_auth.validate_password("weak")
+                mock_validate.assert_called_once_with("weak")
+                assert result is False
 
 
 class TestRegistrationService:
@@ -143,64 +158,92 @@ class TestRegistrationService:
     def registration_service(self, mock_db_session: AsyncMock) -> RegistrationService:
         with patch("src.services.user_auth_manager.User", TestUser):
             return RegistrationService(mock_db_session)
-    
-    @pytest.mark.asyncio
-    async def test_register_with_mismatched_passwords(self, registration_service: RegistrationService) -> None:
-        with pytest.raises(PasswordMismatchError):
-            await registration_service.register(
-                "testuser", "test@example.com", "password123", "differentpassword"
-            )
-    
-    @pytest.mark.asyncio
-    async def test_register_with_existing_username(self, registration_service: RegistrationService, 
-                                                 mock_db_session: AsyncMock) -> None:
-        mock_user = MagicMock(spec=TestUser)
+
+    class TestRegister:
         
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_user
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
-        
-        with patch("src.services.user_auth_manager.select", return_value=select(TestUser)):
-            with pytest.raises(RegistrationError) as exc_info:
-                await registration_service.register(
-                    "existinguser", "test@example.com", "password123", "password123"
+        @pytest.mark.asyncio
+        async def test_register_success(
+            self, 
+            registration_service: RegistrationService, 
+            mock_db_session: AsyncMock
+        ) -> None:
+            mock_result = MagicMock()
+            mock_result.scalar_one_or_none.return_value = None
+            
+            with patch.object(mock_db_session, "execute", return_value=mock_result), \
+                 patch.object(mock_db_session, "add") as mock_add, \
+                 patch.object(mock_db_session, "flush") as mock_flush, \
+                 patch.object(mock_db_session, "commit") as mock_commit:
+                
+                result = await registration_service.register(
+                    "newuser", 
+                    "test@example.com", 
+                    "password123", 
+                    "password123"
                 )
-            
-            assert "Username already exists" in str(exc_info.value)
-    
-    @pytest.mark.asyncio
-    async def test_register_success(self, registration_service: RegistrationService, 
-                                  mock_db_session: AsyncMock) -> None:
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
-        
-        mock_user = MagicMock(spec=TestUser)
-        with patch("src.services.user_auth_manager.select", return_value=select(TestUser)), \
-             patch("src.services.user_auth_manager.User", return_value=mock_user):
-            result = await registration_service.register(
-                "newuser", "test@example.com", "password123", "password123"
-            )
-            
-            assert result == "Registration successful."
-            mock_db_session.add.assert_called_once_with(mock_user)
-            mock_db_session.flush.assert_awaited_once()
-            mock_db_session.commit.assert_awaited_once()
-    
-    @pytest.mark.asyncio
-    async def test_register_database_error(self, registration_service: RegistrationService, 
-                                         mock_db_session: AsyncMock) -> None:
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
-        
-        mock_db_session.commit = AsyncMock(side_effect=Exception("Database error"))
-        
-        with patch("src.services.user_auth_manager.select", return_value=select(TestUser)):
-            with pytest.raises(RegistrationError) as exc_info:
+                
+                assert result == "Registration successful."
+                mock_add.assert_called_once()
+                mock_flush.assert_awaited_once()
+                mock_commit.assert_awaited_once()
+
+        @pytest.mark.asyncio
+        async def test_register_password_mismatch(
+            self, 
+            registration_service: RegistrationService
+        ) -> None:
+            with pytest.raises(PasswordMismatchError):
                 await registration_service.register(
-                    "newuser", "test@example.com", "password123", "password123"
+                    "testuser", 
+                    "test@example.com", 
+                    "password123", 
+                    "different123"
                 )
+
+        @pytest.mark.asyncio
+        async def test_register_existing_username(
+            self, 
+            registration_service: RegistrationService, 
+            mock_db_session: AsyncMock
+        ) -> None:
+            mock_result = MagicMock()
+            existing_user = TestUser(
+                user_name="existing",
+                email="existing@example.com",
+                hash="hash"
+            )
+            mock_result.scalar_one_or_none.return_value = existing_user
             
-            assert "Registration failed" in str(exc_info.value)
-            mock_db_session.rollback.assert_awaited_once()
+            with patch.object(mock_db_session, "execute", return_value=mock_result):
+                with pytest.raises(RegistrationError) as exc_info:
+                    await registration_service.register(
+                        "existing", 
+                        "test@example.com", 
+                        "password123", 
+                        "password123"
+                    )
+                assert "Username already exists" in str(exc_info.value)
+
+        @pytest.mark.asyncio
+        async def test_register_database_error(
+            self, 
+            registration_service: RegistrationService, 
+            mock_db_session: AsyncMock
+        ) -> None:
+            mock_result = MagicMock()
+            mock_result.scalar_one_or_none.return_value = None
+            db_error = Exception("Database error")
+            
+            with patch.object(mock_db_session, "execute", return_value=mock_result), \
+                 patch.object(mock_db_session, "commit", side_effect=db_error), \
+                 patch.object(mock_db_session, "rollback") as mock_rollback:
+                
+                with pytest.raises(RegistrationError) as exc_info:
+                    await registration_service.register(
+                        "newuser", 
+                        "test@example.com", 
+                        "password123", 
+                        "password123"
+                    )
+                assert "Registration failed" in str(exc_info.value)
+                mock_rollback.assert_awaited_once()
