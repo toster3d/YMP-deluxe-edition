@@ -57,6 +57,8 @@ test = [
     "pytest-mock>=3.14.0",
     "httpx==0.28.1",
     "asyncio>=3.4.3",
+    "testcontainers[redis]>=4.10.0",
+
 ]
 
 lint = [
@@ -66,6 +68,7 @@ lint = [
     "types-cryptography==3.3.23.2",
     "types-jwt==0.1.3",
     "types-redis>=4.6.0.20241004",
+    "types-testcontainers",
 ]
 
 db = [
@@ -154,7 +157,8 @@ strict_optional = true
 [[tool.mypy.overrides]]
 module = [
     "fastapi.*",
-    "sqlmodel.*"
+    "sqlmodel.*",
+    "testcontainers.*"
 ]
 ignore_missing_imports = true
 
