@@ -20,34 +20,183 @@ from services.shopping_list_service import ShoppingListService
 from services.user_plan_manager import SqlAlchemyUserPlanManager
 
 
-@pytest.fixture
-async def setup_user_plan(db_session: AsyncSession, create_test_user: Any) -> AsyncGenerator[TestUserPlan, None]:
-    """Create a test user plan for today."""
+@pytest.mark.asyncio
+class TestShoppingListRoutes:
+    """Tests for shopping list endpoints."""
+
+    @pytest.fixture
+    async def setup_user_plan(
+        self, db_session: AsyncSession, create_test_user: Any
+    ) -> AsyncGenerator[TestUserPlan, None]:
+        """Create a test user plan for today."""
+        today = datetime.now(UTC).date()
+        
+        user_plan = TestUserPlan(
+            user_id=create_test_user.id,
+            date=today,
+            breakfast="Test Breakfast",
+            lunch="Test Lunch",
+            dinner="Test Dinner",
+            dessert=None
+        )
+        
+        db_session.add(user_plan)
+        await db_session.commit()
+        await db_session.refresh(user_plan)
+        
+        yield user_plan
+        
+        await db_session.delete(user_plan)
+        await db_session.commit()
+
+
+    @pytest.fixture
+    async def setup_recipes(
+        self, db_session: AsyncSession, create_test_user: Any
+    ) -> AsyncGenerator[list[TestRecipe], None]:
+        """Create test recipes for the user."""
+        recipes = []
+        
+        breakfast = TestRecipe(
+            user_id=create_test_user.id,
+            meal_name="Test Breakfast",
+            meal_type=VALID_MEAL_TYPES[0],
+            ingredients=json.dumps(["eggs", "bread", "butter"]),
+            instructions=json.dumps(["Cook eggs", "Toast bread", "Serve"])
+        )
+        
+        lunch = TestRecipe(
+            user_id=create_test_user.id,
+            meal_name="Test Lunch",
+            meal_type=VALID_MEAL_TYPES[1],
+            ingredients=json.dumps(["chicken", "rice", "vegetables"]),
+            instructions=json.dumps(["Cook chicken", "Prepare rice", "Mix with vegetables"])
+        )
+        
+        dinner = TestRecipe(
+            user_id=create_test_user.id,
+            meal_name="Test Dinner",
+            meal_type=VALID_MEAL_TYPES[2],
+            ingredients=json.dumps(["pasta", "tomato sauce", "cheese"]),
+            instructions=json.dumps(["Boil pasta", "Heat sauce", "Mix and add cheese"])
+        )
+        
+        dessert = TestRecipe(
+            user_id=create_test_user.id,
+            meal_name="Test Dessert",
+            meal_type=VALID_MEAL_TYPES[3],
+            ingredients=json.dumps(["flour", "sugar", "eggs", "chocolate"]),
+            instructions=json.dumps(["Mix ingredients", "Bake", "Serve"])
+        )
+        
+        recipes = [breakfast, lunch, dinner, dessert]
+        db_session.add_all(recipes)
+        await db_session.commit()
+        
+        for recipe in recipes:
+            await db_session.refresh(recipe)
+        
+        yield recipes
+        
+        for recipe in recipes:
+            await db_session.delete(recipe)
+        await db_session.commit()
+
+    class TestGetShoppingListSuccessScenarios:
+        """Tests for successful shopping list retrieval."""
+        
+        async def test_get_shopping_list_today(
+            self,
+            async_client: AsyncClient,
+            auth_headers: dict[str, str],
+            setup_user_plan: TestUserPlan,
+            setup_recipes: list[TestRecipe]
+        ) -> None:
+            """Test getting shopping list for today."""
+            response = await async_client.get("/shopping_list", headers=auth_headers)
+            
+            assert response.status_code == status.HTTP_200_OK
+            
+            data: dict[str, Any] = response.json()
+            assert isinstance(data, dict)
+            
+            shopping_list: ShoppingListResponse = ShoppingListResponse(**data)
+            assert shopping_list.current_date == datetime.now(UTC).date().isoformat()
+            
+            expected_ingredients = {"eggs", "bread", "butter", "chicken", "rice",
+                                "vegetables", "pasta", "tomato sauce", "cheese"}
+            assert set(shopping_list.ingredients) == expected_ingredients
+
+    class TestGetShoppingListErrorScenarios:
+        """Tests for error scenarios in shopping list retrieval."""
+        
+        async def test_get_shopping_list_today_no_plan(
+            self,
+            async_client: AsyncClient,
+            auth_headers: dict[str, str],
+            db_session: AsyncSession
+        ) -> None:
+            """Test getting shopping list for today when no plan exists."""
+            response = await async_client.get("/shopping_list", headers=auth_headers)
+            
+            assert response.status_code == status.HTTP_404_NOT_FOUND
+            assert "No meal plan for today" in response.json()["detail"]
+        
+    class TestAuthorizationScenarios:
+        """Tests for authorization scenarios."""
+        
+        async def test_get_shopping_list_unauthorized(
+            self, 
+            async_client: AsyncClient
+        ) -> None:
+            """Test accessing shopping list without authentication."""
+            response = await async_client.get("/shopping_list")
+            
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        
+        async def test_get_shopping_list_invalid_token(
+            self,
+            async_client: AsyncClient
+        ) -> None:
+            """Test accessing shopping list with invalid token."""
+            headers = {"Authorization": "Bearer invalid.token"}
+            response = await async_client.get("/shopping_list", headers=headers)
+            
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert "Invalid token" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_get_shopping_list_date_range(
+    async_client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: AsyncSession,
+    create_test_user: Any
+) -> None:
+    """Test getting shopping list for date range."""
     today = datetime.now(UTC).date()
+    tomorrow = today + timedelta(days=1)
     
-    user_plan = TestUserPlan(
+    today_plan = TestUserPlan(
         user_id=create_test_user.id,
         date=today,
         breakfast="Test Breakfast",
-        lunch="Test Lunch",
+        lunch="Test Lunch", 
         dinner="Test Dinner",
         dessert=None
     )
     
-    db_session.add(user_plan)
-    await db_session.commit()
-    await db_session.refresh(user_plan)
+    tomorrow_plan = TestUserPlan(
+        user_id=create_test_user.id,
+        date=tomorrow,
+        breakfast="Test Breakfast",
+        lunch=None,
+        dinner="Test Dinner",
+        dessert="New Dessert"
+    )
     
-    yield user_plan
-    
-    await db_session.delete(user_plan)
+    db_session.add_all([today_plan, tomorrow_plan])
     await db_session.commit()
-
-
-@pytest.fixture
-async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> AsyncGenerator[list[TestRecipe], None]:
-    """Create test recipes for the user."""
-    recipes = []
     
     breakfast = TestRecipe(
         user_id=create_test_user.id,
@@ -62,7 +211,7 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
         meal_name="Test Lunch",
         meal_type=VALID_MEAL_TYPES[1],
         ingredients=json.dumps(["chicken", "rice", "vegetables"]),
-        instructions=json.dumps(["Cook chicken", "Prepare rice", "Mix with vegetables"])
+        instructions=json.dumps(["Cook chicken", "Prepare rice", "Mix"])
     )
     
     dinner = TestRecipe(
@@ -70,91 +219,8 @@ async def setup_recipes(db_session: AsyncSession, create_test_user: Any) -> Asyn
         meal_name="Test Dinner",
         meal_type=VALID_MEAL_TYPES[2],
         ingredients=json.dumps(["pasta", "tomato sauce", "cheese"]),
-        instructions=json.dumps(["Boil pasta", "Heat sauce", "Mix and add cheese"])
+        instructions=json.dumps(["Boil pasta", "Heat sauce", "Mix"])
     )
-    
-    dessert = TestRecipe(
-        user_id=create_test_user.id,
-        meal_name="Test Dessert",
-        meal_type=VALID_MEAL_TYPES[3],
-        ingredients=json.dumps(["flour", "sugar", "eggs", "chocolate"]),
-        instructions=json.dumps(["Mix ingredients", "Bake", "Serve"])
-    )
-    
-    recipes = [breakfast, lunch, dinner, dessert]
-    db_session.add_all(recipes)
-    await db_session.commit()
-    
-    for recipe in recipes:
-        await db_session.refresh(recipe)
-    
-    yield recipes
-    
-    for recipe in recipes:
-        await db_session.delete(recipe)
-    await db_session.commit()
-
-
-@pytest.mark.asyncio
-async def test_get_shopping_list_today(
-    async_client: AsyncClient,
-    auth_headers: dict[str, str],
-    setup_user_plan: TestUserPlan,
-    setup_recipes: list[TestRecipe]
-) -> None:
-    """Test getting shopping list for today."""
-    response = await async_client.get("/shopping_list", headers=auth_headers)
-    
-    assert response.status_code == status.HTTP_200_OK
-    
-    data: dict[str, Any] = response.json()
-    assert isinstance(data, dict)
-    
-    shopping_list: ShoppingListResponse = ShoppingListResponse(**data)
-    assert shopping_list.current_date == datetime.now(UTC).date().isoformat()
-    
-    expected_ingredients = {"eggs", "bread", "butter", "chicken", "rice",
-                            "vegetables", "pasta", "tomato sauce", "cheese"}
-    assert set(shopping_list.ingredients) == expected_ingredients
-
-
-@pytest.mark.asyncio
-async def test_get_shopping_list_today_no_plan(
-    async_client: AsyncClient,
-    auth_headers: dict[str, str],
-    db_session: AsyncSession
-) -> None:
-    """Test getting shopping list for today when no plan exists."""
-    response = await async_client.get("/shopping_list", headers=auth_headers)
-    
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert "No meal plan for today" in response.json()["detail"]
-
-
-@pytest.mark.asyncio
-async def test_get_shopping_list_date_range(
-    async_client: AsyncClient,
-    auth_headers: dict[str, str],
-    setup_user_plan: TestUserPlan,
-    setup_recipes: list[TestRecipe],
-    db_session: AsyncSession,
-    create_test_user: Any
-) -> None:
-    """Test getting shopping list for date range."""
-    today = datetime.now(UTC).date()
-    tomorrow = today + timedelta(days=1)
-    
-    tomorrow_plan = TestUserPlan(
-        user_id=create_test_user.id,
-        date=tomorrow,
-        breakfast="Test Breakfast",
-        lunch=None,
-        dinner="Test Dinner",
-        dessert="New Dessert"
-    )
-    
-    db_session.add(tomorrow_plan)
-    await db_session.commit()
     
     dessert = TestRecipe(
         user_id=create_test_user.id,
@@ -164,37 +230,39 @@ async def test_get_shopping_list_date_range(
         instructions=json.dumps(["Mix ingredients", "Bake", "Serve"])
     )
     
-    db_session.add(dessert)
+    db_session.add_all([breakfast, lunch, dinner, dessert])
     await db_session.commit()
     
-    response = await async_client.post(
-        "/shopping_list",
-        json={
-            "start_date": today.isoformat(),
-            "end_date": tomorrow.isoformat()
-        },
-        headers=auth_headers
-    )
-    
-    assert response.status_code == status.HTTP_200_OK
-    
-    data: dict[str, Any] = response.json()
-    assert isinstance(data, dict)
-    
-    shopping_list: ShoppingListRangeResponse = ShoppingListRangeResponse(**data)
-    assert shopping_list.date_range == f"{today.isoformat()} to {tomorrow.isoformat()}"
-    
-    expected_ingredients = {
-        "eggs", "bread", "butter",
-        "chicken", "rice", "vegetables",
-        "pasta", "tomato sauce", "cheese",
-        "flour", "sugar", "chocolate"
-    }
-    assert set(shopping_list.ingredients) == expected_ingredients
-    
-    await db_session.delete(tomorrow_plan)
-    await db_session.delete(dessert)
-    await db_session.commit()
+    try:
+        response = await async_client.post(
+            "/shopping_list",
+            json={
+                "start_date": today.isoformat(),
+                "end_date": tomorrow.isoformat()
+            },
+            headers=auth_headers
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        
+        data: dict[str, Any] = response.json()
+        assert isinstance(data, dict)
+        
+        shopping_list: ShoppingListRangeResponse = ShoppingListRangeResponse(**data)
+        assert shopping_list.date_range == f"{today.isoformat()} to {tomorrow.isoformat()}"
+        
+        expected_ingredients = {
+            "eggs", "bread", "butter",
+            "chicken", "rice", "vegetables",
+            "pasta", "tomato sauce", "cheese",
+            "flour", "sugar", "chocolate"
+        }
+        assert set(shopping_list.ingredients) == expected_ingredients
+    finally:
+        # Cleanup
+        for item in [today_plan, tomorrow_plan, breakfast, lunch, dinner, dessert]:
+            await db_session.delete(item)
+        await db_session.commit()
 
 
 @pytest.mark.asyncio
@@ -251,31 +319,6 @@ async def test_get_shopping_list_date_range_missing_body(
     
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "body" in response.json()["detail"][0]["loc"]
-
-
-@pytest.mark.asyncio
-async def test_get_shopping_list_unauthorized(async_client: AsyncClient) -> None:
-    """Test accessing shopping list without authentication."""
-    response = await async_client.get("/shopping_list")
-    
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
-@pytest.mark.asyncio
-async def test_get_shopping_list_date_range_unauthorized(async_client: AsyncClient) -> None:
-    """Test accessing shopping list date range without authentication."""
-    today = datetime.now(UTC).date()
-    tomorrow = today + timedelta(days=1)
-    
-    response = await async_client.post(
-        "/shopping_list",
-        json={
-            "start_date": today.isoformat(),
-            "end_date": tomorrow.isoformat()
-        }
-    )
-    
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.fixture
@@ -493,6 +536,9 @@ async def test_extract_meal_name() -> None:
         if input_value is not None:
             result: str | None = service.extract_meal_name(input_value or "None")
             assert result == expected_output
+
+
+@pytest.mark.asyncio
 async def test_get_meal_names() -> None:
     """Test the _get_meal_names method."""
     user_plan_manager = AsyncMock()
@@ -551,4 +597,4 @@ def test_generate_date_list() -> None:
     assert date_list == expected_dates
     
     single_day = generate_date_list(start_date, start_date)
-    assert single_day == [start_date] 
+    assert single_day == [start_date]
