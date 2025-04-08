@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dependencies import get_token_storage  # type: ignore
+from dependencies import get_token_storage
 from extensions import get_async_db
 from jwt_utils import verify_jwt
 from services.user_auth_manager import (
@@ -24,7 +24,7 @@ class AuthResource:
     """Resource handling user authentication."""
 
     def __init__(self, db: AsyncSession = Depends(get_async_db)):
-        """Initialize auth resource with database session."""
+        self.db = db
         self.user_auth = UserAuth(db)
 
     async def login_with_form(
@@ -42,6 +42,9 @@ class AuthResource:
         Raises:
             HTTPException: If authentication fails
         """
+        if not form_data.username or not form_data.password:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials")
+
         try:
             access_token = await self.user_auth.login(
                 username=form_data.username, password=form_data.password
@@ -100,7 +103,7 @@ class LogoutResource:
 
     def __init__(
         self,
-        token_storage: Annotated[RedisTokenStorage, Depends(get_token_storage)],  # type: ignore
+        token_storage: Annotated[RedisTokenStorage, Depends(get_token_storage)],
         db: AsyncSession = Depends(get_async_db),
     ) -> None:
         """Initialize logout resource with database session and token storage."""

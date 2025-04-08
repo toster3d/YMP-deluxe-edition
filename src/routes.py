@@ -1,3 +1,4 @@
+import logging
 from datetime import date as date_type
 from typing import Annotated, Any
 
@@ -54,7 +55,10 @@ async def login(
     try:
         result = await auth_resource.login_with_form(form_data)
         return result
+    except HTTPException as e:
+        raise e
     except Exception as e:
+        logging.error(f"Unexpected error during login: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
@@ -98,7 +102,7 @@ async def logout(
 async def get_recipes(
     recipe_list_resource: Annotated[RecipeListResource, Depends()],
     current_user: dict[str, Any] = Depends(verify_token)
-) -> dict[str, list[RecipeUpdateSchema]]:
+) -> dict[str, list[RecipeSchema]]:
     """Get all recipes for authenticated user."""
     return await recipe_list_resource.get(user_id=int(current_user["sub"]))
 
@@ -132,7 +136,7 @@ async def get_recipe(
     recipe_id: int,
     recipe_resource: Annotated[RecipeResource, Depends()],
     token: dict[str, Any] = Depends(verify_token)
-) -> RecipeUpdateSchema:
+) -> RecipeSchema:
     """Get recipe by ID."""
     user_id = int(token['sub'])
     return await recipe_resource.get(recipe_id, user_id)

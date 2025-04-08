@@ -1,11 +1,11 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 import jwt
 from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
 from config import get_settings
-from fastapi.security import OAuth2PasswordBearer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
@@ -44,7 +44,7 @@ def create_access_token(user_id: int, username: str) -> str:
             settings.jwt_secret_key.get_secret_value(),
             algorithm=settings.jwt_algorithm,
         )
-        return token if isinstance(token, str) else token.decode("utf-8")
+        return str(token)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

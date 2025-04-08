@@ -1,16 +1,38 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 
-from services.user_auth_manager import PasswordValidator
+from services.password_validator import PasswordValidator
+
+MealType = Literal["breakfast", "lunch", "dinner", "dessert"]
+VALID_MEAL_TYPES = ("breakfast", "lunch", "dinner", "dessert")
 
 
 class TokenResponse(BaseModel):
     """Schema for token response."""
 
-    access_token: str = Field(..., description="JWT access token")
+    access_token: str = Field(
+        ..., 
+        min_length=1,
+        description="JWT access token"
+    )
     token_type: str = Field("bearer", description="Token type")
+    
+    @field_validator("access_token")
+    @classmethod
+    def validate_access_token_content(cls, value: str) -> str:
+        """Check if the token contains at least one non-whitespace character."""
+        if not value.strip():
+            raise ValueError("access_token cannot consist solely of whitespace")
+        return value
 
 
 class RegisterSchema(BaseModel):
@@ -20,18 +42,27 @@ class RegisterSchema(BaseModel):
     username: str = Field(
         min_length=3,
         max_length=30,
-        description="Username must be between 3 and 30 characters long",
+        pattern="^[a-zA-Z0-9_-]+$",
+        description="Username must be between 3 and 30 characters long and contain only letters, numbers, underscores and hyphens",
     )
     password: str = Field(
         min_length=8,
-        max_length=50,
-        description="Password must be at least 8 characters long and meet complexity requirements",
+        max_length=64,
+        description="Password must be between 8 and 64 characters long and meet complexity requirements (uppercase, lowercase, digit, and special character)",
     )
     confirmation: str = Field(
         min_length=8,
-        max_length=50,
+        max_length=64,
         description="Password confirmation must match password",
     )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username_content(cls, value: str) -> str:
+        """Validate username content."""
+        if not value.strip():
+            raise ValueError("Username cannot consist solely of whitespace")
+        return value
 
     @field_validator("confirmation")
     def passwords_match(cls, value: str, info: ValidationInfo) -> str:
@@ -51,42 +82,80 @@ class RegisterSchema(BaseModel):
 
 
 class RecipeSchema(BaseModel):
-    meal_name: str = Field(..., description="Name of the meal")
-    meal_type: Literal["breakfast", "lunch", "dinner", "dessert"] = Field(
-        ..., description="Type of meal"
+    """Schema for recipe data validation."""
+    
+    model_config = ConfigDict(strict=True)
+
+    meal_name: str = Field(
+        ..., 
+        description="Name of the meal",
+        min_length=1,
+        max_length=200,
+        pattern=r"^[a-zA-Z0-9\s\-']+$"
+    )
+    meal_type: MealType = Field(
+        ..., 
+        description="Type of meal",
+        examples=["breakfast", "lunch", "dinner", "dessert"],
     )
     ingredients: list[str] = Field(
-        default_factory=list, description="List of ingredients required for the meal"
+        default_factory=list,
+        description="List of ingredients required for the meal. Optional.",
+        examples=[["flour", "sugar", "eggs"]],
     )
     instructions: list[str] = Field(
         default_factory=list,
-        description="Step-by-step instructions to prepare the meal",
+        description="List of instructions to prepare the meal. Optional.",
+        examples=[["Mix ingredients", "Bake for 30 minutes"]],
     )
 
+    @field_validator("ingredients", "instructions")
+    @classmethod
+    def validate_list_items(cls, v: list[str]) -> list[str]:
+        """Validate that list items are non-empty strings if list is not empty."""
+        if v and any(not item.strip() for item in v):
+            raise ValueError("Each item must be a non-empty string")
+        return v
+
+    @field_validator("meal_name")
+    @classmethod
+    def validate_meal_name(cls, v: str) -> str:
+        """Validate meal name format."""
+        if not v.strip():
+            raise ValueError("Meal name cannot be empty or whitespace")
+        return v.strip()
 
 class RecipeUpdateSchema(BaseModel):
     meal_name: str | None = None
-    meal_type: str | None = None
+    meal_type: MealType | None = None
     ingredients: list[str] | None = None
     instructions: list[str] | None = None
+
+    @field_validator("ingredients", "instructions")
+    @classmethod
+    def validate_list_items(cls, v: list[str] | None) -> list[str] | None:
+        """Validate that list items are non-empty strings."""
+        if v is not None:
+            if any(not item.strip() for item in v):
+                raise ValueError("Input should be a valid string")
+        return v
 
 
 class UserPlanSchema(BaseModel):
     user_id: int
     date: date
-    breakfast: str | None = None
-    lunch: str | None = None
-    dinner: str | None = None
-    dessert: str | None = None
+    breakfast: str | None = Field(None, description="Breakfast meal name")
+    lunch: str | None = Field(None, description="Lunch meal name")
+    dinner: str | None = Field(None, description="Dinner meal name")
+    dessert: str | None = Field(None, description="Dessert meal name")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PlanSchema(BaseModel):
     selected_date: date = Field(..., description="Date in ISO format (YYYY-MM-DD)")
-    recipe_id: int = Field(..., description="ID of the recipe")
-    meal_type: str = Field(
+    recipe_id: int = Field(..., gt=0, description="ID of the recipe")
+    meal_type: MealType = Field(
         ..., description="Type of meal (breakfast, lunch, dinner, dessert)"
     )
 
@@ -110,7 +179,8 @@ class ShoppingListResponse(BaseModel):
         description="List of ingredients needed for planned meals"
     )
     current_date: str = Field(
-        description="Current date in ISO format (YYYY-MM-DD)"
+        description="Current date in ISO format (YYYY-MM-DD)",
+        pattern=r"^\d{4}-\d{2}-\d{2}$"
     )
 
 
@@ -120,5 +190,6 @@ class ShoppingListRangeResponse(BaseModel):
         description="List of ingredients needed for planned meals"
     )
     date_range: str = Field(
-        description="Date range in format 'YYYY-MM-DD to YYYY-MM-DD'"
+        description="Date range in format 'YYYY-MM-DD to YYYY-MM-DD'",
+        pattern=r"^\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}$"
     )
